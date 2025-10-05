@@ -47,7 +47,7 @@ export async function withRetry<T>(
 
       // Log retry attempt
       logger.warn(`Retry attempt ${attempt}/${maxRetries}`, {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         delayMs: delay,
       });
 
@@ -127,7 +127,7 @@ export async function withRetryJitter<T>(
       const jitteredDelay = Math.min(delay * jitter, maxDelayMs);
 
       logger.warn(`Retry attempt ${attempt}/${maxRetries} with jitter`, {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         delayMs: Math.round(jitteredDelay),
       });
 
