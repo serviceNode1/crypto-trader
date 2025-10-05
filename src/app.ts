@@ -49,7 +49,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Request logging middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
+app.use((req: Request, _res: Response, next: NextFunction) => {
   logger.info('Incoming request', {
     method: req.method,
     path: req.path,
@@ -71,14 +71,14 @@ app.use('/api', routes);
 /**
  * Root route - Serve dashboard
  */
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 /**
  * Error Handling Middleware
  */
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   logger.error('Unhandled error', {
     error: err.message,
     stack: err.stack,
@@ -94,7 +94,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 /**
  * 404 Handler
  */
-app.use((req: Request, res: Response) => {
+app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Route not found' });
 });
 

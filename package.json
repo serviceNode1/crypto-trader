@@ -4,7 +4,7 @@
   "description": "AI-powered cryptocurrency analysis and paper trading system",
   "main": "dist/app.js",
   "scripts": {
-    "dev": "nodemon --exec ts-node src/app.ts",
+    "dev": "nodemon --exec ts-node --transpile-only src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
     "migrate": "ts-node src/migrations/run.ts",
