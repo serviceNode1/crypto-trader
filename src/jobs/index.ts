@@ -34,7 +34,7 @@ const setupQueueListeners = (queue: Queue.Queue, queueName: string) => {
   queue.on('completed', (job) => {
     logger.info(`Job ${job.id} in queue ${queueName} completed`, {
       jobId: job.id,
-      duration: Date.now() - job.processedOn,
+      duration: job.processedOn ? Date.now() - job.processedOn : 0,
     });
   });
 

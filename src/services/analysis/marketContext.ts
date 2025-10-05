@@ -16,6 +16,15 @@ export interface MarketContext {
   };
   riskSentiment: 'risk-on' | 'risk-off' | 'neutral';
   volatilityIndex: number;
+  // Optional additional fields
+  totalVolume?: number;
+  ethDominance?: number;
+  altcoinMarketCap?: number;
+  fearGreedIndex?: number;
+  sp500?: number;        // Top-level alias for traditionalMarkets.sp500
+  gold?: number;         // Top-level alias for traditionalMarkets.gold
+  dxy?: number;          // USD Dollar Index
+  vix?: number;          // Top-level alias for traditionalMarkets.vix
 }
 
 export interface RegimeAnalysis {

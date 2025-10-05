@@ -23,6 +23,12 @@ interface RedditPost {
   num_comments: number;
   permalink: string;
   url: string;
+  // Processed/computed fields (added during analysis)
+  content?: string;        // Combined title + selftext for analysis
+  sentiment?: number;      // Sentiment score (-1 to 1)
+  authorKarma?: number;    // Author credibility score
+  numComments?: number;    // Alias for num_comments (camelCase)
+  createdAt?: Date;        // Converted created_utc as Date object
 }
 
 interface RedditComment {

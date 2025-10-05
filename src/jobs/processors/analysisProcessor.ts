@@ -1,7 +1,6 @@
 import { Job } from 'bull';
 import { getCandlesticks } from '../../services/dataCollection/binanceService';
 import { calculateAllIndicators, analyzeTrend } from '../../services/analysis/technicalAnalysis';
-import { query } from '../../config/database';
 import { SUPPORTED_SYMBOLS } from '../../config/constants';
 import { logger } from '../../utils/logger';
 
@@ -33,9 +32,9 @@ async function analyzeSymbol(symbol: string): Promise<void> {
     // Store analysis results (you might want to create a separate table for this)
     logger.info(`${symbol} analysis complete - Trend: ${trend.trend}, Strength: ${trend.strength.toFixed(2)}`);
     logger.debug(`${symbol} indicators:`, {
-      rsi: indicators.rsi.toFixed(2),
-      macd: indicators.macd.histogram.toFixed(2),
-      bbPosition: indicators.bollingerBands.position.toFixed(3),
+      rsi: indicators.rsi !== null ? indicators.rsi.toFixed(2) : 'N/A',
+      macd: indicators.macd.histogram !== null ? indicators.macd.histogram.toFixed(2) : 'N/A',
+      bbUpper: indicators.bollingerBands.upper !== null ? indicators.bollingerBands.upper.toFixed(2) : 'N/A',
     });
     
   } catch (error) {

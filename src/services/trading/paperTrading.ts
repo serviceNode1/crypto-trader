@@ -19,6 +19,7 @@ export interface Portfolio {
   totalValue: number;
   totalReturn: number;
   totalReturnPercent: number;
+  holdings?: Position[];  // Alias for positions for backward compatibility
 }
 
 export interface Trade {

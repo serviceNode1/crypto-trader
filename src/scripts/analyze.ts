@@ -41,7 +41,7 @@ async function analyzeCrypto(symbol: string): Promise<void> {
     logger.info(`Trend: ${trend.trend} (strength: ${trend.strength.toFixed(1)})`);
 
     // Calculate sentiment
-    const sentiment = aggregateSentiment(redditPosts, news);
+    const sentiment = await aggregateSentiment(redditPosts, news);
 
     logger.info(
       `Sentiment: ${sentiment.overall.classification} (score: ${sentiment.overall.score.toFixed(3)})`

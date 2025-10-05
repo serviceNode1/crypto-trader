@@ -1,5 +1,5 @@
 import { Job } from 'bull';
-import { getCurrentPrice, getTrendingCoins, getGlobalData } from '../../services/dataCollection/coinGeckoService';
+import { getCurrentPrice } from '../../services/dataCollection/coinGeckoService';
 import { getCandlesticks } from '../../services/dataCollection/binanceService';
 import { getCryptoNews } from '../../services/dataCollection/cryptoPanicService';
 import { getCryptoMentions } from '../../services/dataCollection/redditService';

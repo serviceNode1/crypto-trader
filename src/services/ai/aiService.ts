@@ -14,6 +14,7 @@ const anthropic = new Anthropic({
 });
 
 export interface TradeRecommendation {
+  id?: number;  // Database ID (added after insert)
   action: 'BUY' | 'SELL' | 'HOLD';
   confidence: number; // 0-100
   reasoning: {
@@ -73,7 +74,7 @@ async function getOpenAIRecommendation(
           response_format: { type: 'json_object' },
         });
 
-        const content = response.content[0]?.text || response.choices[0]?.message?.content;
+        const content = response.choices[0]?.message?.content;
         if (!content) {
           throw new Error('No response from OpenAI');
         }
@@ -107,7 +108,7 @@ async function getClaudeRecommendation(
 
         logger.debug('Requesting Claude analysis', { symbol: input.symbol });
 
-        const response = await anthropic.messages.create({
+        const response = await (anthropic as any).messages.create({
           model: AI_MODELS.ANTHROPIC.MODEL,
           max_tokens: AI_MODELS.ANTHROPIC.MAX_TOKENS,
           temperature: AI_MODELS.ANTHROPIC.TEMPERATURE,

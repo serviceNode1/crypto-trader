@@ -1,5 +1,5 @@
 import { Job } from 'bull';
-import { getPortfolio, getPerformanceMetrics } from '../../services/trading/paperTrading';
+import { getPortfolio, calculatePerformanceMetrics } from '../../services/trading/paperTrading';
 import { query } from '../../config/database';
 import { logger } from '../../utils/logger';
 
@@ -15,7 +15,7 @@ async function generateDailyReport(): Promise<void> {
   
   try {
     const portfolio = await getPortfolio();
-    const metrics = await getPerformanceMetrics();
+    const metrics = await calculatePerformanceMetrics();
     
     // Get today's trades
     const tradesResult = await query(
@@ -37,7 +37,7 @@ async function generateDailyReport(): Promise<void> {
     logger.info(`  Total Value: $${portfolio.totalValue.toFixed(2)}`);
     logger.info(`  Cash: $${portfolio.cash.toFixed(2)}`);
     logger.info(`  Invested: $${(portfolio.totalValue - portfolio.cash).toFixed(2)}`);
-    logger.info(`  Open Positions: ${portfolio.holdings.length}`);
+    logger.info(`  Open Positions: ${portfolio.positions.length}`);
     logger.info('');
     logger.info('Performance Metrics:');
     logger.info(`  Total Return: ${(metrics.totalReturn * 100).toFixed(2)}%`);
@@ -52,11 +52,12 @@ async function generateDailyReport(): Promise<void> {
     logger.info(`  P&L: $${parseFloat(todayStats.total_pnl || '0').toFixed(2)}`);
     logger.info('');
     
-    if (portfolio.holdings.length > 0) {
+    if (portfolio.positions.length > 0) {
       logger.info('Current Holdings:');
-      for (const holding of portfolio.holdings) {
-        const pnlPercent = ((holding.currentValue - holding.totalCost) / holding.totalCost) * 100;
-        logger.info(`  ${holding.symbol}: ${holding.quantity} @ $${holding.avgPrice.toFixed(2)} | Current: $${holding.currentValue.toFixed(2)} (${pnlPercent > 0 ? '+' : ''}${pnlPercent.toFixed(2)}%)`);
+      for (const holding of portfolio.positions) {
+        const totalCost = holding.averagePrice * holding.quantity;
+        const pnlPercent = ((holding.currentValue - totalCost) / totalCost) * 100;
+        logger.info(`  ${holding.symbol}: ${holding.quantity} @ $${holding.averagePrice.toFixed(2)} | Current: $${holding.currentValue.toFixed(2)} (${pnlPercent > 0 ? '+' : ''}${pnlPercent.toFixed(2)}%)`);
       }
     }
     
@@ -75,7 +76,7 @@ async function generateWeeklyReport(): Promise<void> {
   
   try {
     const portfolio = await getPortfolio();
-    const metrics = await getPerformanceMetrics();
+    const metrics = await calculatePerformanceMetrics();
     
     // Get this week's trades
     const tradesResult = await query(

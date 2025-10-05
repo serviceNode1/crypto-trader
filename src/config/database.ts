@@ -1,4 +1,4 @@
-import { Pool, PoolConfig } from 'pg';
+import { Pool, PoolConfig, PoolClient } from 'pg';
 import dotenv from 'dotenv';
 import { logger } from '../utils/logger';
 
@@ -21,7 +21,7 @@ if (process.env.NODE_ENV === 'production') {
 const pool = new Pool(poolConfig);
 
 // Error handling
-pool.on('error', (err) => {
+pool.on('error', (err: Error) => {
   logger.error('Unexpected error on idle database client', err);
 });
 
@@ -58,7 +58,7 @@ export async function getClient() {
  * Execute a transaction
  */
 export async function transaction<T>(
-  callback: (client: any) => Promise<T>
+  callback: (client: PoolClient) => Promise<T>
 ): Promise<T> {
   const client = await getClient();
   try {

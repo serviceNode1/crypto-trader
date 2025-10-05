@@ -36,7 +36,7 @@ async function generateRecommendation(symbol: string): Promise<void> {
     const technicalIndicators = calculateAllIndicators(candlesticks);
     
     // Calculate sentiment
-    const sentiment = aggregateSentiment(redditPosts, news);
+    const sentiment = await aggregateSentiment(redditPosts, news);
 
     // Get AI recommendation
     const recommendation = await getAIRecommendation({

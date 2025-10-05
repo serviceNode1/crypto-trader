@@ -252,12 +252,12 @@ export function analyzeNewsSentiment(articles: NewsArticle[]): SentimentScore {
 /**
  * Aggregate sentiment from multiple sources
  */
-export function aggregateSentiment(
+export async function aggregateSentiment(
   redditPosts: RedditPost[],
   newsArticles: NewsArticle[],
   previousSentiment?: number
-): AggregatedSentiment {
-  const redditSentiment = analyzeRedditSentiment(redditPosts);
+): Promise<AggregatedSentiment> {
+  const redditSentiment = await analyzeRedditSentiment(redditPosts);
   const newsSentiment = analyzeNewsSentiment(newsArticles);
 
   // Weight news slightly more than Reddit (news is often more reliable)

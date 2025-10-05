@@ -24,7 +24,7 @@ const router = Router();
 /**
  * GET /api/health - Health check endpoint
  */
-router.get('/health', async (req: Request, res: Response) => {
+router.get('/health', async (_req: Request, res: Response) => {
   try {
     const dbHealthy = await testConnection();
     const redisHealthy = await testRedisConnection();
@@ -48,7 +48,7 @@ router.get('/health', async (req: Request, res: Response) => {
 /**
  * GET /api/portfolio - Get current portfolio state
  */
-router.get('/portfolio', async (req: Request, res: Response) => {
+router.get('/portfolio', async (_req: Request, res: Response) => {
   try {
     const portfolio = await getPortfolio();
     res.json(portfolio);
@@ -61,7 +61,7 @@ router.get('/portfolio', async (req: Request, res: Response) => {
 /**
  * GET /api/portfolio/performance - Get performance metrics
  */
-router.get('/portfolio/performance', async (req: Request, res: Response) => {
+router.get('/portfolio/performance', async (_req: Request, res: Response) => {
   try {
     const metrics = await calculatePerformanceMetrics();
     res.json(metrics);
@@ -74,7 +74,7 @@ router.get('/portfolio/performance', async (req: Request, res: Response) => {
 /**
  * GET /api/portfolio/risk - Get risk exposure
  */
-router.get('/portfolio/risk', async (req: Request, res: Response) => {
+router.get('/portfolio/risk', async (_req: Request, res: Response) => {
   try {
     const risk = await getRiskExposure();
     res.json(risk);
@@ -160,7 +160,7 @@ router.get('/recommendations', async (req: Request, res: Response) => {
       [limit]
     );
 
-    const recommendations = result.rows.map((row) => ({
+    const recommendations = result.rows.map((row: any) => ({
       id: row.id,
       symbol: row.symbol,
       action: row.action,
@@ -210,7 +210,7 @@ router.get('/analysis/:symbol', async (req: Request, res: Response) => {
     const trend = analyzeTrend(technicalIndicators, currentPrice);
 
     // Calculate sentiment
-    const sentiment = aggregateSentiment(redditPosts, news);
+    const sentiment = await aggregateSentiment(redditPosts, news);
 
     // Analyze market regime
     const regime = analyzeRegime(marketContext);
@@ -262,7 +262,7 @@ router.post('/analyze/:symbol', async (req: Request, res: Response) => {
     const technicalIndicators = calculateAllIndicators(candlesticks);
 
     // Calculate sentiment
-    const sentiment = aggregateSentiment(redditPosts, news);
+    const sentiment = await aggregateSentiment(redditPosts, news);
 
     // Get AI recommendation
     const recommendation = await getAIRecommendation(
@@ -342,7 +342,7 @@ router.get('/sentiment/:symbol', async (req: Request, res: Response) => {
       getCryptoMentions(symbol, 50),
     ]);
 
-    const sentiment = aggregateSentiment(redditPosts, news);
+    const sentiment = await aggregateSentiment(redditPosts, news);
 
     res.json({
       symbol,
@@ -358,7 +358,7 @@ router.get('/sentiment/:symbol', async (req: Request, res: Response) => {
 /**
  * GET /api/market-context - Get current market context
  */
-router.get('/market-context', async (req: Request, res: Response) => {
+router.get('/market-context', async (_req: Request, res: Response) => {
   try {
     const context = await getMarketContext();
     const regime = analyzeRegime(context);

@@ -32,6 +32,8 @@ interface NewsArticle {
     saved: number;
     comments: number;
   };
+  // Computed field (calculated from votes)
+  sentiment?: number;  // Sentiment score (-1 to 1)
 }
 
 interface NewsResponse {
