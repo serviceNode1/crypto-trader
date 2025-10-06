@@ -22,8 +22,31 @@ const PORT = process.env.PORT || 3000;
  * Middleware Configuration
  */
 
-// Security headers
-app.use(helmet());
+// Security headers with relaxed CSP for development
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'", // Allow inline scripts for dashboard
+          "https://cdn.jsdelivr.net", // Allow Chart.js CDN
+        ],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'", // Allow inline styles
+        ],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
+    },
+  })
+);
 
 // CORS
 app.use(

@@ -5,6 +5,8 @@
   "main": "dist/app.js",
   "scripts": {
     "dev": "nodemon --exec ts-node --transpile-only src/app.ts",
+    "dev:fresh": "npx kill-port 3000 && npm run dev",
+    "restart": "npx kill-port 3000 && npm run dev",
     "build": "tsc",
     "start": "node dist/app.js",
     "migrate": "ts-node src/migrations/run.ts",
