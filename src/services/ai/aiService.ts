@@ -5,13 +5,35 @@ import { withRetryJitter } from '../../utils/retry';
 import { withRateLimit, rateLimiters } from '../../utils/rateLimiter';
 import { aiLogger as logger } from '../../utils/logger';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI
+let openai: OpenAI | null = null;
+try {
+  if (!process.env.OPENAI_API_KEY) {
+    logger.warn('OPENAI_API_KEY not configured');
+  } else {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+    logger.info('OpenAI client initialized');
+  }
+} catch (error) {
+  logger.error('Failed to initialize OpenAI client', { error });
+}
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Initialize Anthropic
+let anthropic: Anthropic | null = null;
+try {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    logger.warn('ANTHROPIC_API_KEY not configured');
+  } else {
+    anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+    logger.info('Anthropic client initialized');
+  }
+} catch (error) {
+  logger.error('Failed to initialize Anthropic client', { error });
+}
 
 export interface TradeRecommendation {
   id?: number;  // Database ID (added after insert)
@@ -48,6 +70,10 @@ export interface AnalysisInput {
 async function getOpenAIRecommendation(
   input: AnalysisInput
 ): Promise<TradeRecommendation> {
+  if (!openai) {
+    throw new Error('OpenAI client not initialized - check OPENAI_API_KEY');
+  }
+
   return withRateLimit(
     rateLimiters.openai,
     async () => {
@@ -56,7 +82,7 @@ async function getOpenAIRecommendation(
 
         logger.debug('Requesting OpenAI analysis', { symbol: input.symbol });
 
-        const response = await openai.chat.completions.create({
+        const response = await openai!.chat.completions.create({
           model: AI_MODELS.OPENAI.MODEL,
           messages: [
             {
@@ -100,40 +126,54 @@ async function getOpenAIRecommendation(
 async function getClaudeRecommendation(
   input: AnalysisInput
 ): Promise<TradeRecommendation> {
+  if (!anthropic) {
+    throw new Error('Anthropic client not initialized - check ANTHROPIC_API_KEY');
+  }
+
   return withRateLimit(
     rateLimiters.anthropic,
     async () => {
       return withRetryJitter(async () => {
         const prompt = buildAnalysisPrompt(input);
 
-        logger.debug('Requesting Claude analysis', { symbol: input.symbol });
+        logger.info('Requesting Claude analysis', { symbol: input.symbol });
 
-        const response = await (anthropic as any).messages.create({
-          model: AI_MODELS.ANTHROPIC.MODEL,
-          max_tokens: AI_MODELS.ANTHROPIC.MAX_TOKENS,
-          temperature: AI_MODELS.ANTHROPIC.TEMPERATURE,
-          messages: [
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
-        });
+        try {
+          const response = await anthropic!.messages.create({
+            model: AI_MODELS.ANTHROPIC.MODEL,
+            max_tokens: AI_MODELS.ANTHROPIC.MAX_TOKENS,
+            temperature: AI_MODELS.ANTHROPIC.TEMPERATURE,
+            messages: [
+              {
+                role: 'user',
+                content: prompt,
+              },
+            ],
+          });
 
-        const content = response.content[0];
-        if (content.type !== 'text') {
-          throw new Error('Unexpected response type from Claude');
+          const content = response.content[0];
+          if (content.type !== 'text') {
+            throw new Error('Unexpected response type from Claude');
+          }
+
+          const recommendation = JSON.parse(content.text);
+
+          logger.info('Claude recommendation received', {
+            symbol: input.symbol,
+            action: recommendation.action,
+            confidence: recommendation.confidence,
+          });
+
+          return recommendation;
+        } catch (error: any) {
+          logger.error('Claude API request failed', {
+            symbol: input.symbol,
+            error: error.message,
+            statusCode: error.status,
+            details: error.error?.message || error.toString(),
+          });
+          throw error;
         }
-
-        const recommendation = JSON.parse(content.text);
-
-        logger.info('Claude recommendation received', {
-          symbol: input.symbol,
-          action: recommendation.action,
-          confidence: recommendation.confidence,
-        });
-
-        return recommendation;
       });
     },
     'Anthropic'
@@ -213,15 +253,25 @@ Provide a JSON response with the following structure:
 7. Confidence should be realistic (rarely above 80)`;
 }
 
+export type AIModel = 'local' | 'anthropic' | 'openai' | 'both';
+
 /**
- * Get consensus recommendation from multiple AI models
+ * Get AI recommendation with configurable model selection
  */
 export async function getAIRecommendation(
   input: AnalysisInput,
-  useMultipleModels: boolean = false
+  modelChoice: AIModel = 'anthropic'
 ): Promise<TradeRecommendation> {
   try {
-    if (useMultipleModels) {
+    logger.info('Getting AI recommendation', { symbol: input.symbol, modelChoice });
+
+    // Local fallback (no AI)
+    if (modelChoice === 'local') {
+      return getLocalRecommendation(input);
+    }
+
+    // Both models (consensus)
+    if (modelChoice === 'both') {
       // Get recommendations from both models
       const [openaiRec, claudeRec] = await Promise.allSettled([
         getOpenAIRecommendation(input),
@@ -244,12 +294,22 @@ export async function getAIRecommendation(
       }
 
       throw new Error('Both AI models failed');
-    } else {
-      // Use Claude by default (faster and cheaper for structured outputs)
-      return await getClaudeRecommendation(input);
     }
+
+    // Use specific model
+    if (modelChoice === 'openai') {
+      return await getOpenAIRecommendation(input);
+    }
+
+    // Default to Anthropic (faster and cheaper for structured outputs)
+    return await getClaudeRecommendation(input);
+    
   } catch (error) {
-    logger.error('AI recommendation failed', { symbol: input.symbol, error });
+    logger.error('AI recommendation failed', { 
+      symbol: input.symbol, 
+      modelChoice,
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    });
     throw error;
   }
 }

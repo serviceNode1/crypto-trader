@@ -548,6 +548,22 @@
                         🔍 Analyze
                     </button>
                 </div>
+
+                <!-- AI Model Selector -->
+                <div style="margin-top: 15px; padding: 15px; background: #f9fafb; border-radius: 8px;">
+                    <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px; font-size: 14px;">
+                        🤖 AI Analysis Model:
+                    </label>
+                    <select id="aiModelSelect" style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid #e5e7eb; border-radius: 6px; background: white; cursor: pointer;">
+                        <option value="local">💻 Local Analysis (Free - No AI)</option>
+                        <option value="anthropic" selected>🧠 Anthropic Claude (Recommended - Fast & Cheap)</option>
+                        <option value="openai">🤖 OpenAI GPT-4 (Premium)</option>
+                        <option value="both">🔬 Both Models - Consensus (Most Expensive)</option>
+                    </select>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">
+                        <strong>Costs:</strong> Local = Free | Anthropic ≈ $0.001/analysis | OpenAI ≈ $0.01/analysis | Both ≈ $0.011/analysis
+                    </p>
+                </div>
                 
                 <div style="margin-top: 20px;">
                     <p style="color: #6b7280; margin-bottom: 10px; font-size: 14px;">Or choose from popular cryptocurrencies:</p>
@@ -943,6 +959,7 @@
 
         async function analyzeCrypto() {
             const symbol = document.getElementById('cryptoSearch').value.trim().toUpperCase();
+            const aiModel = document.getElementById('aiModelSelect').value;
             
             if (!symbol) {
                 alert('Please enter a cryptocurrency symbol');
@@ -953,15 +970,24 @@
             const contentDiv = document.getElementById('analysisContent');
             const titleDiv = document.getElementById('analysisTitle');
             
+            // Get model display name
+            const modelNames = {
+                'local': 'Local Analysis',
+                'anthropic': 'Anthropic Claude',
+                'openai': 'OpenAI GPT-4',
+                'both': 'AI Consensus'
+            };
+            const modelName = modelNames[aiModel] || aiModel;
+            
             // Show loading state
             resultDiv.style.display = 'block';
-            titleDiv.textContent = `Analyzing ${symbol}...`;
+            titleDiv.textContent = `Analyzing ${symbol} with ${modelName}...`;
             contentDiv.innerHTML = `
                 <div class="analysis-loading">
                     <div class="spinner"></div>
                     <div>
                         <strong>Fetching comprehensive analysis...</strong><br>
-                        <span style="font-size: 14px;">This may take 10-30 seconds as we gather data from multiple sources</span>
+                        <span style="font-size: 14px;">Using ${modelName} • This may take ${aiModel === 'both' ? '30-60' : '10-30'} seconds</span>
                     </div>
                 </div>
             `;
@@ -970,8 +996,8 @@
             resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
             try {
-                // Call the analysis endpoint
-                const response = await fetch(`${API_BASE}/analyze/${symbol}`);
+                // Call the analysis endpoint with model parameter
+                const response = await fetch(`${API_BASE}/analyze/${symbol}?model=${aiModel}`);
                 
                 if (!response.ok) {
                     throw new Error(`Analysis failed: ${response.statusText}`);

@@ -240,12 +240,14 @@ router.get('/analysis/:symbol', async (req: Request, res: Response) => {
 
 /**
  * GET /api/analyze/:symbol - Get comprehensive analysis WITH AI recommendation
+ * Query params: ?model=local|anthropic|openai|both (default: anthropic)
  */
 router.get('/analyze/:symbol', async (req: Request, res: Response) => {
   try {
     const symbol = req.params.symbol.toUpperCase();
+    const modelChoice = (req.query.model as string || 'anthropic') as 'local' | 'anthropic' | 'openai' | 'both';
 
-    logger.info('Generating complete analysis with AI recommendation', { symbol });
+    logger.info('Generating complete analysis with AI recommendation', { symbol, modelChoice });
 
     // Fetch data with graceful fallbacks and explicit logging
     logger.info('Starting data collection', { symbol });
@@ -337,19 +339,26 @@ router.get('/analyze/:symbol', async (req: Request, res: Response) => {
       throw new Error(`Market regime analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 
-    // Get AI recommendation
+    // Get AI recommendation (or local if specified)
     let recommendation;
     try {
-      recommendation = await getAIRecommendation({
-        symbol,
-        currentPrice,
-        technicalIndicators,
-        sentiment,
-        news,
-        marketContext,
-      });
+      recommendation = await getAIRecommendation(
+        {
+          symbol,
+          currentPrice,
+          technicalIndicators,
+          sentiment,
+          news,
+          marketContext,
+        },
+        modelChoice
+      );
     } catch (aiError) {
-      logger.warn('AI recommendation failed, using local fallback', { aiError });
+      logger.warn('AI recommendation failed, using local fallback', { 
+        symbol, 
+        modelChoice,
+        error: aiError instanceof Error ? aiError.message : 'Unknown error'
+      });
       recommendation = getLocalRecommendation({
         symbol,
         currentPrice,
