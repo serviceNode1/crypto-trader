@@ -33,12 +33,13 @@ app.use(
           "'unsafe-inline'", // Allow inline scripts for dashboard
           "https://cdn.jsdelivr.net", // Allow Chart.js CDN
         ],
+        scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers (onclick, etc.)
         styleSrc: [
           "'self'",
           "'unsafe-inline'", // Allow inline styles
         ],
         imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", "https://cdn.jsdelivr.net"], // Allow Chart.js source maps
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
