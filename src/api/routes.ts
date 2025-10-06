@@ -239,6 +239,156 @@ router.get('/analysis/:symbol', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/analyze/:symbol - Get comprehensive analysis WITH AI recommendation
+ */
+router.get('/analyze/:symbol', async (req: Request, res: Response) => {
+  try {
+    const symbol = req.params.symbol.toUpperCase();
+
+    logger.info('Generating complete analysis with AI recommendation', { symbol });
+
+    // Fetch data with graceful fallbacks and explicit logging
+    logger.info('Starting data collection', { symbol });
+    
+    const [currentPrice, news, redditPosts, marketContext] = await Promise.all([
+      getCurrentPrice(symbol).then(price => {
+        logger.info('Price fetched', { symbol, price });
+        return price;
+      }),
+      getCryptoNews(symbol, 20).then(newsData => {
+        logger.info('News fetched', { symbol, count: newsData.length });
+        return newsData;
+      }).catch(error => {
+        logger.error('News fetching failed, using empty array', { symbol, error: error.message });
+        return []; // Graceful fallback
+      }),
+      getCryptoMentions(symbol, 50).then(posts => {
+        logger.info('Reddit posts fetched', { symbol, count: posts.length });
+        return posts;
+      }).catch(error => {
+        logger.error('Reddit fetching failed, using empty array', { symbol, error: error.message });
+        return []; // Graceful fallback
+      }),
+      getMarketContext().then(context => {
+        logger.info('Market context fetched', { symbol });
+        return context;
+      }),
+    ]);
+    
+    logger.info('Data collection complete', { symbol, newsCount: news.length, redditCount: redditPosts.length });
+
+    // Try Binance first, fallback to CoinGecko if blocked
+    let candlesticks;
+    try {
+      logger.debug('Attempting to fetch candlesticks from Binance', { symbol });
+      candlesticks = await getCandlesticks(symbol, '1h', 100);
+      logger.info('Successfully fetched candlesticks from Binance', { symbol });
+    } catch (binanceError: any) {
+      logger.warn('Binance unavailable, using CoinGecko fallback', {
+        symbol,
+        error: binanceError.message,
+        status: binanceError.status,
+      });
+      
+      // Fallback to CoinGecko OHLC
+      const { getCandlesticksFromCoinGecko } = await import('../services/dataCollection/coinGeckoService');
+      candlesticks = await getCandlesticksFromCoinGecko(symbol, 7);
+      logger.info('Successfully fetched candlesticks from CoinGecko', { symbol });
+    }
+
+    // Calculate technical indicators
+    let technicalIndicators, trend, sentiment, regime;
+    
+    try {
+      logger.info('Calculating technical indicators', { symbol, candles: candlesticks.length });
+      technicalIndicators = calculateAllIndicators(candlesticks);
+      logger.info('Technical indicators calculated', { symbol });
+    } catch (error) {
+      logger.error('Technical indicators calculation failed', { symbol, error });
+      throw new Error(`Technical analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    try {
+      logger.info('Analyzing trend', { symbol });
+      trend = analyzeTrend(technicalIndicators, currentPrice);
+      logger.info('Trend analyzed', { symbol, trend: trend.trend });
+    } catch (error) {
+      logger.error('Trend analysis failed', { symbol, error });
+      throw new Error(`Trend analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    // Calculate sentiment
+    try {
+      logger.info('Aggregating sentiment', { symbol, redditPosts: redditPosts.length, newsArticles: news.length });
+      sentiment = await aggregateSentiment(redditPosts, news);
+      logger.info('Sentiment aggregated', { symbol });
+    } catch (error) {
+      logger.error('Sentiment aggregation failed', { symbol, error });
+      throw new Error(`Sentiment analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    // Analyze market regime
+    try {
+      logger.info('Analyzing market regime', { symbol });
+      regime = analyzeRegime(marketContext);
+      logger.info('Market regime analyzed', { symbol });
+    } catch (error) {
+      logger.error('Market regime analysis failed', { symbol, error });
+      throw new Error(`Market regime analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    // Get AI recommendation
+    let recommendation;
+    try {
+      recommendation = await getAIRecommendation({
+        symbol,
+        currentPrice,
+        technicalIndicators,
+        sentiment,
+        news,
+        marketContext,
+      });
+    } catch (aiError) {
+      logger.warn('AI recommendation failed, using local fallback', { aiError });
+      recommendation = getLocalRecommendation({
+        symbol,
+        currentPrice,
+        technicalIndicators,
+        sentiment,
+        news,
+        marketContext,
+      });
+    }
+
+    const analysis = {
+      symbol,
+      currentPrice,
+      technical: {
+        indicators: technicalIndicators,
+        trend,
+      },
+      sentiment,
+      marketContext: {
+        ...marketContext,
+        regime,
+      },
+      recommendation,
+      news: news.slice(0, 5),
+      candlesticks: candlesticks.slice(-30), // Last 30 candles for chart
+      timestamp: new Date().toISOString(),
+    };
+
+    res.json(analysis);
+  } catch (error) {
+    logger.error('Failed to generate complete analysis', { error });
+    res.status(500).json({ 
+      error: 'Failed to generate analysis',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
  * POST /api/analyze/:symbol - Generate AI recommendation for a symbol
  */
 router.post('/analyze/:symbol', async (req: Request, res: Response) => {

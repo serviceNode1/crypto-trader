@@ -143,7 +143,12 @@ export async function getCryptoNews(
  * Calculate news sentiment score based on votes
  */
 export function calculateNewsSentiment(article: NewsArticle): number {
-  const { positive, negative, important, toxic } = article.votes;
+  // Defensive: Handle missing votes
+  if (!article.votes) {
+    return 0;
+  }
+
+  const { positive = 0, negative = 0, important = 0, toxic = 0 } = article.votes;
 
   // Weight important news more heavily
   const importanceMultiplier = important > 0 ? 1.5 : 1;

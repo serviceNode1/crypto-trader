@@ -407,6 +407,111 @@
             from { transform: translateY(50px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
+
+        /* Crypto Selector Styles */
+        .crypto-selector {
+            padding: 10px 0;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+        }
+
+        #cryptoSearch:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .popular-coins {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .coin-button {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .coin-button:hover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea10, #764ba210);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .coin-button:active {
+            transform: translateY(0);
+        }
+
+        .coin-icon {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .coin-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 14px;
+        }
+
+        .coin-symbol {
+            color: #6b7280;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .analysis-loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: #eff6ff;
+            border-radius: 8px;
+            color: #3b82f6;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .analysis-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            margin: 8px 0;
+        }
+
+        .analysis-stat-label {
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .analysis-stat-value {
+            color: #1f2937;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -425,6 +530,96 @@
 
         <div class="warning">
             ⚠️ <strong>PAPER TRADING MODE</strong> - This system uses virtual money only. No real trades are executed.
+        </div>
+
+        <!-- Crypto Selector -->
+        <div class="card" style="margin-bottom: 30px;">
+            <h2>🔍 Select Cryptocurrency to Analyze</h2>
+            <div class="crypto-selector">
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="cryptoSearch" 
+                        placeholder="Enter symbol (e.g., BTC, ETH, SOL, ADA)..." 
+                        style="flex: 1; padding: 12px 16px; font-size: 16px; border: 2px solid #e5e7eb; border-radius: 8px; outline: none; transition: border 0.3s;"
+                        onkeypress="if(event.key === 'Enter') analyzeCrypto()"
+                    />
+                    <button class="button" onclick="analyzeCrypto()" style="margin-left: 10px; padding: 12px 24px;">
+                        🔍 Analyze
+                    </button>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <p style="color: #6b7280; margin-bottom: 10px; font-size: 14px;">Or choose from popular cryptocurrencies:</p>
+                    <div class="popular-coins">
+                        <button class="coin-button" onclick="selectCrypto('BTC')">
+                            <span class="coin-icon">₿</span>
+                            <div>
+                                <div class="coin-name">Bitcoin</div>
+                                <div class="coin-symbol">BTC</div>
+                            </div>
+                        </button>
+                        <button class="coin-button" onclick="selectCrypto('ETH')">
+                            <span class="coin-icon">Ξ</span>
+                            <div>
+                                <div class="coin-name">Ethereum</div>
+                                <div class="coin-symbol">ETH</div>
+                            </div>
+                        </button>
+                        <button class="coin-button" onclick="selectCrypto('SOL')">
+                            <span class="coin-icon">◎</span>
+                            <div>
+                                <div class="coin-name">Solana</div>
+                                <div class="coin-symbol">SOL</div>
+                            </div>
+                        </button>
+                        <button class="coin-button" onclick="selectCrypto('ADA')">
+                            <span class="coin-icon">₳</span>
+                            <div>
+                                <div class="coin-name">Cardano</div>
+                                <div class="coin-symbol">ADA</div>
+                            </div>
+                        </button>
+                        <button class="coin-button" onclick="selectCrypto('AVAX')">
+                            <span class="coin-icon">▲</span>
+                            <div>
+                                <div class="coin-name">Avalanche</div>
+                                <div class="coin-symbol">AVAX</div>
+                            </div>
+                        </button>
+                        <button class="coin-button" onclick="selectCrypto('DOT')">
+                            <span class="coin-icon">●</span>
+                            <div>
+                                <div class="coin-name">Polkadot</div>
+                                <div class="coin-symbol">DOT</div>
+                            </div>
+                        </button>
+                        <button class="coin-button" onclick="selectCrypto('MATIC')">
+                            <span class="coin-icon">⬡</span>
+                            <div>
+                                <div class="coin-name">Polygon</div>
+                                <div class="coin-symbol">MATIC</div>
+                            </div>
+                        </button>
+                        <button class="coin-button" onclick="selectCrypto('LINK')">
+                            <span class="coin-icon">⬢</span>
+                            <div>
+                                <div class="coin-name">Chainlink</div>
+                                <div class="coin-symbol">LINK</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Analysis Result Display -->
+            <div id="analysisResult" style="display: none; margin-top: 30px; padding: 20px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #667eea;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 id="analysisTitle" style="margin: 0; color: #667eea;">Analysis Results</h3>
+                    <button onclick="closeAnalysis()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #6b7280;">×</button>
+                </div>
+                <div id="analysisContent" style="margin-top: 15px;"></div>
+            </div>
         </div>
 
         <!-- Portfolio Overview -->
@@ -738,6 +933,286 @@
 
         function closeInfoModal() {
             document.getElementById('infoModal').classList.remove('active');
+        }
+
+        // Crypto Selector Functions
+        function selectCrypto(symbol) {
+            document.getElementById('cryptoSearch').value = symbol.toUpperCase();
+            analyzeCrypto();
+        }
+
+        async function analyzeCrypto() {
+            const symbol = document.getElementById('cryptoSearch').value.trim().toUpperCase();
+            
+            if (!symbol) {
+                alert('Please enter a cryptocurrency symbol');
+                return;
+            }
+
+            const resultDiv = document.getElementById('analysisResult');
+            const contentDiv = document.getElementById('analysisContent');
+            const titleDiv = document.getElementById('analysisTitle');
+            
+            // Show loading state
+            resultDiv.style.display = 'block';
+            titleDiv.textContent = `Analyzing ${symbol}...`;
+            contentDiv.innerHTML = `
+                <div class="analysis-loading">
+                    <div class="spinner"></div>
+                    <div>
+                        <strong>Fetching comprehensive analysis...</strong><br>
+                        <span style="font-size: 14px;">This may take 10-30 seconds as we gather data from multiple sources</span>
+                    </div>
+                </div>
+            `;
+            
+            // Scroll to results
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            try {
+                // Call the analysis endpoint
+                const response = await fetch(`${API_BASE}/analyze/${symbol}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Analysis failed: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Display results
+                titleDiv.textContent = `✅ Analysis Complete: ${symbol}`;
+                contentDiv.innerHTML = formatAnalysisResults(data);
+                
+            } catch (error) {
+                console.error('Analysis error:', error);
+                titleDiv.textContent = `❌ Analysis Failed`;
+                contentDiv.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #ef4444;">
+                        <strong>Unable to analyze ${symbol}</strong><br>
+                        <span style="font-size: 14px;">${error.message}</span><br><br>
+                        <p style="font-size: 14px; color: #6b7280;">
+                            Make sure the symbol is correct and try again. Popular symbols: BTC, ETH, SOL, ADA, AVAX, DOT, MATIC, LINK
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        function createCandlestickChart(candlesticks, currentPrice) {
+            if (!candlesticks || candlesticks.length === 0) return '<p>No chart data available</p>';
+            
+            // Find min and max prices for scaling
+            const prices = candlesticks.flatMap(c => [c.high, c.low]);
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            const priceRange = maxPrice - minPrice;
+            const padding = priceRange * 0.1; // 10% padding
+            
+            // Calculate dimensions
+            const chartWidth = 100; // percentage
+            const chartHeight = 220; // pixels
+            const candleWidth = chartWidth / candlesticks.length * 0.7; // 70% of available space
+            const candleGap = chartWidth / candlesticks.length * 0.3; // 30% gap
+            
+            // Generate candlesticks
+            const candles = candlesticks.map((candle, index) => {
+                const isGreen = candle.close >= candle.open;
+                const color = isGreen ? '#10b981' : '#ef4444';
+                
+                // Calculate positions (inverted Y axis for SVG)
+                const high = ((maxPrice + padding - candle.high) / (priceRange + 2 * padding)) * 100;
+                const low = ((maxPrice + padding - candle.low) / (priceRange + 2 * padding)) * 100;
+                const open = ((maxPrice + padding - candle.open) / (priceRange + 2 * padding)) * 100;
+                const close = ((maxPrice + padding - candle.close) / (priceRange + 2 * padding)) * 100;
+                
+                const bodyTop = Math.min(open, close);
+                const bodyBottom = Math.max(open, close);
+                const bodyHeight = Math.abs(close - open);
+                
+                const x = (index / candlesticks.length) * 100 + candleGap / 2;
+                
+                return `
+                    <g>
+                        <!-- Wick -->
+                        <line x1="${x + candleWidth/2}%" y1="${high}%" 
+                              x2="${x + candleWidth/2}%" y2="${low}%" 
+                              stroke="${color}" stroke-width="1"/>
+                        <!-- Body -->
+                        <rect x="${x}%" y="${bodyTop}%" 
+                              width="${candleWidth}%" height="${bodyHeight || 0.5}%" 
+                              fill="${color}" stroke="${color}"/>
+                    </g>
+                `;
+            }).join('');
+            
+            // Current price line
+            const currentPriceY = ((maxPrice + padding - currentPrice) / (priceRange + 2 * padding)) * 100;
+            
+            return `
+                <svg width="100%" height="${chartHeight}px" style="display: block;">
+                    ${candles}
+                    <!-- Current Price Line -->
+                    <line x1="0%" y1="${currentPriceY}%" x2="100%" y2="${currentPriceY}%" 
+                          stroke="#667eea" stroke-width="2" stroke-dasharray="5,5" opacity="0.7"/>
+                    <text x="2" y="${currentPriceY - 2}%" fill="#667eea" font-size="10" font-weight="bold">
+                        Current: $${currentPrice.toLocaleString()}
+                    </text>
+                    
+                    <!-- Price labels -->
+                    <text x="2" y="8" fill="#6b7280" font-size="10">
+                        $${maxPrice.toLocaleString()}
+                    </text>
+                    <text x="2" y="${chartHeight - 2}" fill="#6b7280" font-size="10">
+                        $${minPrice.toLocaleString()}
+                    </text>
+                </svg>
+            `;
+        }
+
+        function formatAnalysisResults(data) {
+            const recommendation = data.recommendation || {};
+            const technical = data.technical || {};
+            const sentiment = data.sentiment || {};
+            
+            return `
+                <div style="display: grid; gap: 20px;">
+                    <!-- Quick Summary -->
+                    <div style="padding: 20px; background: white; border-radius: 8px; border-left: 4px solid ${
+                        recommendation.action === 'BUY' ? '#10b981' : 
+                        recommendation.action === 'SELL' ? '#ef4444' : '#6b7280'
+                    };">
+                        <h4 style="margin: 0 0 10px 0; color: #1f2937;">AI Recommendation</h4>
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                            <span style="padding: 8px 16px; background: ${
+                                recommendation.action === 'BUY' ? '#10b981' : 
+                                recommendation.action === 'SELL' ? '#ef4444' : '#6b7280'
+                            }; color: white; border-radius: 6px; font-weight: 600; font-size: 18px;">
+                                ${recommendation.action || 'HOLD'}
+                            </span>
+                            <span style="font-size: 16px; color: #6b7280;">
+                                Confidence: <strong style="color: #1f2937;">${recommendation.confidence || 0}%</strong>
+                            </span>
+                        </div>
+                        <p style="color: #6b7280; margin: 0; line-height: 1.6;">
+                            ${recommendation.reasoning?.conclusion || 'Analysis in progress...'}
+                        </p>
+                    </div>
+
+                    <!-- Price Chart -->
+                    ${data.candlesticks && data.candlesticks.length > 0 ? `
+                    <div style="background: white; border-radius: 8px; padding: 20px;">
+                        <h4 style="margin: 0 0 15px 0; color: #1f2937;">📈 Price Chart (Last 30 Periods)</h4>
+                        <div style="position: relative; height: 250px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px;">
+                            ${createCandlestickChart(data.candlesticks, data.currentPrice)}
+                        </div>
+                        <p style="margin: 10px 0 0 0; font-size: 12px; color: #6b7280; text-align: center;">
+                            Each bar represents ${data.candlesticks.length > 0 ? '~4 hours' : 'N/A'} • 
+                            Source: ${data.symbol} OHLC data
+                        </p>
+                    </div>
+                    ` : ''}
+
+                    <!-- Price & Technical -->
+                    <div style="background: white; border-radius: 8px; padding: 20px;">
+                        <h4 style="margin: 0 0 15px 0; color: #1f2937;">📊 Technical Analysis</h4>
+                        <div style="display: grid; gap: 10px;">
+                            <div class="analysis-stat">
+                                <span class="analysis-stat-label">Current Price</span>
+                                <span class="analysis-stat-value">$${data.currentPrice?.toLocaleString() || 'N/A'}</span>
+                            </div>
+                            <div class="analysis-stat">
+                                <span class="analysis-stat-label">Trend</span>
+                                <span class="analysis-stat-value">${technical.trend?.trend?.toUpperCase() || 'N/A'}</span>
+                            </div>
+                            <div class="analysis-stat">
+                                <span class="analysis-stat-label">RSI (14)</span>
+                                <span class="analysis-stat-value" style="color: ${
+                                    technical.indicators?.rsi > 70 ? '#ef4444' : 
+                                    technical.indicators?.rsi < 30 ? '#10b981' : '#1f2937'
+                                }">${technical.indicators?.rsi?.toFixed(2) || 'N/A'}</span>
+                            </div>
+                            <div class="analysis-stat">
+                                <span class="analysis-stat-label">MACD Signal</span>
+                                <span class="analysis-stat-value">${
+                                    technical.indicators?.macd?.histogram > 0 ? '📈 Bullish' : '📉 Bearish'
+                                }</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sentiment -->
+                    <div style="background: white; border-radius: 8px; padding: 20px;">
+                        <h4 style="margin: 0 0 15px 0; color: #1f2937;">💭 Market Sentiment</h4>
+                        <div style="display: grid; gap: 10px;">
+                            <div class="analysis-stat">
+                                <span class="analysis-stat-label">Overall</span>
+                                <span class="analysis-stat-value" style="color: ${
+                                    sentiment.overall?.classification === 'bullish' ? '#10b981' : 
+                                    sentiment.overall?.classification === 'bearish' ? '#ef4444' : '#6b7280'
+                                }">
+                                    ${sentiment.overall?.classification?.toUpperCase() || 'NEUTRAL'}
+                                </span>
+                            </div>
+                            <div class="analysis-stat">
+                                <span class="analysis-stat-label">Sentiment Score</span>
+                                <span class="analysis-stat-value">${sentiment.overall?.score?.toFixed(3) || '0.000'}</span>
+                            </div>
+                            <div class="analysis-stat">
+                                <span class="analysis-stat-label">Mention Volume</span>
+                                <span class="analysis-stat-value">${sentiment.mentionVolume || 0} posts</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trade Setup -->
+                    ${recommendation.entryPrice ? `
+                    <div style="background: #f0fdf4; border-radius: 8px; padding: 20px; border: 2px solid #10b981;">
+                        <h4 style="margin: 0 0 15px 0; color: #1f2937;">🎯 Trade Setup</h4>
+                        <div style="display: grid; gap: 10px;">
+                            <div class="analysis-stat">
+                                <span class="analysis-stat-label">Entry Price</span>
+                                <span class="analysis-stat-value">$${recommendation.entryPrice?.toLocaleString()}</span>
+                            </div>
+                            <div class="analysis-stat">
+                                <span class="analysis-stat-label">Stop Loss</span>
+                                <span class="analysis-stat-value" style="color: #ef4444;">$${recommendation.stopLoss?.toLocaleString()}</span>
+                            </div>
+                            <div class="analysis-stat">
+                                <span class="analysis-stat-label">Take Profit Levels</span>
+                                <span class="analysis-stat-value" style="color: #10b981;">
+                                    ${recommendation.takeProfitLevels?.map(tp => '$' + tp.toLocaleString()).join(', ') || 'N/A'}
+                                </span>
+                            </div>
+                            <div class="analysis-stat">
+                                <span class="analysis-stat-label">Position Size</span>
+                                <span class="analysis-stat-value">${recommendation.positionSize}% of portfolio</span>
+                            </div>
+                            <div class="analysis-stat">
+                                <span class="analysis-stat-label">Risk Level</span>
+                                <span class="analysis-stat-value" style="color: ${
+                                    recommendation.riskLevel === 'HIGH' ? '#ef4444' : 
+                                    recommendation.riskLevel === 'MEDIUM' ? '#f59e0b' : '#10b981'
+                                }">${recommendation.riskLevel}</span>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <!-- Key Factors -->
+                    ${recommendation.keyFactors?.length ? `
+                    <div style="background: white; border-radius: 8px; padding: 20px;">
+                        <h4 style="margin: 0 0 15px 0; color: #1f2937;">🔑 Key Factors</h4>
+                        <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                            ${recommendation.keyFactors.map(factor => `<li>${factor}</li>`).join('')}
+                        </ul>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function closeAnalysis() {
+            document.getElementById('analysisResult').style.display = 'none';
         }
 
         function switchTab(tabName) {

@@ -209,21 +209,34 @@ export function analyzeNewsSentiment(articles: NewsArticle[]): SentimentScore {
   let totalMagnitude = 0;
 
   for (const article of articles) {
-    // Use CryptoPanic's voting-based sentiment
-    const voteSentiment = calculateNewsSentiment(article);
+    try {
+      // Use CryptoPanic's voting-based sentiment
+      const voteSentiment = calculateNewsSentiment(article);
 
-    // Also analyze title text
-    const textSentiment = analyzeCryptoSentiment(article.title);
+      // Also analyze title text
+      const textSentiment = analyzeCryptoSentiment(article.title);
 
-    // Average both methods
-    const combinedScore = (voteSentiment + textSentiment.score) / 2;
+      // Average both methods
+      const combinedScore = (voteSentiment + textSentiment.score) / 2;
 
-    // Weight by total votes (more votes = more reliable)
-    const totalVotes = Object.values(article.votes).reduce((sum, v) => sum + v, 0);
-    const weight = Math.log10(totalVotes + 10); // Log scale
+      // Weight by total votes (more votes = more reliable)
+      // Defensive: Handle missing or undefined votes
+      const totalVotes = article.votes 
+        ? Object.values(article.votes).reduce((sum, v) => sum + (v || 0), 0)
+        : 0;
+      const weight = Math.log10(totalVotes + 10); // Log scale
 
-    totalScore += combinedScore * weight;
-    totalMagnitude += textSentiment.magnitude * weight;
+      totalScore += combinedScore * weight;
+      totalMagnitude += textSentiment.magnitude * weight;
+    } catch (error) {
+      logger.warn('Failed to analyze news article sentiment, skipping', {
+        articleId: article.id,
+        title: article.title?.substring(0, 50),
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      // Skip this article and continue
+      continue;
+    }
   }
 
   const averageScore = totalScore / articles.length;
@@ -257,8 +270,13 @@ export async function aggregateSentiment(
   newsArticles: NewsArticle[],
   previousSentiment?: number
 ): Promise<AggregatedSentiment> {
+  logger.info('Starting Reddit sentiment analysis', { postCount: redditPosts.length });
   const redditSentiment = await analyzeRedditSentiment(redditPosts);
+  logger.info('Reddit sentiment analyzed', { score: redditSentiment.score });
+  
+  logger.info('Starting news sentiment analysis', { articleCount: newsArticles.length });
   const newsSentiment = analyzeNewsSentiment(newsArticles);
+  logger.info('News sentiment analyzed', { score: newsSentiment.score });
 
   // Weight news slightly more than Reddit (news is often more reliable)
   const redditWeight = 0.4;

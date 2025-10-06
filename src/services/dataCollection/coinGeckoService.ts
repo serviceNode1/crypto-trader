@@ -231,6 +231,65 @@ export async function getTrendingCoins(): Promise<any[]> {
 }
 
 /**
+ * Get OHLC candlestick data from CoinGecko (fallback when Binance is unavailable)
+ */
+export async function getCandlesticksFromCoinGecko(
+  symbol: string,
+  days: number = 7
+): Promise<any[]> {
+  const cacheKey = `coingecko:ohlc:${symbol}:${days}`;
+
+  return cacheAside(cacheKey, CACHE_TTL.PRICE, async () => {
+    return withRateLimit(
+      rateLimiters.coinGecko,
+      async () => {
+        return withRetryJitter(
+          async () => {
+            const coinId = symbolToCoinId(symbol);
+            const url = `${BASE_URL}/coins/${coinId}/ohlc`;
+
+            logger.debug('Fetching OHLC data from CoinGecko', { symbol, days });
+
+            const response = await axios.get(url, {
+              params: {
+                vs_currency: 'usd',
+                days: days,
+              },
+              headers: {
+                'x-cg-demo-api-key': process.env.COINGECKO_API_KEY || '',
+              },
+            });
+
+            // CoinGecko returns: [timestamp, open, high, low, close]
+            // Convert to Binance Candlestick format
+            const candlesticks = response.data.map((ohlc: number[]) => ({
+              openTime: ohlc[0],
+              open: ohlc[1],
+              high: ohlc[2],
+              low: ohlc[3],
+              close: ohlc[4],
+              volume: 0, // CoinGecko OHLC doesn't include volume
+              closeTime: ohlc[0] + 3600000, // Approximate 1h close
+              quoteAssetVolume: 0,
+              trades: 0,
+            }));
+
+            logger.info('OHLC data fetched from CoinGecko', {
+              symbol,
+              candles: candlesticks.length,
+            });
+
+            return candlesticks;
+          },
+          { shouldRetry: isRetryableError }
+        );
+      },
+      'CoinGecko'
+    );
+  });
+}
+
+/**
  * Get global market data (total market cap, BTC dominance, etc.)
  */
 export async function getGlobalMarketData(): Promise<any> {
