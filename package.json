@@ -17,6 +17,8 @@
     "report": "ts-node src/scripts/report.ts",
     "backtest": "ts-node src/scripts/backtest.ts",
     "train": "ts-node src/scripts/train.ts",
+    "test:apis": "ts-node src/scripts/testApis.ts",
+    "test:binance": "ts-node src/scripts/testBinance.ts",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write \"src/**/*.ts\""
   },

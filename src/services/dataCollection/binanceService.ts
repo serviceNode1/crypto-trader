@@ -5,7 +5,12 @@ import { withRetryJitter, isRetryableError } from '../../utils/retry';
 import { withRateLimit, rateLimiters } from '../../utils/rateLimiter';
 import { dataLogger as logger } from '../../utils/logger';
 
-const BASE_URL = 'https://api.binance.com/api/v3';
+// Use Binance.US for US users, global Binance otherwise
+const BASE_URL = process.env.BINANCE_REGION === 'US'
+  ? 'https://api.binance.us/api/v3'
+  : 'https://api.binance.com/api/v3';
+
+logger.info(`Using Binance API: ${BASE_URL}`);
 
 interface Candlestick {
   openTime: number;

@@ -86,6 +86,7 @@ export class RateLimiter {
 export const rateLimiters = {
   coinGecko: new RateLimiter({ maxRequests: 50, intervalMs: 60000 }), // 50 req/min
   binance: new RateLimiter({ maxRequests: 1200, intervalMs: 60000 }), // 1200 req/min
+  coinbase: new RateLimiter({ maxRequests: 10000, intervalMs: 3600000 }), // 10000 req/hour
   reddit: new RateLimiter({ maxRequests: 60, intervalMs: 60000 }), // 60 req/min
   cryptoPanic: new RateLimiter({ maxRequests: 100, intervalMs: 60000 }), // 100 req/min
   alphaVantage: new RateLimiter({ maxRequests: 5, intervalMs: 60000 }), // 5 req/min

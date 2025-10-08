@@ -7,6 +7,14 @@ import { dataLogger as logger } from '../../utils/logger';
 
 const BASE_URL = 'https://cryptopanic.com/api/v1';
 
+// Feature flag: Disable CryptoPanic to save API calls (100/month limit exceeded)
+// Set CRYPTOPANIC_ENABLED=true in .env to re-enable
+const CRYPTOPANIC_ENABLED = process.env.CRYPTOPANIC_ENABLED === 'true';
+
+if (!CRYPTOPANIC_ENABLED) {
+  logger.warn('⚠️  CryptoPanic is DISABLED (to save API calls). Set CRYPTOPANIC_ENABLED=true to re-enable.');
+}
+
 interface NewsArticle {
   id: number;
   title: string;
@@ -51,6 +59,12 @@ export async function getLatestNews(
   currencies?: string[],
   limit: number = 50
 ): Promise<NewsArticle[]> {
+  // Return empty array if CryptoPanic is disabled
+  if (!CRYPTOPANIC_ENABLED) {
+    logger.debug('CryptoPanic is disabled, returning empty news array');
+    return [];
+  }
+
   const currencyParam = currencies?.join(',') || '';
   const cacheKey = `news:latest:${filter}:${currencyParam}:${limit}`;
 
@@ -103,6 +117,12 @@ export async function getCryptoNews(
   symbol: string,
   limit: number = 50
 ): Promise<NewsArticle[]> {
+  // Return empty array if CryptoPanic is disabled
+  if (!CRYPTOPANIC_ENABLED) {
+    logger.debug('CryptoPanic is disabled, returning empty news array', { symbol });
+    return [];
+  }
+
   const cacheKey = `news:crypto:${symbol}:${limit}`;
 
   return cacheAside(cacheKey, CACHE_TTL.NEWS, async () => {
