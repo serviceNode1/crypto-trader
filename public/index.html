@@ -57,10 +57,11 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
-            margin-bottom: 20px;
+            
         }
 
         .card {
+            margin: 10px;
             background: white;
             padding: 20px;
             border-radius: 10px;
@@ -371,6 +372,160 @@
         }
 
         .tip-box strong {
+            color: #1e40af;
+        }
+
+        /* Settings Styles */
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-info {
+            flex: 1;
+        }
+
+        .setting-info h4 {
+            margin: 0 0 5px 0;
+            color: #374151;
+            font-size: 16px;
+        }
+
+        .setting-info p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .setting-control {
+            margin-left: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: 0.3s;
+            border-radius: 30px;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #667eea;
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+
+        /* Range Slider */
+        .range-slider {
+            width: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .range-slider input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: #e5e7eb;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .range-slider input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .range-slider input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .range-value {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        /* Select Dropdown */
+        .setting-select {
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            color: #374151;
+            font-size: 14px;
+            cursor: pointer;
+            min-width: 200px;
+            transition: border-color 0.3s;
+        }
+
+        .setting-select:hover {
+            border-color: #667eea;
+        }
+
+        .setting-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .tip-box strong {
             color: #3b82f6;
         }
 
@@ -522,9 +677,14 @@
                     <h1>Crypto Trading Dashboard</h1>
                     <p class="subtitle">AI-Powered Paper Trading System | Starting Capital: $10,000</p>
                 </div>
-                <button class="info-button" onclick="openInfoModal()" title="Trading Guide & Information">
-                    💡
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="info-button" onclick="openSettingsModal()" title="Trading Settings">
+                        ⚙️
+                    </button>
+                    <button class="info-button" onclick="openInfoModal()" title="Trading Guide & Information">
+                        💡
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -556,12 +716,12 @@
                     </label>
                     <select id="aiModelSelect" style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid #e5e7eb; border-radius: 6px; background: white; cursor: pointer;">
                         <option value="local">💻 Local Analysis (Free - No AI)</option>
-                        <option value="anthropic" selected>🧠 Anthropic Claude (Recommended - Fast & Cheap)</option>
-                        <option value="openai">🤖 OpenAI GPT-4 (Premium)</option>
-                        <option value="both">🔬 Both Models - Consensus (Most Expensive)</option>
+                        <option value="openai">🤖 OpenAI GPT-4o-mini (Cheapest AI - $0.0007)</option>
+                        <option value="anthropic" selected>🧠 Anthropic Claude Haiku (Fast - $0.0014)</option>
+                        <option value="both">🔬 Both Models - Consensus ($0.0021)</option>
                     </select>
                     <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">
-                        <strong>Costs:</strong> Local = Free | Anthropic ≈ $0.001/analysis | OpenAI ≈ $0.01/analysis | Both ≈ $0.011/analysis
+                        <strong>Estimated Cost per Analysis:</strong> Local = $0 | OpenAI = $0.0007 | Anthropic = $0.0014 | Both = $0.0021
                     </p>
                 </div>
                 
@@ -635,6 +795,41 @@
                     <button onclick="closeAnalysis()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #6b7280;">×</button>
                 </div>
                 <div id="analysisContent" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+
+        <!-- Discovery Dashboard -->
+        <div class="card" style="margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2>🔍 Discovered Opportunities</h2>
+                <button class="button" onclick="runDiscovery()" id="discoveryBtn">
+                    🚀 Run Discovery
+                </button>
+            </div>
+            
+            <div id="discovery-status" style="display: none; margin-bottom: 15px; padding: 12px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                <div class="spinner" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 10px;"></div>
+                <span id="discovery-message">Scanning markets...</span>
+            </div>
+
+            <!-- Analysis Log (Thinking Process) -->
+            <div id="analysis-log-container" style="display: none; margin-bottom: 15px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fafafa;">
+                <div onclick="toggleAnalysisLog()" style="padding: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f3f4f6; border-radius: 6px 6px 0 0;">
+                    <div>
+                        <strong style="color: #374151;">🔬 Analysis Log</strong>
+                        <span id="log-summary" style="margin-left: 10px; color: #6b7280; font-size: 14px;"></span>
+                    </div>
+                    <span id="log-toggle" style="color: #6b7280; font-size: 20px;">▼</span>
+                </div>
+                <div id="analysis-log-content" style="max-height: 400px; overflow-y: auto; display: none;">
+                    <!-- Log entries will be added here -->
+                </div>
+            </div>
+            
+            <div id="discoveries-list">
+                <p style="color: #6b7280; text-align: center; padding: 20px;">
+                    Click "Run Discovery" to find trading opportunities based on your coin universe setting.
+                </p>
             </div>
         </div>
 
@@ -933,6 +1128,7 @@
             loadTrades();
             loadRecommendations();
             loadMarketContext();
+            loadTopDiscoveries();  // Load previously discovered coins
 
             // Refresh every 60 seconds
             setInterval(() => {
@@ -1729,6 +1925,539 @@
             </div>
         </div>
     </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Your Settings</h2>
+                <button class="close-button" onclick="closeSettingsModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Auto-Trading Settings -->
+                <div class="info-section">
+                    <h3>🤖 Auto-Trading</h3>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Enable Auto-Execution</h4>
+                            <p>Automatically execute trades when AI confidence exceeds threshold</p>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoExecuteToggle" onchange="saveSettings()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Confidence Threshold</h4>
+                            <p>Minimum AI confidence required for auto-execution</p>
+                        </div>
+                        <div class="setting-control">
+                            <div class="range-slider">
+                                <input type="range" id="confidenceThreshold" min="70" max="90" step="5" value="75" oninput="updateConfidenceValue(this.value)" onchange="saveSettings()">
+                                <div class="range-value"><span id="confidenceValue">75</span>%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Human-in-the-Loop</h4>
+                            <p>Require manual approval before executing trades</p>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="humanApprovalToggle" checked onchange="saveSettings()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Position Sizing -->
+                <div class="info-section">
+                    <h3>💰 Capital Allocation</h3>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Position Sizing Strategy</h4>
+                            <p>How to calculate position size for new trades</p>
+                        </div>
+                        <div class="setting-control">
+                            <select id="positionSizingStrategy" class="setting-select" onchange="saveSettings()">
+                                <option value="equal">Equal Weight - Same size for all positions</option>
+                                <option value="confidence">Confidence-Based - Size by AI confidence</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Maximum Position Size</h4>
+                            <p>Maximum % of portfolio per single position</p>
+                        </div>
+                        <div class="setting-control">
+                            <div class="range-slider">
+                                <input type="range" id="maxPositionSize" min="2" max="10" step="1" value="5" oninput="updateMaxPositionValue(this.value)" onchange="saveSettings()">
+                                <div class="range-value"><span id="maxPositionValue">5</span>%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exit Strategy -->
+                <div class="info-section">
+                    <h3>🎯 Exit Strategy</h3>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Take Profit Strategy</h4>
+                            <p>How to handle reaching profit targets</p>
+                        </div>
+                        <div class="setting-control">
+                            <select id="takeProfitStrategy" class="setting-select" onchange="saveSettings()">
+                                <option value="full">Full Exit - Close entire position at target</option>
+                                <option value="partial">Partial Exit - Close 50% at first target</option>
+                                <option value="trailing">Trailing Stop - Follow price upward</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Auto Stop-Loss</h4>
+                            <p>Automatically exit when stop-loss is hit</p>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoStopLossToggle" checked onchange="saveSettings()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Market Focus -->
+                <div class="info-section">
+                    <h3>🎯 Market Focus</h3>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Coin Universe</h4>
+                            <p>Which cryptocurrencies to analyze and trade</p>
+                        </div>
+                        <div class="setting-control">
+                            <select id="coinUniverse" class="setting-select" onchange="saveSettings()">
+                                <option value="top10">Top 10 - BTC, ETH, BNB, etc.</option>
+                                <option value="top50" selected>Top 50 - Major coins + large caps</option>
+                                <option value="top100">Top 100 - Include mid-caps</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Analysis Frequency</h4>
+                            <p>How often to generate new AI recommendations</p>
+                        </div>
+                        <div class="setting-control">
+                            <select id="analysisFrequency" class="setting-select" onchange="saveSettings()">
+                                <option value="1">Every 1 Hour (High cost)</option>
+                                <option value="4" selected>Every 4 Hours (Recommended)</option>
+                                <option value="8">Every 8 Hours (Low cost)</option>
+                                <option value="24">Daily (Minimal cost)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warning Box -->
+                <div class="warning-box" style="margin-top: 20px;">
+                    <strong>⚠️ Auto-Trading Risk Warning:</strong><br>
+                    Enabling auto-execution means trades will be placed automatically based on AI recommendations. While convenient, this removes human oversight and could result in unexpected losses. Start with small position sizes and monitor closely.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Settings Management
+        const DEFAULT_SETTINGS = {
+            autoExecute: false,
+            confidenceThreshold: 75,
+            humanApproval: true,
+            positionSizingStrategy: 'equal',
+            maxPositionSize: 5,
+            takeProfitStrategy: 'partial',
+            autoStopLoss: true,
+            coinUniverse: 'top50',
+            analysisFrequency: 4
+        };
+
+        // Load settings from localStorage
+        function loadSettings() {
+            const saved = localStorage.getItem('tradingSettings');
+            return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+        }
+
+        // Save settings to localStorage
+        function saveSettings() {
+            const settings = {
+                autoExecute: document.getElementById('autoExecuteToggle').checked,
+                confidenceThreshold: parseInt(document.getElementById('confidenceThreshold').value),
+                humanApproval: document.getElementById('humanApprovalToggle').checked,
+                positionSizingStrategy: document.getElementById('positionSizingStrategy').value,
+                maxPositionSize: parseInt(document.getElementById('maxPositionSize').value),
+                takeProfitStrategy: document.getElementById('takeProfitStrategy').value,
+                autoStopLoss: document.getElementById('autoStopLossToggle').checked,
+                coinUniverse: document.getElementById('coinUniverse').value,
+                analysisFrequency: parseInt(document.getElementById('analysisFrequency').value)
+            };
+            
+            localStorage.setItem('tradingSettings', JSON.stringify(settings));
+            console.log('Settings saved:', settings);
+        }
+
+        // Apply saved settings to UI
+        function applySettings() {
+            const settings = loadSettings();
+            
+            document.getElementById('autoExecuteToggle').checked = settings.autoExecute;
+            document.getElementById('confidenceThreshold').value = settings.confidenceThreshold;
+            document.getElementById('confidenceValue').textContent = settings.confidenceThreshold;
+            document.getElementById('humanApprovalToggle').checked = settings.humanApproval;
+            document.getElementById('positionSizingStrategy').value = settings.positionSizingStrategy;
+            document.getElementById('maxPositionSize').value = settings.maxPositionSize;
+            document.getElementById('maxPositionValue').textContent = settings.maxPositionSize;
+            document.getElementById('takeProfitStrategy').value = settings.takeProfitStrategy;
+            document.getElementById('autoStopLossToggle').checked = settings.autoStopLoss;
+            document.getElementById('coinUniverse').value = settings.coinUniverse;
+            document.getElementById('analysisFrequency').value = settings.analysisFrequency;
+        }
+
+        // Update confidence value display
+        function updateConfidenceValue(value) {
+            document.getElementById('confidenceValue').textContent = value;
+        }
+
+        // Update max position value display
+        function updateMaxPositionValue(value) {
+            document.getElementById('maxPositionValue').textContent = value;
+        }
+
+        // Settings modal functions
+        function openSettingsModal() {
+            applySettings(); // Load current settings
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        function saveAndCloseSettings() {
+            saveSettings();
+            closeSettingsModal();
+            
+            // Show success message
+            alert('✅ Settings saved successfully!');
+        }
+
+        // Initialize settings on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            applySettings();
+        });
+
+        // Get current settings (for use in other functions)
+        function getSettings() {
+            return loadSettings();
+        }
+
+        // Discovery Functions
+        async function runDiscovery() {
+            const btn = document.getElementById('discoveryBtn');
+            const status = document.getElementById('discovery-status');
+            const message = document.getElementById('discovery-message');
+            const listDiv = document.getElementById('discoveries-list');
+            const logContainer = document.getElementById('analysis-log-container');
+            const logContent = document.getElementById('analysis-log-content');
+            const logSummary = document.getElementById('log-summary');
+            
+            try {
+                // Get coin universe from settings
+                const settings = getSettings();
+                const universe = settings.coinUniverse || 'top50';
+                
+                // Show loading
+                btn.disabled = true;
+                btn.textContent = '⏳ Scanning...';
+                status.style.display = 'block';
+                message.textContent = `Scanning ${universe === 'top10' ? 'top 10' : universe === 'top50' ? 'top 50' : 'top 100'} coins...`;
+                
+                // Clear previous log
+                logContent.innerHTML = '';
+                logContainer.style.display = 'none';
+                
+                // Run discovery
+                const response = await fetch(`${API_BASE}/discover?universe=${universe}`);
+                
+                if (!response.ok) {
+                    throw new Error('Discovery failed');
+                }
+                
+                const data = await response.json();
+                
+                // Hide loading, show results
+                status.style.display = 'none';
+                btn.disabled = false;
+                btn.textContent = '🚀 Run Discovery';
+                
+                // Show analysis log
+                if (data.analysisLog && data.analysisLog.length > 0) {
+                    logContainer.style.display = 'block';
+                    logSummary.textContent = `${data.summary.totalAnalyzed} analyzed · ${data.summary.passed} passed · ${data.summary.rejected} rejected`;
+                    displayAnalysisLog(data.analysisLog, data.summary);
+                }
+                
+                // Display results
+                if (data.candidates && data.candidates.length > 0) {
+                    listDiv.innerHTML = formatDiscoveries(data.candidates);
+                } else {
+                    listDiv.innerHTML = formatNoOpportunities(data.summary, data.analysisLog);
+                }
+                
+            } catch (error) {
+                console.error('Discovery error:', error);
+                status.style.display = 'none';
+                btn.disabled = false;
+                btn.textContent = '🚀 Run Discovery';
+                listDiv.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 20px;">❌ Discovery failed. Please try again.</p>';
+            }
+        }
+
+        function formatNoOpportunities(summary, analysisLog) {
+            return `
+                <div style="padding: 30px; text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 15px;">😔</div>
+                    <h3 style="color: #374151; margin-bottom: 10px;">No Opportunities Found</h3>
+                    <p style="color: #6b7280; margin-bottom: 20px;">
+                        Analyzed ${summary.totalAnalyzed} coins, but none met the criteria.
+                    </p>
+                    
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: left;">
+                        <h4 style="color: #374151; margin-bottom: 15px;">📊 Top Rejection Reasons:</h4>
+                        ${summary.topRejectionReasons.map((r, i) => `
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: ${i < summary.topRejectionReasons.length - 1 ? '1px solid #e5e7eb' : 'none'};">
+                                <span style="color: #6b7280;">${r.reason}</span>
+                                <span style="font-weight: 600; color: #374151;">${r.count} coins</span>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0; text-align: left;">
+                        <strong style="color: #92400e;">💡 Suggestions:</strong>
+                        <ul style="margin: 10px 0 0 20px; color: #78350f;">
+                            <li>Market conditions may be unfavorable right now</li>
+                            <li>Try expanding to "Top 100" in settings</li>
+                            <li>Check back later when market activity increases</li>
+                            <li>Review the analysis log below for detailed reasons</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayAnalysisLog(analysisLog, summary) {
+            const logContent = document.getElementById('analysis-log-content');
+            
+            const html = `
+                <div style="padding: 15px;">
+                    <!-- Summary Stats -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+                        <div style="text-align: center; padding: 15px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                            <div style="font-size: 24px; font-weight: 600; color: #3b82f6;">${summary.totalAnalyzed}</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">Total Analyzed</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                            <div style="font-size: 24px; font-weight: 600; color: #10b981;">${summary.passed}</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">Passed</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                            <div style="font-size: 24px; font-weight: 600; color: #ef4444;">${summary.rejected}</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">Rejected</div>
+                        </div>
+                    </div>
+
+                    <!-- Log Entries -->
+                    <div style="background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                        ${analysisLog.map((entry, index) => `
+                            <div style="padding: 12px; border-bottom: ${index < analysisLog.length - 1 ? '1px solid #f3f4f6' : 'none'}; ${entry.passed ? 'background: #f0fdf4;' : ''}">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 5px;">
+                                    <div>
+                                        <strong style="color: #1f2937; font-size: 15px;">
+                                            ${entry.symbol}
+                                        </strong>
+                                        <span style="color: #6b7280; font-size: 13px; margin-left: 8px;">
+                                            ${entry.name} · Rank #${entry.rank}
+                                        </span>
+                                    </div>
+                                    <span style="font-size: 11px; color: #9ca3af;">
+                                        ${new Date(entry.timestamp).toLocaleTimeString()}
+                                    </span>
+                                </div>
+                                <div style="color: ${entry.passed ? '#059669' : '#6b7280'}; font-size: 13px; margin-bottom: 8px;">
+                                    ${entry.reason}
+                                </div>
+                                ${entry.details && Object.keys(entry.details).length > 0 ? `
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; font-size: 12px; color: #6b7280;">
+                                        ${entry.details.volumeScore !== undefined ? `
+                                            <div>Vol Score: <strong>${entry.details.volumeScore.toFixed(0)}</strong></div>
+                                        ` : ''}
+                                        ${entry.details.momentumScore !== undefined ? `
+                                            <div>Momentum: <strong>${entry.details.momentumScore.toFixed(0)}</strong></div>
+                                        ` : ''}
+                                        ${entry.details.sentimentScore !== undefined ? `
+                                            <div>Sentiment: <strong>${entry.details.sentimentScore.toFixed(0)}</strong></div>
+                                        ` : ''}
+                                        ${entry.compositeScore !== undefined ? `
+                                            <div>Composite: <strong style="color: ${getScoreColor(entry.compositeScore)};">${entry.compositeScore.toFixed(0)}</strong></div>
+                                        ` : ''}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            logContent.innerHTML = html;
+        }
+
+        function toggleAnalysisLog() {
+            const content = document.getElementById('analysis-log-content');
+            const toggle = document.getElementById('log-toggle');
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                toggle.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▼';
+            }
+        }
+
+        function formatDiscoveries(discoveries) {
+            return `
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                            <th style="padding: 12px; text-align: left;">Rank</th>
+                            <th style="padding: 12px; text-align: left;">Symbol</th>
+                            <th style="padding: 12px; text-align: left;">Name</th>
+                            <th style="padding: 12px; text-align: right;">Score</th>
+                            <th style="padding: 12px; text-align: right;">Volume 24h</th>
+                            <th style="padding: 12px; text-align: right;">Market Cap</th>
+                            <th style="padding: 12px; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${discoveries.map((coin, index) => `
+                            <tr style="border-bottom: 1px solid #e5e7eb; ${index % 2 === 0 ? 'background: #fafafa;' : ''}">
+                                <td style="padding: 12px;">
+                                    <span style="font-weight: 600; color: ${index < 3 ? '#667eea' : '#6b7280'};">
+                                        #${index + 1}
+                                    </span>
+                                </td>
+                                <td style="padding: 12px;">
+                                    <strong style="color: #1f2937; font-size: 16px;">${coin.symbol}</strong>
+                                </td>
+                                <td style="padding: 12px; color: #6b7280;">${coin.name}</td>
+                                <td style="padding: 12px; text-align: right;">
+                                    <div style="display: flex; align-items: center; justify-content: flex-end;">
+                                        <div style="width: 60px; height: 8px; background: #e5e7eb; border-radius: 4px; margin-right: 8px;">
+                                            <div style="width: ${coin.compositeScore}%; height: 100%; background: ${getScoreColor(coin.compositeScore)}; border-radius: 4px;"></div>
+                                        </div>
+                                        <span style="font-weight: 600; color: ${getScoreColor(coin.compositeScore)};">${Math.round(coin.compositeScore)}</span>
+                                    </div>
+                                </td>
+                                <td style="padding: 12px; text-align: right; color: #6b7280;">
+                                    $${formatNumber(coin.volume24h)}
+                                </td>
+                                <td style="padding: 12px; text-align: right; color: #6b7280;">
+                                    $${formatNumber(coin.marketCap)}
+                                </td>
+                                <td style="padding: 12px; text-align: center;">
+                                    <button class="button" style="padding: 6px 12px; font-size: 13px;" onclick="analyzeDiscovered('${coin.symbol}')">
+                                        Analyze
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                
+                <div style="margin-top: 15px; padding: 12px; background: #f9fafb; border-radius: 6px; text-align: center; color: #6b7280; font-size: 14px;">
+                    <strong>Score Breakdown:</strong> 
+                    Volume (40%) + Momentum (35%) + Sentiment (25%)
+                </div>
+            `;
+        }
+
+        function getScoreColor(score) {
+            if (score >= 80) return '#10b981'; // Green
+            if (score >= 60) return '#f59e0b'; // Orange
+            return '#6b7280'; // Gray
+        }
+
+        function formatNumber(num) {
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
+            return num.toFixed(2);
+        }
+
+        function analyzeDiscovered(symbol) {
+            // Set the symbol in the search box
+            document.getElementById('cryptoSearch').value = symbol;
+            // Scroll to crypto selector
+            document.querySelector('.crypto-selector').scrollIntoView({ behavior: 'smooth' });
+            // Trigger analysis
+            setTimeout(() => analyzeCrypto(), 500);
+        }
+
+        // Load top discoveries on page load
+        async function loadTopDiscoveries() {
+            try {
+                const response = await fetch(`${API_BASE}/discover/top?limit=10`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.discoveries && data.discoveries.length > 0) {
+                        document.getElementById('discoveries-list').innerHTML = formatDiscoveries(data.discoveries);
+                    }
+                }
+            } catch (error) {
+                console.log('No saved discoveries yet');
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const settingsModal = document.getElementById('settingsModal');
+            const infoModal = document.getElementById('infoModal');
+            
+            if (event.target === settingsModal) {
+                closeSettingsModal();
+            }
+            if (event.target === infoModal) {
+                closeInfoModal();
+            }
+        }
+    </script>
 
 </body>
 </html>

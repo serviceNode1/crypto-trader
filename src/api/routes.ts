@@ -14,6 +14,10 @@ import { calculateAllIndicators, analyzeTrend } from '../services/analysis/techn
 import { aggregateSentiment } from '../services/analysis/sentimentAnalysis';
 import { getMarketContext, analyzeRegime } from '../services/analysis/marketContext';
 import { getAIRecommendation, getLocalRecommendation } from '../services/ai/aiService';
+import { getUserSettings, updateUserSettings, resetUserSettings } from '../services/settings/settingsService';
+import { discoverCoins, getTopDiscoveries } from '../services/discovery/coinDiscovery';
+import { getAutoExecutionStats } from '../services/trading/autoExecutor';
+import { getMonitoringStats } from '../services/trading/positionMonitor';
 import { query } from '../config/database';
 import { testConnection } from '../config/database';
 import { testRedisConnection } from '../config/redis';
@@ -530,6 +534,190 @@ router.get('/market-context', async (_req: Request, res: Response) => {
   } catch (error) {
     logger.error('Failed to get market context', { error });
     res.status(500).json({ error: 'Failed to retrieve market context' });
+  }
+});
+
+/**
+ * GET /api/settings - Get user settings
+ */
+router.get('/settings', async (_req: Request, res: Response) => {
+  try {
+    const settings = await getUserSettings();
+    res.json(settings);
+  } catch (error) {
+    logger.error('Failed to get settings', { error });
+    res.status(500).json({ error: 'Failed to get settings' });
+  }
+});
+
+/**
+ * PUT /api/settings - Update user settings
+ */
+router.put('/settings', async (req: Request, res: Response) => {
+  try {
+    const settings = req.body;
+    logger.info('Updating settings', { settings });
+    
+    const updatedSettings = await updateUserSettings(settings);
+    
+    logger.info('Settings updated successfully');
+    res.json(updatedSettings);
+  } catch (error) {
+    logger.error('Failed to update settings', { error });
+    res.status(400).json({ 
+      error: 'Failed to update settings',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * POST /api/settings/reset - Reset settings to defaults
+ */
+router.post('/settings/reset', async (_req: Request, res: Response) => {
+  try {
+    const settings = await resetUserSettings();
+    logger.info('Settings reset to defaults');
+    res.json(settings);
+  } catch (error) {
+    logger.error('Failed to reset settings', { error });
+    res.status(500).json({ error: 'Failed to reset settings' });
+  }
+});
+
+/**
+ * GET /api/discover - Discover trading opportunities
+ * Query params: ?universe=top10|top50|top100
+ */
+router.get('/discover', async (req: Request, res: Response) => {
+  try {
+    const universe = (req.query.universe as 'top10' | 'top50' | 'top100') || 'top50';
+    
+    logger.info('Starting coin discovery', { universe });
+    
+    const result = await discoverCoins(universe);
+    
+    res.json({
+      universe,
+      count: result.candidates.length,
+      candidates: result.candidates.slice(0, 20), // Return top 20 candidates
+      analysisLog: result.analysisLog, // Full analysis log
+      summary: result.summary, // Summary statistics
+    });
+  } catch (error) {
+    logger.error('Failed to discover coins', { error });
+    res.status(500).json({ error: 'Failed to discover coins' });
+  }
+});
+
+/**
+ * GET /api/discover/top - Get top discovered coins from database
+ */
+router.get('/discover/top', async (req: Request, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const discoveries = await getTopDiscoveries(limit);
+    
+    res.json({
+      count: discoveries.length,
+      discoveries,
+    });
+  } catch (error) {
+    logger.error('Failed to get top discoveries', { error });
+    res.status(500).json({ error: 'Failed to get top discoveries' });
+  }
+});
+
+/**
+ * GET /api/auto-trading/stats - Get auto-trading statistics
+ */
+router.get('/auto-trading/stats', async (_req: Request, res: Response) => {
+  try {
+    const [execStats, monitorStats] = await Promise.all([
+      getAutoExecutionStats(),
+      getMonitoringStats(),
+    ]);
+    
+    res.json({
+      execution: execStats,
+      monitoring: monitorStats,
+    });
+  } catch (error) {
+    logger.error('Failed to get auto-trading stats', { error });
+    res.status(500).json({ error: 'Failed to get auto-trading stats' });
+  }
+});
+
+/**
+ * GET /api/approvals - Get pending trade approvals
+ */
+router.get('/approvals', async (_req: Request, res: Response) => {
+  try {
+    const result = await query(
+      `SELECT 
+        ta.*,
+        r.confidence,
+        r.risk_level,
+        EXTRACT(EPOCH FROM (ta.expires_at - NOW())) as seconds_remaining
+       FROM trade_approvals ta
+       LEFT JOIN recommendations r ON ta.recommendation_id = r.id
+       WHERE ta.status = 'pending'
+         AND ta.expires_at > NOW()
+       ORDER BY ta.created_at DESC`
+    );
+    
+    res.json({
+      count: result.rows.length,
+      approvals: result.rows,
+    });
+  } catch (error) {
+    logger.error('Failed to get pending approvals', { error });
+    res.status(500).json({ error: 'Failed to get pending approvals' });
+  }
+});
+
+/**
+ * POST /api/approvals/:id/approve - Approve a trade
+ */
+router.post('/approvals/:id/approve', async (req: Request, res: Response) => {
+  try {
+    const approvalId = parseInt(req.params.id);
+    
+    await query(
+      `UPDATE trade_approvals
+       SET status = 'approved', approved_at = NOW()
+       WHERE id = $1 AND status = 'pending'`,
+      [approvalId]
+    );
+    
+    logger.info('Trade approved', { approvalId });
+    res.json({ success: true, message: 'Trade approved and will be executed shortly' });
+  } catch (error) {
+    logger.error('Failed to approve trade', { error });
+    res.status(500).json({ error: 'Failed to approve trade' });
+  }
+});
+
+/**
+ * POST /api/approvals/:id/reject - Reject a trade
+ */
+router.post('/approvals/:id/reject', async (req: Request, res: Response) => {
+  try {
+    const approvalId = parseInt(req.params.id);
+    const reason = req.body.reason || 'Rejected by user';
+    
+    await query(
+      `UPDATE trade_approvals
+       SET status = 'rejected', rejected_at = NOW(), rejection_reason = $2
+       WHERE id = $1 AND status = 'pending'`,
+      [approvalId, reason]
+    );
+    
+    logger.info('Trade rejected', { approvalId, reason });
+    res.json({ success: true, message: 'Trade rejected' });
+  } catch (error) {
+    logger.error('Failed to reject trade', { error });
+    res.status(500).json({ error: 'Failed to reject trade' });
   }
 });
 
