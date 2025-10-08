@@ -281,7 +281,7 @@ function calculateVolumeScore(coin: any): number {
   
   // Normalize to 0-100 scale
   // Typical ratio is 0.01-0.5, anything above 0.3 is significant
-  let score = (volumeRatio / 0.3) * 100;
+  const score = (volumeRatio / 0.3) * 100;
   
   return Math.min(Math.max(score, 0), 100);
 }
@@ -299,7 +299,7 @@ function calculateMomentumScore(coin: any): number {
   
   // Normalize to 0-100
   // -10% to +10% maps to 0-100
-  let score = ((weightedMomentum + 10) / 20) * 100;
+  const score = ((weightedMomentum + 10) / 20) * 100;
   
   return Math.min(Math.max(score, 0), 100);
 }

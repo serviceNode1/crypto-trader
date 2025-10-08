@@ -61,10 +61,13 @@ export async function processRecommendations(): Promise<{
       try {
         // Skip HOLD recommendations
         if (rec.action === 'HOLD') {
-          await markRecommendationStatus(rec.id, 'skipped');
+          await markRecommendationStatus(rec.id, 'rejected');
           stats.skipped++;
           continue;
         }
+
+        // At this point, action can only be 'BUY' or 'SELL'
+        // (tradeAction is for documentation; rec.action is still safe to use after HOLD check)
 
         // Decide whether to execute immediately or queue for approval
         if (settings.humanApproval) {
@@ -151,6 +154,14 @@ async function executeRecommendation(
   const startTime = Date.now();
 
   try {
+    // Type guard: This function should never be called with HOLD
+    if (rec.action === 'HOLD') {
+      throw new Error('HOLD recommendations should not be executed');
+    }
+
+    // At this point, TypeScript knows action is 'BUY' | 'SELL'
+    const tradeAction: 'BUY' | 'SELL' = rec.action;
+
     // Calculate position size based on strategy
     let quantity: number;
     
@@ -185,10 +196,10 @@ async function executeRecommendation(
     // Validate trade against risk rules
     const riskCheck = await validateTrade(
       rec.symbol,
-      rec.action,
+      tradeAction,
       quantity,
       rec.entryPrice,
-      rec.stopLoss
+      rec.stopLoss ?? undefined
     );
 
     if (!riskCheck.allowed) {
@@ -200,7 +211,7 @@ async function executeRecommendation(
     // Execute the trade
     const trade = await executeTrade(
       rec.symbol,
-      rec.action,
+      tradeAction,
       quantity,
       JSON.stringify(rec.reasoning),
       rec.id
@@ -363,7 +374,7 @@ export async function processPendingApprovals(): Promise<void> {
     for (const approval of result.rows) {
       try {
         // Execute the approved trade
-        const trade = await executeTrade(
+        await executeTrade(
           approval.symbol,
           approval.action,
           parseFloat(approval.quantity),
