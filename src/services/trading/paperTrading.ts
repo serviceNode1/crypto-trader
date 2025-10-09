@@ -1,6 +1,6 @@
 import { query, transaction } from '../../config/database';
 import { TRANSACTION_COSTS, RISK_LIMITS } from '../../config/constants';
-import { estimateSlippage } from '../dataCollection/binanceService';
+import { estimateSlippage } from '../dataCollection/coinbaseService';
 import { getCurrentPrice } from '../dataCollection/coinGeckoService';
 import { tradingLogger as logger } from '../../utils/logger';
 

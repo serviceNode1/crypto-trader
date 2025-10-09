@@ -11,7 +11,7 @@ export interface UserSettings {
   maxPositionSize: number;
   takeProfitStrategy: 'full' | 'partial' | 'trailing';
   autoStopLoss: boolean;
-  coinUniverse: 'top10' | 'top50' | 'top100';
+  coinUniverse: 'top10' | 'top25' | 'top50';
   analysisFrequency: 1 | 4 | 8 | 24;
   createdAt?: Date;
   updatedAt?: Date;
@@ -25,7 +25,7 @@ const DEFAULT_SETTINGS: Omit<UserSettings, 'id' | 'userId' | 'createdAt' | 'upda
   maxPositionSize: 5.0,
   takeProfitStrategy: 'partial',
   autoStopLoss: true,
-  coinUniverse: 'top50',
+  coinUniverse: 'top25',
   analysisFrequency: 4,
 };
 
@@ -259,7 +259,7 @@ function validateSettings(settings: Partial<UserSettings>): void {
 
   if (
     settings.coinUniverse !== undefined &&
-    !['top10', 'top50', 'top100'].includes(settings.coinUniverse)
+    !['top10', 'top25', 'top50'].includes(settings.coinUniverse)
   ) {
     throw new Error('Invalid coin universe');
   }

@@ -8,7 +8,7 @@ import {
 import { validateTrade, getRiskExposure } from '../services/trading/riskManagement';
 import { getCryptoNews } from '../services/dataCollection/cryptoPanicService';
 import { getCryptoMentions } from '../services/dataCollection/redditService';
-import { getCandlesticks } from '../services/dataCollection/binanceService';
+import { getCandlesticks } from '../services/dataCollection/coinbaseService';
 import { getCurrentPrice } from '../services/dataCollection/coinGeckoService';
 import { calculateAllIndicators, analyzeTrend } from '../services/analysis/technicalAnalysis';
 import { aggregateSentiment } from '../services/analysis/sentimentAnalysis';
@@ -587,11 +587,11 @@ router.post('/settings/reset', async (_req: Request, res: Response) => {
 
 /**
  * GET /api/discover - Discover trading opportunities
- * Query params: ?universe=top10|top50|top100
+ * Query params: ?universe=top10|top25|top50
  */
 router.get('/discover', async (req: Request, res: Response) => {
   try {
-    const universe = (req.query.universe as 'top10' | 'top50' | 'top100') || 'top50';
+    const universe = (req.query.universe as 'top10' | 'top25' | 'top50') || 'top25';
     
     logger.info('Starting coin discovery', { universe });
     

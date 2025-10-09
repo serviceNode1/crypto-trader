@@ -1,6 +1,6 @@
 import { Job } from 'bull';
 import { getCurrentPrice } from '../../services/dataCollection/coinGeckoService';
-import { getCandlesticks } from '../../services/dataCollection/binanceService';
+import { getCandlesticks } from '../../services/dataCollection/coinbaseService';
 import { getCryptoNews } from '../../services/dataCollection/cryptoPanicService';
 import { getCryptoMentions } from '../../services/dataCollection/redditService';
 import { getMarketContext } from '../../services/analysis/marketContext';

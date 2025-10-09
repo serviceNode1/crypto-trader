@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import { initRedis } from '../config/redis';
 import { testConnection } from '../config/database';
 import { getCurrentPrice } from '../services/dataCollection/coinGeckoService';
-import { getCandlesticks } from '../services/dataCollection/binanceService';
+import { getCandlesticks } from '../services/dataCollection/coinbaseService';
 import { getCryptoNews } from '../services/dataCollection/cryptoPanicService';
 import { getCryptoMentions } from '../services/dataCollection/redditService';
 import { calculateAllIndicators, analyzeTrend } from '../services/analysis/technicalAnalysis';

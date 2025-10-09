@@ -7,7 +7,19 @@ import { dataLogger as logger } from '../../utils/logger';
 
 const BASE_URL = 'https://api.exchange.coinbase.com';
 
-logger.info(`Using Coinbase API: ${BASE_URL}`);
+// API Keys (optional - public endpoints work without auth)
+const API_KEY = process.env.COINBASE_API_KEY || '';
+const API_SECRET = process.env.COINBASE_API_SECRET || '';
+const API_KEY_TRADING = process.env.COINBASE_API_KEY_TRADING || '';
+const API_SECRET_TRADING = process.env.COINBASE_API_SECRET_TRADING || '';
+
+logger.info(`Using Coinbase API: ${BASE_URL}`, {
+  authenticated: !!(API_KEY && API_SECRET),
+  tradingEnabled: !!(API_KEY_TRADING && API_SECRET_TRADING)
+});
+
+// NOTE: Authentication function available when needed for private endpoints (orders, accounts, etc.)
+// All current endpoints are public and work without authentication
 
 interface CoinbaseCandle {
   time: number;

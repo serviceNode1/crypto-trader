@@ -1,5 +1,4 @@
 import { getCurrentPrice, getTrendingCoins } from '../dataCollection/coinGeckoService';
-import { getCandlesticks } from '../dataCollection/binanceService';
 import { getCryptoNews } from '../dataCollection/cryptoPanicService';
 import { getCryptoMentions } from '../dataCollection/redditService';
 import { aggregateSentiment } from '../analysis/sentimentAnalysis';
@@ -74,7 +73,7 @@ const DEFAULT_FILTERS: DiscoveryFilters = {
  * Discover trading opportunities based on user's coin universe setting
  */
 export async function discoverCoins(
-  universe: 'top10' | 'top50' | 'top100' = 'top50',
+  universe: 'top10' | 'top25' | 'top50' = 'top25',
   customFilters?: DiscoveryFilters
 ): Promise<DiscoveryResult> {
   try {
@@ -83,7 +82,7 @@ export async function discoverCoins(
     const filters = { ...DEFAULT_FILTERS, ...customFilters };
 
     // Determine market cap range based on universe
-    const limit = universe === 'top10' ? 10 : universe === 'top50' ? 50 : 100;
+    const limit = universe === 'top10' ? 10 : universe === 'top25' ? 25 : 50;
 
     // Fetch coin list from CoinGecko
     const coins = await fetchCoinsByMarketCap(limit);
@@ -192,13 +191,15 @@ export async function discoverCoins(
         analysisLog.push(logEntry);
       } catch (error) {
         logger.warn(`Failed to process coin ${coin.symbol}`, { error });
+        const errorReason = `Error during analysis: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        rejectionReasons[errorReason] = (rejectionReasons[errorReason] || 0) + 1;
         analysisLog.push({
           symbol: coin.symbol.toUpperCase(),
           name: coin.name,
           rank: coin.market_cap_rank,
           timestamp: new Date(),
           passed: false,
-          reason: `Error during analysis: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          reason: errorReason,
           details: {},
         });
         continue;
@@ -219,13 +220,25 @@ export async function discoverCoins(
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    // Verify rejection count matches
+    const totalRejections = Object.values(rejectionReasons).reduce((sum, count) => sum + count, 0);
+    const expectedRejections = coins.length - candidates.length;
+    
+    if (totalRejections !== expectedRejections) {
+      logger.warn('Rejection count mismatch', {
+        totalRejections,
+        expectedRejections,
+        difference: expectedRejections - totalRejections
+      });
+    }
+
     const result: DiscoveryResult = {
       candidates,
       analysisLog,
       summary: {
         totalAnalyzed: coins.length,
         passed: candidates.length,
-        rejected: coins.length - candidates.length,
+        rejected: totalRejections, // Use actual count from rejectionReasons
         topRejectionReasons,
       },
     };

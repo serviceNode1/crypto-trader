@@ -1,6 +1,7 @@
 import Sentiment from 'sentiment';
 import { RedditPost, RedditComment, calculateCredibility } from '../dataCollection/redditService';
 import { NewsArticle, calculateNewsSentiment } from '../dataCollection/cryptoPanicService';
+import { UnifiedArticle, calculateAggregateSentiment as calculateUnifiedSentiment } from '../dataCollection/newsAggregator';
 import { SENTIMENT_SCORES } from '../../config/constants';
 import { logger } from '../../utils/logger';
 
@@ -263,11 +264,11 @@ export function analyzeNewsSentiment(articles: NewsArticle[]): SentimentScore {
 }
 
 /**
- * Aggregate sentiment from multiple sources
+ * Aggregate sentiment from multiple sources (NEW: supports unified articles)
  */
 export async function aggregateSentiment(
   redditPosts: RedditPost[],
-  newsArticles: NewsArticle[],
+  newsArticles: NewsArticle[] | UnifiedArticle[],
   previousSentiment?: number
 ): Promise<AggregatedSentiment> {
   logger.info('Starting Reddit sentiment analysis', { postCount: redditPosts.length });
@@ -275,8 +276,24 @@ export async function aggregateSentiment(
   logger.info('Reddit sentiment analyzed', { score: redditSentiment.score });
   
   logger.info('Starting news sentiment analysis', { articleCount: newsArticles.length });
-  const newsSentiment = analyzeNewsSentiment(newsArticles);
-  logger.info('News sentiment analyzed', { score: newsSentiment.score });
+  
+  // Check if we're using new unified articles or old CryptoPanic articles
+  let newsSentiment: SentimentScore;
+  if (newsArticles.length > 0 && 'sourceType' in newsArticles[0]) {
+    // New unified article format
+    const unifiedArticles = newsArticles as UnifiedArticle[];
+    const aggregated = calculateUnifiedSentiment(unifiedArticles);
+    newsSentiment = {
+      score: aggregated.score,
+      magnitude: aggregated.magnitude,
+      classification: aggregated.classification,
+    };
+    logger.info('Unified news sentiment analyzed', { score: newsSentiment.score, sources: 'CryptoCompare+RSS' });
+  } else {
+    // Old CryptoPanic format (for backward compatibility)
+    newsSentiment = analyzeNewsSentiment(newsArticles as NewsArticle[]);
+    logger.info('CryptoPanic sentiment analyzed', { score: newsSentiment.score });
+  }
 
   // Weight news slightly more than Reddit (news is often more reliable)
   const redditWeight = 0.4;

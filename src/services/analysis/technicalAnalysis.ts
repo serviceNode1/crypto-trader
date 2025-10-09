@@ -1,6 +1,6 @@
 import { RSI, MACD, BollingerBands, EMA, SMA } from 'technicalindicators';
 import { INDICATOR_PERIODS } from '../../config/constants';
-import { Candlestick } from '../dataCollection/binanceService';
+import { Candlestick } from '../dataCollection/coinbaseService';
 import { logger } from '../../utils/logger';
 
 export interface TechnicalIndicators {

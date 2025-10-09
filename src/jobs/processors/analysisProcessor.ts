@@ -1,5 +1,5 @@
 import { Job } from 'bull';
-import { getCandlesticks } from '../../services/dataCollection/binanceService';
+import { getCandlesticks } from '../../services/dataCollection/coinbaseService';
 import { calculateAllIndicators, analyzeTrend } from '../../services/analysis/technicalAnalysis';
 import { SUPPORTED_SYMBOLS } from '../../config/constants';
 import { logger } from '../../utils/logger';

@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
   auto_stop_loss BOOLEAN DEFAULT TRUE,
   
   -- Market Focus
-  coin_universe VARCHAR(20) DEFAULT 'top50' CHECK (coin_universe IN ('top10', 'top50', 'top100')),
+  coin_universe VARCHAR(20) DEFAULT 'top25' CHECK (coin_universe IN ('top10', 'top25', 'top50')),
   analysis_frequency INTEGER DEFAULT 4 CHECK (analysis_frequency IN (1, 4, 8, 24)),
   
   -- Metadata

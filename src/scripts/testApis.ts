@@ -4,9 +4,12 @@
  */
 
 import { getCurrentPrice } from '../services/dataCollection/coinGeckoService';
-import { getCandlesticks } from '../services/dataCollection/binanceService';
+import { getCandlesticks } from '../services/dataCollection/coinbaseService';
 import { getCryptoNews } from '../services/dataCollection/cryptoPanicService';
 import { getCryptoMentions } from '../services/dataCollection/redditService';
+import { getCryptoCompareNews } from '../services/dataCollection/cryptocompareService';
+import { aggregateRSSNews } from '../services/dataCollection/rssFeedService';
+import { getAggregatedNews } from '../services/dataCollection/newsAggregator';
 import { logger } from '../utils/logger';
 
 interface APITestResult {
@@ -63,10 +66,10 @@ async function runAPIHealthCheck(): Promise<void> {
     })
   );
   
-  // Test Binance
+  // Test Coinbase
   results.push(
-    await testAPI('Binance (Candlestick Data)', async () => {
-      await getCandlesticks('BTCUSDT', '1h', 10);
+    await testAPI('Coinbase (Candlestick Data)', async () => {
+      await getCandlesticks('BTC', '1h', 10);
     })
   );
   
@@ -77,10 +80,31 @@ async function runAPIHealthCheck(): Promise<void> {
     })
   );
   
-  // Test Reddit (most likely to fail)
+  // Test Reddit
   results.push(
     await testAPI('Reddit (Social Sentiment)', async () => {
       await getCryptoMentions('BTC', 5);
+    })
+  );
+  
+  // Test CryptoCompare News (NEW)
+  results.push(
+    await testAPI('CryptoCompare (News API)', async () => {
+      await getCryptoCompareNews(undefined, 5);
+    })
+  );
+  
+  // Test RSS Feed Aggregator (NEW)
+  results.push(
+    await testAPI('RSS Feeds (Multi-Source)', async () => {
+      await aggregateRSSNews(10);
+    })
+  );
+  
+  // Test Unified News Aggregator (NEW)
+  results.push(
+    await testAPI('Unified News Aggregator', async () => {
+      await getAggregatedNews(['BTC'], 10);
     })
   );
   
