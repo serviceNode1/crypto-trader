@@ -70,7 +70,7 @@ CREATE INDEX idx_trade_approvals_symbol ON trade_approvals(symbol, created_at DE
 -- ============================================
 CREATE TABLE IF NOT EXISTS discovered_coins (
   id SERIAL PRIMARY KEY,
-  symbol VARCHAR(10) NOT NULL,
+  symbol VARCHAR(10) NOT NULL UNIQUE,  -- UNIQUE constraint for ON CONFLICT
   name VARCHAR(100),
   
   -- Market Data
@@ -91,7 +91,8 @@ CREATE TABLE IF NOT EXISTS discovered_coins (
   recommendation_generated BOOLEAN DEFAULT FALSE
 );
 
-CREATE UNIQUE INDEX idx_discovered_coins_symbol ON discovered_coins(symbol);
+-- Index is automatically created by UNIQUE constraint, but adding explicit name for clarity
+-- CREATE UNIQUE INDEX idx_discovered_coins_symbol ON discovered_coins(symbol);
 CREATE INDEX idx_discovered_coins_score ON discovered_coins(composite_score DESC, discovered_at DESC);
 CREATE INDEX idx_discovered_coins_analyzed ON discovered_coins(analyzed, composite_score DESC);
 

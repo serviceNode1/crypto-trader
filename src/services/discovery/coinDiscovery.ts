@@ -61,8 +61,8 @@ export interface DiscoveryFilters {
 }
 
 const DEFAULT_FILTERS: DiscoveryFilters = {
-  minMarketCap: 10_000_000,      // $10M minimum
-  maxMarketCap: 5_000_000_000,   // $5B maximum (avoid blue chips, focus on growth potential)
+  minMarketCap: 10_000_000,      // $10M minimum (filter out micro-caps with low liquidity)
+  maxMarketCap: undefined,       // No maximum (let coin universe setting control this)
   minVolume24h: 1_000_000,        // $1M minimum daily volume
   minVolumeChange: 1.5,            // 50% volume increase minimum
   minPriceChange7d: -20,           // Not dumping too hard
@@ -274,7 +274,7 @@ async function fetchCoinsByMarketCap(limit: number, forceRefresh: boolean = fals
     // Add cache-busting parameter if force refresh
     if (forceRefresh) {
       params._t = Date.now();
-    };
+    }
 
     const response = await axios.get(url, {
       params,
