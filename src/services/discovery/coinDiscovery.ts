@@ -74,10 +74,11 @@ const DEFAULT_FILTERS: DiscoveryFilters = {
  */
 export async function discoverCoins(
   universe: 'top10' | 'top25' | 'top50' = 'top25',
-  customFilters?: DiscoveryFilters
+  customFilters?: DiscoveryFilters,
+  forceRefresh: boolean = false
 ): Promise<DiscoveryResult> {
   try {
-    logger.info('Starting coin discovery', { universe });
+    logger.info('Starting coin discovery', { universe, forceRefresh });
 
     const filters = { ...DEFAULT_FILTERS, ...customFilters };
 
@@ -85,7 +86,7 @@ export async function discoverCoins(
     const limit = universe === 'top10' ? 10 : universe === 'top25' ? 25 : 50;
 
     // Fetch coin list from CoinGecko
-    const coins = await fetchCoinsByMarketCap(limit);
+    const coins = await fetchCoinsByMarketCap(limit, forceRefresh);
 
     logger.info(`Fetched ${coins.length} coins, now screening...`);
 
@@ -258,16 +259,21 @@ export async function discoverCoins(
 /**
  * Fetch coins by market cap from CoinGecko
  */
-async function fetchCoinsByMarketCap(limit: number): Promise<any[]> {
+async function fetchCoinsByMarketCap(limit: number, forceRefresh: boolean = false): Promise<any[]> {
   try {
     const url = `https://api.coingecko.com/api/v3/coins/markets`;
-    const params = {
+    const params: any = {
       vs_currency: 'usd',
       order: 'market_cap_desc',
       per_page: limit,
       page: 1,
       sparkline: false,
       price_change_percentage: '24h,7d',
+    };
+    
+    // Add cache-busting parameter if force refresh
+    if (forceRefresh) {
+      params._t = Date.now();
     };
 
     const response = await axios.get(url, {

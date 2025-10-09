@@ -587,15 +587,18 @@ router.post('/settings/reset', async (_req: Request, res: Response) => {
 
 /**
  * GET /api/discover - Discover trading opportunities
- * Query params: ?universe=top10|top25|top50
+ * Query params: ?universe=top10|top25|top50&forceRefresh=true
  */
 router.get('/discover', async (req: Request, res: Response) => {
   try {
     const universe = (req.query.universe as 'top10' | 'top25' | 'top50') || 'top25';
+    const forceRefresh = req.query.forceRefresh === 'true';
     
-    logger.info('Starting coin discovery', { universe });
+    logger.info('Starting coin discovery', { universe, forceRefresh });
     
-    const result = await discoverCoins(universe);
+    const startTime = Date.now();
+    const result = await discoverCoins(universe, undefined, forceRefresh);
+    const executionTime = Date.now() - startTime;
     
     res.json({
       universe,
@@ -603,6 +606,9 @@ router.get('/discover', async (req: Request, res: Response) => {
       candidates: result.candidates.slice(0, 20), // Return top 20 candidates
       analysisLog: result.analysisLog, // Full analysis log
       summary: result.summary, // Summary statistics
+      timestamp: new Date().toISOString(), // When this discovery was run
+      executionTime, // How long it took in ms
+      forceRefresh, // Whether cache was bypassed
     });
   } catch (error) {
     logger.error('Failed to discover coins', { error });
