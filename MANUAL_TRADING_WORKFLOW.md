@@ -612,6 +612,93 @@ async function quickExit(symbol, quantity) {
 
 ---
 
+## 🛡️ **Protection Level Auto-Execution (October 10, 2025 Update)**
+
+### **How Protection Levels Work - Pre-Authorization Model**
+
+**Key Principle:** Setting a stop loss or take profit level = **Pre-authorization to execute an automatic trade**
+
+#### **Why This Approach?**
+
+When a user explicitly sets protection levels, they are:
+- ✅ **Making a conscious decision** - Not relying on AI
+- ✅ **Pre-approving the trade** - No manual intervention needed later
+- ✅ **Setting risk parameters** - They've already decided their exit strategy
+- ✅ **Like placing a limit order** - Execution is just fulfillment
+
+#### **How It Works:**
+
+1. **User Sets Protection Levels:**
+   ```
+   User buys 0.5 ZEC at $27.43
+   User sets:
+   - Stop Loss: $24.50 (-10%)
+   - Take Profit: $30.00 (+10%)
+   ```
+
+2. **Position Monitor (Every 5 Minutes):**
+   ```typescript
+   // Checks holdings table for stop_loss and take_profit values
+   - Reads position: ZEC with stopLoss=$24.50, takeProfit=$30.00
+   - Fetches current price: $30.15
+   - Compares: $30.15 >= $30.00 ✅ TRIGGERED!
+   - Executes: SELL 0.5 ZEC automatically
+   - Records: trade_type='take_profit', triggered_by='take_profit_$30.00'
+   ```
+
+3. **User Returns and Sees:**
+   ```
+   Recent Trades:
+   1:30 PM  ZEC  SELL  🎯 Take Profit  0.5000  $30.15  $15.08
+   
+   - Clear indication it was automatic
+   - Shows what triggered it
+   - Profit secured while away
+   ```
+
+#### **No "Auto Stop-Loss Setting" Required:**
+
+**Before (Incorrect):**
+- ❌ User sets stop loss
+- ❌ System requires "auto stop-loss" setting enabled
+- ❌ If disabled, protection is ignored
+- ❌ User's protection doesn't work!
+
+**After (Correct):**
+- ✅ User sets stop loss = Permission granted
+- ✅ System always honors user-set protection levels
+- ✅ No additional settings required
+- ✅ Protection always active
+
+#### **Trade Type Tracking:**
+
+All trades now include `trade_type` field:
+- **`manual`** - User clicked buy/sell
+- **`automatic`** - AI recommendation executed with approval
+- **`stop_loss`** - Protection level hit (downside)
+- **`take_profit`** - Protection level hit (upside)
+
+#### **Human-in-the-Loop Maintained:**
+
+| Action | HITL Point | Auto-Execute? |
+|--------|-----------|---------------|
+| **Set Protection Level** | When user sets level | ✅ Yes (pre-authorized) |
+| **Manual Trade** | When user clicks execute | ✅ Yes (direct command) |
+| **AI Recommendation** | When user approves rec | ✅ Yes (after approval) |
+| **No Protection Set** | N/A | ❌ No auto-action |
+
+**The "loop" happens when you SET the protection level, not when it executes.**
+
+#### **Benefits:**
+
+1. ✅ **24/7 Protection** - Works while you sleep
+2. ✅ **No Missed Exits** - Captures profits/limits losses
+3. ✅ **Clear Audit Trail** - Always know what happened
+4. ✅ **User Control** - Only acts on YOUR instructions
+5. ✅ **Peace of Mind** - Set it and forget it
+
+---
+
 ## 🔄 **Complete Workflow Example**
 
 ### **Scenario: User Wants to Invest in ZEC After Discovery**

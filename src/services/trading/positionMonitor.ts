@@ -29,6 +29,7 @@ export async function monitorPositions(): Promise<{
 }> {
   try {
     logger.info('👀 Starting position monitoring cycle...');
+    logger.info('='.repeat(60));
 
     const stats = {
       checked: 0,
@@ -40,52 +41,69 @@ export async function monitorPositions(): Promise<{
     // Get user settings
     const settings = await getUserSettings();
 
-    // Only monitor if auto stop-loss is enabled
-    if (!settings.autoStopLoss) {
-      logger.info('Auto stop-loss is disabled, skipping monitoring');
-      return stats;
-    }
-
     // Get all open positions
     const portfolio = await getPortfolio();
     
     if (portfolio.positions.length === 0) {
-      logger.info('No open positions to monitor');
+      logger.info('✅ No open positions to monitor');
+      logger.info('='.repeat(60));
       return stats;
     }
 
-    logger.info(`Monitoring ${portfolio.positions.length} positions`);
+    logger.info(`📊 Monitoring ${portfolio.positions.length} positions`);
 
     for (const position of portfolio.positions) {
       stats.checked++;
+      logger.info(`\n🔍 Checking position #${stats.checked}: ${position.symbol}`);
 
       try {
         // Get position details with stop-loss and take-profit levels
         const monitoredPosition = await getMonitoredPosition(position.symbol, settings);
 
         if (!monitoredPosition) {
-          logger.warn(`No monitoring data for ${position.symbol}`);
+          logger.warn(`⚠️  No monitoring data for ${position.symbol}`);
           continue;
         }
 
-        // Check stop-loss
-        if (monitoredPosition.stopLoss && settings.autoStopLoss) {
+        // Log current position state
+        logger.info(`   Current Price: $${monitoredPosition.currentPrice.toFixed(2)}`);
+        logger.info(`   Average Entry: $${monitoredPosition.averagePrice.toFixed(2)}`);
+        logger.info(`   Quantity: ${monitoredPosition.quantity}`);
+        logger.info(`   P&L: ${monitoredPosition.unrealizedPnLPercent >= 0 ? '+' : ''}${monitoredPosition.unrealizedPnLPercent.toFixed(2)}% ($${monitoredPosition.unrealizedPnL.toFixed(2)})`);
+
+        // Check stop-loss (always enabled if user set a stop loss)
+        if (monitoredPosition.stopLoss) {
+          const distanceToStop = ((monitoredPosition.currentPrice - monitoredPosition.stopLoss) / monitoredPosition.stopLoss * 100);
+          logger.info(`   🛡️  Stop Loss: $${monitoredPosition.stopLoss.toFixed(2)} (${distanceToStop.toFixed(2)}% away)`);
+          
           if (monitoredPosition.currentPrice <= monitoredPosition.stopLoss) {
+            logger.warn(`   🚨 STOP LOSS TRIGGERED! Price $${monitoredPosition.currentPrice.toFixed(2)} <= $${monitoredPosition.stopLoss.toFixed(2)}`);
             await triggerStopLoss(monitoredPosition);
             stats.stopLossTriggered++;
             continue; // Position closed, skip other checks
+          } else {
+            logger.info(`   ✅ Stop loss not triggered (price above level)`);
           }
+        } else {
+          logger.info(`   ℹ️  No stop loss set for this position`);
         }
 
         // Check take-profit levels
         if (monitoredPosition.takeProfit1) {
+          const distanceToTP = ((monitoredPosition.takeProfit1 - monitoredPosition.currentPrice) / monitoredPosition.currentPrice * 100);
+          logger.info(`   🎯 Take Profit: $${monitoredPosition.takeProfit1.toFixed(2)} (${distanceToTP.toFixed(2)}% away)`);
+          
           const tpResult = await checkTakeProfit(monitoredPosition, settings);
           if (tpResult.triggered) {
             stats.takeProfitTriggered++;
             if (tpResult.positionClosed) {
               continue; // Position fully closed
             }
+          } else {
+            logger.info(`   ✅ Take profit not triggered (price below level)`);
           }
+        } else {
+          logger.info(`   ℹ️  No take profit set for this position`);
         }
 
         // Adjust trailing stops if applicable
@@ -95,12 +113,21 @@ export async function monitorPositions(): Promise<{
             stats.trailingStopsAdjusted++;
           }
         }
+
+        logger.info(`   ✅ Position ${position.symbol} check complete`);
       } catch (error) {
-        logger.error(`Failed to monitor position ${position.symbol}`, { error });
+        logger.error(`❌ Failed to monitor position ${position.symbol}`, { error });
       }
     }
 
-    logger.info('👀 Position monitoring cycle complete', stats);
+    logger.info('\n' + '='.repeat(60));
+    logger.info('📊 Position monitoring cycle complete', {
+      positionsChecked: stats.checked,
+      stopLossTriggered: stats.stopLossTriggered,
+      takeProfitTriggered: stats.takeProfitTriggered,
+      trailingStopsAdjusted: stats.trailingStopsAdjusted
+    });
+    logger.info('='.repeat(60));
 
     return stats;
   } catch (error) {
@@ -111,46 +138,41 @@ export async function monitorPositions(): Promise<{
 
 /**
  * Get monitored position with stop-loss and take-profit levels
+ * Now reads protection levels from holdings table (user-set values)
  */
 async function getMonitoredPosition(
   symbol: string,
   settings: any
 ): Promise<MonitoredPosition | null> {
   try {
-    // Get portfolio position
+    // Get portfolio position with stop_loss and take_profit from holdings table
     const portfolio = await getPortfolio();
     const position = portfolio.positions.find(p => p.symbol === symbol);
 
     if (!position) {
+      logger.debug(`Position not found in portfolio: ${symbol}`);
       return null;
     }
 
-    // Get latest recommendation for this symbol (to get stop-loss/take-profit levels)
-    const result = await query(
-      `SELECT * FROM recommendations
-       WHERE symbol = $1
-         AND action = 'BUY'
-         AND execution_status = 'executed'
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [symbol]
-    );
+    // Position already includes stopLoss and takeProfit from holdings table
+    const currentPrice = position.currentValue / position.quantity;
 
-    if (result.rows.length === 0) {
-      return null;
-    }
-
-    const rec = result.rows[0];
+    logger.debug(`Retrieved protection levels from holdings table for ${symbol}:`, {
+      stopLoss: position.stopLoss,
+      takeProfit: position.takeProfit,
+      currentPrice,
+      quantity: position.quantity
+    });
 
     return {
       symbol,
       quantity: position.quantity,
       averagePrice: position.averagePrice,
-      currentPrice: position.currentValue / position.quantity,
-      stopLoss: rec.stop_loss ? parseFloat(rec.stop_loss) : null,
-      takeProfit1: rec.take_profit_1 ? parseFloat(rec.take_profit_1) : null,
-      takeProfit2: rec.take_profit_2 ? parseFloat(rec.take_profit_2) : null,
-      takeProfitStrategy: settings.takeProfitStrategy,
+      currentPrice,
+      stopLoss: position.stopLoss || null,
+      takeProfit1: position.takeProfit || null,
+      takeProfit2: null, // We only have one take_profit in holdings table
+      takeProfitStrategy: 'full', // Default to selling full position
       unrealizedPnL: position.unrealizedPnL,
       unrealizedPnLPercent: position.unrealizedPnLPercent,
     };
@@ -171,12 +193,17 @@ async function triggerStopLoss(position: MonitoredPosition): Promise<void> {
       loss: position.unrealizedPnL,
     });
 
-    // Execute sell order
+    // Execute sell order (protection-triggered)
     await executeTrade(
       position.symbol,
       'SELL',
       position.quantity,
-      `STOP-LOSS: Price ${position.currentPrice} hit stop-loss at ${position.stopLoss}`
+      `STOP-LOSS: Price ${position.currentPrice.toFixed(2)} hit stop-loss at ${position.stopLoss.toFixed(2)}`,
+      undefined, // recommendationId
+      undefined, // stopLoss
+      undefined, // takeProfit
+      'stop_loss', // tradeType
+      `stop_loss_$${position.stopLoss.toFixed(2)}` // triggeredBy
     );
 
     // Log the stop-loss trigger
@@ -205,27 +232,37 @@ async function checkTakeProfit(
         profit: position.unrealizedPnL,
       });
 
-      if (settings.takeProfitStrategy === 'full') {
-        // Sell entire position
+      if (settings.takeProfitStrategy === 'full' || !settings.takeProfitStrategy) {
+        // Sell entire position (protection-triggered)
         await executeTrade(
           position.symbol,
           'SELL',
           position.quantity,
-          `TAKE-PROFIT: Price ${position.currentPrice} reached target ${position.takeProfit1}`
+          `TAKE-PROFIT: Price ${position.currentPrice.toFixed(2)} reached target ${position.takeProfit1.toFixed(2)}`,
+          undefined, // recommendationId
+          undefined, // stopLoss
+          undefined, // takeProfit
+          'take_profit', // tradeType
+          `take_profit_$${position.takeProfit1.toFixed(2)}` // triggeredBy
         );
 
         await logTakeProfit(position, 1, position.quantity);
 
         return { triggered: true, positionClosed: true };
       } else if (settings.takeProfitStrategy === 'partial') {
-        // Sell 50% at first target
+        // Sell 50% at first target (protection-triggered)
         const sellQuantity = position.quantity * 0.5;
 
         await executeTrade(
           position.symbol,
           'SELL',
           sellQuantity,
-          `PARTIAL TAKE-PROFIT: Selling 50% at target ${position.takeProfit1}`
+          `PARTIAL TAKE-PROFIT: Selling 50% at target ${position.takeProfit1.toFixed(2)}`,
+          undefined, // recommendationId
+          undefined, // stopLoss
+          undefined, // takeProfit
+          'take_profit', // tradeType
+          `take_profit_partial_$${position.takeProfit1.toFixed(2)}` // triggeredBy
         );
 
         // Move stop-loss to breakeven

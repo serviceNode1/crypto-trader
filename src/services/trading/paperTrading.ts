@@ -118,7 +118,9 @@ export async function executeTrade(
   reasoning?: string,
   recommendationId?: number,
   stopLoss?: number,
-  takeProfit?: number
+  takeProfit?: number,
+  tradeType?: 'manual' | 'automatic' | 'stop_loss' | 'take_profit',
+  triggeredBy?: string
 ): Promise<Trade> {
   return transaction(async (client) => {
     try {
@@ -259,8 +261,8 @@ export async function executeTrade(
 
       // Record trade
       const tradeResult = await client.query(
-        `INSERT INTO trades (symbol, side, quantity, price, fee, slippage, total_cost, reasoning, recommendation_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `INSERT INTO trades (symbol, side, quantity, price, fee, slippage, total_cost, reasoning, recommendation_id, trade_type, triggered_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          RETURNING id`,
         [
           symbol,
@@ -272,6 +274,8 @@ export async function executeTrade(
           totalCost,
           reasoning,
           recommendationId,
+          tradeType || 'manual',
+          triggeredBy || 'user',
         ]
       );
 

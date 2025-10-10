@@ -14,7 +14,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #0127ce 0%, #3c0177 100%);
+            background: linear-gradient(135deg, #2e0197 0%, #460066);
             color: #333;
             min-height: 100vh;
             padding: 20px;
@@ -1360,22 +1360,39 @@
                                     <th>Time</th>
                                     <th>Symbol</th>
                                     <th>Side</th>
+                                    <th>Type</th>
                                     <th>Quantity</th>
                                     <th>Price</th>
                                     <th>Total</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${data.map(trade => `
+                                ${data.map(trade => {
+                                    const tradeType = trade.tradeType || trade.trade_type || 'manual';
+                                    const typeLabel = {
+                                        'manual': '👤 Manual',
+                                        'automatic': '🤖 AI',
+                                        'stop_loss': '🛡️ Stop Loss',
+                                        'take_profit': '🎯 Take Profit'
+                                    }[tradeType] || '👤 Manual';
+                                    const typeColor = {
+                                        'manual': '#667eea',
+                                        'automatic': '#10b981',
+                                        'stop_loss': '#f59e0b',
+                                        'take_profit': '#10b981'
+                                    }[tradeType] || '#667eea';
+                                    
+                                    return `
                                     <tr>
                                         <td>${new Date(trade.executedAt || trade.executed_at).toLocaleString()}</td>
                                         <td><strong>${trade.symbol}</strong></td>
                                         <td><span class="badge badge-${trade.side.toLowerCase()}">${trade.side}</span></td>
+                                        <td><span style="font-size: 12px; color: ${typeColor}; font-weight: 500;">${typeLabel}</span></td>
                                         <td>${parseFloat(trade.quantity).toFixed(4)}</td>
                                         <td>$${parseFloat(trade.price).toFixed(2)}</td>
                                         <td>$${parseFloat(trade.totalCost || trade.total_cost).toFixed(2)}</td>
                                     </tr>
-                                `).join('')}
+                                `;}).join('')}
                             </tbody>
                         </table>
                         ${totalPages > 1 ? `
@@ -1832,8 +1849,26 @@
                 <!-- What's New Tab -->
                 <div id="updates" class="tab-content active">
                     <div class="info-section">
-                        <h3>🎉 Latest Updates - October 9, 2025</h3>
+                        <h3>🎉 Latest Updates - October 10, 2025</h3>
                         
+                        <div class="success-box" style="margin-bottom: 20px;">
+                            <strong>🛡️ Automatic Protection Execution - NEW!</strong><br>
+                            Setting stop loss or take profit now auto-executes when levels are reached.
+                        </div>
+
+                        <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                            <h4 style="margin: 0 0 10px 0; color: #1e40af;">🔐 How Protection Auto-Execution Works</h4>
+                            <p style="margin-bottom: 10px;"><strong>Setting a protection level = Pre-authorization to sell</strong></p>
+                            <ul style="margin-left: 20px;">
+                                <li>✅ When you set a <strong>stop loss</strong> or <strong>take profit</strong> level, you're giving permission</li>
+                                <li>✅ The system monitors prices every 5 minutes</li>
+                                <li>✅ When your level is reached, it <strong>automatically executes</strong> the sell</li>
+                                <li>✅ No manual approval needed - you already decided when you set the level</li>
+                                <li>✅ Trade history shows it as "🛡️ Stop Loss" or "🎯 Take Profit"</li>
+                            </ul>
+                            <p style="margin-top: 10px; color: #1e40af;"><strong>💡 Think of it like:</strong> Placing a limit order on an exchange. You've already made the decision - execution is just fulfillment.</p>
+                        </div>
+
                         <div class="success-box" style="margin-bottom: 20px;">
                             <strong>🚀 Discovery Strategy System - LIVE!</strong><br>
                             Choose your risk/reward profile for finding trading opportunities.

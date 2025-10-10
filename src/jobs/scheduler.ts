@@ -3,11 +3,13 @@ import {
   analysisQueue,
   recommendationQueue,
   reportQueue,
+  positionMonitorQueue,
 } from './index';
 import { processDataCollection } from './processors/dataCollectionProcessor';
 import { processAnalysis } from './processors/analysisProcessor';
 import { processRecommendation } from './processors/recommendationProcessor';
 import { processReport } from './processors/reportProcessor';
+import { monitorPositions } from '../services/trading/positionMonitor';
 import { logger } from '../utils/logger';
 
 /**
@@ -34,6 +36,11 @@ export function setupProcessors(): void {
   // Report processor
   reportQueue.process(async (job) => {
     return processReport(job);
+  });
+
+  // Position monitor processor
+  positionMonitorQueue.process(async (job) => {
+    return monitorPositions();
   });
 
   logger.info('Job processors ready');
@@ -142,6 +149,18 @@ export async function scheduleJobs(): Promise<void> {
     );
     logger.info(`Scheduled weekly report: ${weeklyReportCron}`);
 
+    // Position monitor - every 5 minutes
+    const positionMonitorCron = process.env.CRON_POSITION_MONITOR || '*/5 * * * *';
+    await positionMonitorQueue.add(
+      {},
+      {
+        repeat: { cron: positionMonitorCron },
+        removeOnComplete: true,
+        removeOnFail: false,
+      }
+    );
+    logger.info(`Scheduled position monitor: ${positionMonitorCron}`);
+
     logger.info('All jobs scheduled successfully');
   } catch (error) {
     logger.error('Failed to schedule jobs', { error });
@@ -161,6 +180,7 @@ export async function clearScheduledJobs(): Promise<void> {
       analysisQueue.obliterate({ force: true }),
       recommendationQueue.obliterate({ force: true }),
       reportQueue.obliterate({ force: true }),
+      positionMonitorQueue.obliterate({ force: true }),
     ]);
 
     logger.info('All scheduled jobs cleared');

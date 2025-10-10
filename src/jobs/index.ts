@@ -16,6 +16,7 @@ export const analysisQueue = new Queue('analysis', redisConfig);
 export const recommendationQueue = new Queue('recommendation', redisConfig);
 export const reportQueue = new Queue('report', redisConfig);
 export const learningQueue = new Queue('learning', redisConfig);
+export const positionMonitorQueue = new Queue('position-monitor', redisConfig);
 
 // Queue event listeners
 const setupQueueListeners = (queue: Queue.Queue, queueName: string) => {
@@ -51,6 +52,7 @@ setupQueueListeners(analysisQueue, 'analysis');
 setupQueueListeners(recommendationQueue, 'recommendation');
 setupQueueListeners(reportQueue, 'report');
 setupQueueListeners(learningQueue, 'learning');
+setupQueueListeners(positionMonitorQueue, 'position-monitor');
 
 // Graceful shutdown
 export const closeQueues = async (): Promise<void> => {
@@ -62,6 +64,7 @@ export const closeQueues = async (): Promise<void> => {
     recommendationQueue.close(),
     reportQueue.close(),
     learningQueue.close(),
+    positionMonitorQueue.close(),
   ]);
   
   logger.info('All queues closed');
@@ -73,5 +76,6 @@ export default {
   recommendationQueue,
   reportQueue,
   learningQueue,
+  positionMonitorQueue,
   closeQueues,
 };

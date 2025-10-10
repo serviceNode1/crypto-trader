@@ -476,6 +476,10 @@ function symbolToCoinIdSync(symbol: string): string {
     RNDR: 'render-token',
     INJ: 'injective-protocol',
     RUNE: 'thorchain',
+    TAO: 'bittensor',
+    SEI: 'sei-network',
+    SUI: 'sui',
+    TIA: 'celestia',
     
     // Stablecoins
     USDT: 'tether',

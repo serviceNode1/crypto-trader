@@ -189,6 +189,60 @@ An AI-powered cryptocurrency analysis system that monitors markets, analyzes soc
 
 ---
 
+## 🛡️ Protection Level Auto-Execution
+
+### Pre-Authorization Model (Human-in-the-Loop)
+
+**Key Principle:** When you set a stop loss or take profit level, you are **pre-authorizing** the system to execute a trade automatically when that level is reached.
+
+#### How It Works
+
+1. **You Set Protection Levels:**
+   - When executing a trade, you can set stop loss and take profit prices
+   - Or edit them later via the Position Details UI
+   - These levels are stored in the `holdings` table
+
+2. **System Monitors (Every 5 Minutes):**
+   - Position monitor checks all holdings with protection levels
+   - Compares current market price to your set levels
+   - If level is reached → Executes sell automatically
+   - Records trade as `stop_loss` or `take_profit` type
+
+3. **You Stay Informed:**
+   - Trade history shows execution type: 🛡️ Stop Loss or 🎯 Take Profit
+   - Clear audit trail of what triggered each sale
+   - Protection works 24/7, even while you're away
+
+#### Why This Approach?
+
+**Setting a protection level = Giving permission.**
+
+Think of it like placing a limit order on an exchange:
+- ✅ You already made the decision when you set the level
+- ✅ Execution is just fulfillment of your instruction
+- ✅ No additional approval needed (you already approved it)
+- ✅ Human-in-the-loop happened when you SET the level, not when it executes
+
+#### Trade Types
+
+All trades are tagged with their origin:
+- **`manual`** - You clicked buy/sell button
+- **`automatic`** - AI recommendation (after you approved it)
+- **`stop_loss`** - Your stop loss level was hit
+- **`take_profit`** - Your take profit level was hit
+
+#### Benefits
+
+- 🛡️ **24/7 Protection** - Never miss an exit while sleeping
+- 💰 **Lock in Profits** - Take profit executes automatically
+- 📊 **Limit Losses** - Stop loss protects downside risk
+- 🎯 **Clear Accountability** - Always know why a trade happened
+- 😌 **Peace of Mind** - Set it and forget it
+
+**See `MANUAL_TRADING_WORKFLOW.md` for detailed documentation.**
+
+---
+
 ## Technology Stack
 
 ### Core Technologies
