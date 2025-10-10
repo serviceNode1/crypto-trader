@@ -909,13 +909,13 @@
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                     <select id="discoveryUniverseSelect" style="padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;" onchange="saveDiscoverySettings()">
                         <option value="top10">Top 10</option>
-                        <option value="top25" selected>Top 25</option>
+                        <option value="top25">Top 25</option>
                         <option value="top50">Top 50</option>
                         <option value="top100">Top 100</option>
                     </select>
                     <select id="discoveryStrategySelect" style="padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;" onchange="saveDiscoverySettings()">
                         <option value="conservative">🛡️ Conservative</option>
-                        <option value="moderate" selected>⚖️ Moderate</option>
+                        <option value="moderate">⚖️ Moderate</option>
                         <option value="aggressive">🚀 Aggressive</option>
                     </select>
                     <label style="display: flex; align-items: center; gap: 6px; font-size: 14px; color: #6b7280; cursor: pointer;">
@@ -2793,6 +2793,7 @@ UPDATE user_settings SET take_profit_strategy = 'partial' WHERE user_id = 1;</pr
         // Initialize settings on page load
         document.addEventListener('DOMContentLoaded', function() {
             applySettings();
+            loadDiscoverySettings();  // Load user's discovery preferences into dropdowns
         });
 
         // Get current settings (for use in other functions)
