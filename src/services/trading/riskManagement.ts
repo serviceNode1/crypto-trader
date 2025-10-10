@@ -8,6 +8,7 @@ export interface RiskCheck {
   reason: string;
   currentRisk?: number;
   maxRisk?: number;
+  warnings?: string[];  // For manual trades: warnings instead of blocks
 }
 
 export interface PositionRisk {
@@ -33,6 +34,7 @@ export async function validateTrade(
 ): Promise<RiskCheck> {
   try {
     const portfolio = await getPortfolio();
+    const warnings: string[] = [];
 
     // SELL trades are generally allowed (reducing risk)
     if (side === 'SELL') {
@@ -54,64 +56,84 @@ export async function validateTrade(
       };
     }
 
-    // 2. Check if stop loss is provided (optional for manual trades)
-    if (!stopLoss && !isManualTrade) {
-      return {
-        allowed: false,
-        reason: 'Stop loss is mandatory for automated BUY orders',
-      };
-    }
-
-    // 3. Validate stop loss is reasonable (only for automated trades or if stop loss is provided)
-    if (stopLoss && !isManualTrade) {
-      const stopLossPercent = (price - stopLoss) / price;
-      if (stopLossPercent > 0.1) {
+    // 2. Check if stop loss is provided (optional for manual trades, warning if missing)
+    if (!stopLoss) {
+      if (!isManualTrade) {
         return {
           allowed: false,
-          reason: `Stop loss ${(stopLossPercent * 100).toFixed(1)}% below entry is too wide (max 10%)`,
+          reason: 'Stop loss is mandatory for automated BUY orders',
         };
+      } else {
+        warnings.push('No stop-loss set. Your position is not protected from significant losses.');
       }
     }
 
-    // 4. Check maximum open positions
+    // 3. Validate stop loss is reasonable (only for automated trades, warning for manual)
+    if (stopLoss) {
+      const stopLossPercent = (price - stopLoss) / price;
+      if (stopLossPercent > 0.1) {
+        if (!isManualTrade) {
+          return {
+            allowed: false,
+            reason: `Stop loss ${(stopLossPercent * 100).toFixed(1)}% below entry is too wide (max 10%)`,
+          };
+        } else {
+          warnings.push(`Stop-loss is ${(stopLossPercent * 100).toFixed(1)}% below entry. This exceeds recommended 10% limit.`);
+        }
+      }
+    }
+
+    // 4. Check maximum open positions (warning for manual, block for auto)
     const openPositions = portfolio.positions.length;
     const hasExistingPosition = portfolio.positions.some((p) => p.symbol === symbol);
 
     if (openPositions >= RISK_LIMITS.MAX_OPEN_POSITIONS && !hasExistingPosition) {
-      return {
-        allowed: false,
-        reason: `Maximum ${RISK_LIMITS.MAX_OPEN_POSITIONS} open positions already reached`,
-      };
+      if (!isManualTrade) {
+        return {
+          allowed: false,
+          reason: `Maximum ${RISK_LIMITS.MAX_OPEN_POSITIONS} open positions already reached`,
+        };
+      } else {
+        warnings.push(`You already have ${openPositions} open positions. Maximum recommended is ${RISK_LIMITS.MAX_OPEN_POSITIONS}.`);
+      }
     }
 
-    // 5. Check total portfolio risk
+    // 5. Check total portfolio risk (warning for manual, block for auto)
     const currentPortfolioRisk = await calculateTotalPortfolioRisk(portfolio);
-    const newPositionRisk = quantity * (price - stopLoss);
+    const newPositionRisk = stopLoss ? quantity * (price - stopLoss) : 0;
     const totalRisk = (currentPortfolioRisk + newPositionRisk) / portfolio.totalValue;
 
     if (totalRisk > RISK_LIMITS.MAX_PORTFOLIO_RISK) {
-      return {
-        allowed: false,
-        reason: `Total portfolio risk ${(totalRisk * 100).toFixed(1)}% would exceed maximum ${(RISK_LIMITS.MAX_PORTFOLIO_RISK * 100).toFixed(1)}%`,
-        currentRisk: totalRisk,
-        maxRisk: RISK_LIMITS.MAX_PORTFOLIO_RISK,
-      };
+      if (!isManualTrade) {
+        return {
+          allowed: false,
+          reason: `Total portfolio risk ${(totalRisk * 100).toFixed(1)}% would exceed maximum ${(RISK_LIMITS.MAX_PORTFOLIO_RISK * 100).toFixed(1)}%`,
+          currentRisk: totalRisk,
+          maxRisk: RISK_LIMITS.MAX_PORTFOLIO_RISK,
+        };
+      } else {
+        warnings.push(`Total portfolio risk would be ${(totalRisk * 100).toFixed(1)}%. Recommended maximum is ${(RISK_LIMITS.MAX_PORTFOLIO_RISK * 100).toFixed(1)}%.`);
+      }
     }
 
-    // 6. Check daily loss limit
+    // 6. Check daily loss limit (warning for manual, block for auto)
     const dailyLoss = await calculateDailyLoss();
     const dailyLossPercent = dailyLoss / portfolio.totalValue;
 
     if (dailyLossPercent > RISK_LIMITS.MAX_DAILY_LOSS) {
-      return {
-        allowed: false,
-        reason: `Daily loss limit ${(RISK_LIMITS.MAX_DAILY_LOSS * 100).toFixed(1)}% reached. Trading halted for today.`,
-        currentRisk: dailyLossPercent,
-        maxRisk: RISK_LIMITS.MAX_DAILY_LOSS,
-      };
+      if (!isManualTrade) {
+        return {
+          allowed: false,
+          reason: `Daily loss limit ${(RISK_LIMITS.MAX_DAILY_LOSS * 100).toFixed(1)}% reached. Trading halted for today.`,
+          currentRisk: dailyLossPercent,
+          maxRisk: RISK_LIMITS.MAX_DAILY_LOSS,
+        };
+      } else {
+        warnings.push(`Daily loss limit of ${(RISK_LIMITS.MAX_DAILY_LOSS * 100).toFixed(1)}% has been reached (current: ${(dailyLossPercent * 100).toFixed(1)}%). Additional trading may increase losses.`);
+      }
     }
 
-    // 7. Check minimum time between trades
+    // 7. Check minimum time between trades (informational warning only)
     const lastTradeTime = await getLastTradeTime(symbol);
     if (lastTradeTime) {
       const timeSinceLastTrade = Date.now() - lastTradeTime.getTime();
@@ -119,10 +141,14 @@ export async function validateTrade(
         const remainingMinutes = Math.ceil(
           (RISK_LIMITS.MIN_TRADE_INTERVAL_MS - timeSinceLastTrade) / 60000
         );
-        return {
-          allowed: false,
-          reason: `Must wait ${remainingMinutes} more minutes before next trade in ${symbol}`,
-        };
+        if (!isManualTrade) {
+          return {
+            allowed: false,
+            reason: `Must wait ${remainingMinutes} more minutes before next trade in ${symbol}`,
+          };
+        } else {
+          warnings.push(`Last ${symbol} trade was ${Math.floor(timeSinceLastTrade / 60000)} minutes ago. Consider waiting ${remainingMinutes} more minutes.`);
+        }
       }
     }
 
@@ -130,10 +156,14 @@ export async function validateTrade(
     if (portfolio.positions.length > 0 && !hasExistingPosition) {
       const correlation = await checkPositionCorrelation(symbol, portfolio);
       if (correlation > RISK_LIMITS.MAX_POSITION_CORRELATION) {
-        return {
-          allowed: false,
-          reason: `Position correlation ${(correlation * 100).toFixed(0)}% exceeds maximum ${(RISK_LIMITS.MAX_POSITION_CORRELATION * 100).toFixed(0)}%`,
-        };
+        if (!isManualTrade) {
+          return {
+            allowed: false,
+            reason: `Position correlation ${(correlation * 100).toFixed(0)}% exceeds maximum ${(RISK_LIMITS.MAX_POSITION_CORRELATION * 100).toFixed(0)}%`,
+          };
+        } else {
+          warnings.push(`High correlation (${(correlation * 100).toFixed(0)}%) with existing positions. This increases portfolio risk concentration.`);
+        }
       }
     }
 
@@ -142,11 +172,14 @@ export async function validateTrade(
       symbol,
       positionSizePercent: (positionSizePercent * 100).toFixed(2),
       portfolioRisk: (totalRisk * 100).toFixed(2),
+      isManualTrade,
+      warningsCount: warnings.length,
     });
 
     return {
       allowed: true,
-      reason: 'All risk checks passed',
+      reason: warnings.length > 0 ? 'Trade allowed with warnings' : 'All risk checks passed',
+      warnings: warnings.length > 0 ? warnings : undefined,
     };
   } catch (error) {
     logger.error('Risk validation failed', { symbol, error });

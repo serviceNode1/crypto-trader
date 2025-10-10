@@ -649,23 +649,117 @@
             to { transform: rotate(360deg); }
         }
 
-        .analysis-stat {
+            .analysis-stat {
+                display: flex;
+                justify-content: space-between;
+                padding: 12px;
+                background: white;
+                border-radius: 6px;
+                margin: 8px 0;
+            }
+
+            .analysis-stat-label {
+                color: #6b7280;
+                font-weight: 500;
+            }
+
+            .analysis-stat-value {
+                color: #1f2937;
+                font-weight: 600;
+            }
+
+        /* Modal System */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.active {
             display: flex;
-            justify-content: space-between;
-            padding: 12px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
             background: white;
-            border-radius: 6px;
-            margin: 8px 0;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease;
         }
 
-        .analysis-stat-label {
-            color: #6b7280;
-            font-weight: 500;
+        .modal-header {
+            padding: 24px 24px 16px 24px;
+            border-bottom: 1px solid #e5e7eb;
         }
 
-        .analysis-stat-value {
+        .modal-header h3 {
+            margin: 0;
+            font-size: 20px;
             color: #1f2937;
-            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-body {
+            padding: 24px;
+            color: #4b5563;
+            line-height: 1.6;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .modal-warning-list {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .modal-warning-list li {
+            margin: 12px 0 12px 24px;
+            color: #92400e;
+        }
+
+        .modal-icon {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
     </style>
 </head>
@@ -3088,7 +3182,7 @@
             }
         }
 
-        async function executeManualTrade() {
+        async function executeManualTrade(confirmWarnings = false) {
             const symbol = document.getElementById('manualTradeSymbol').value.toUpperCase().trim();
             const quantity = parseFloat(document.getElementById('manualTradeQuantity').value);
             const quantityType = document.getElementById('quantityType').value;
@@ -3098,9 +3192,14 @@
             
             const previewArea = document.getElementById('tradePreviewArea');
             
-            // Confirm trade
-            if (!confirm(`Execute ${selectedTradeAction} order for ${symbol}?\n\nThis will ${selectedTradeAction === 'BUY' ? 'deduct funds from' : 'add funds to'} your portfolio.`)) {
-                return;
+            // Initial confirmation (only if not already confirming warnings)
+            if (!confirmWarnings) {
+                const confirmed = await showConfirm(
+                    'Execute Trade',
+                    `Execute ${selectedTradeAction} order for <strong>${symbol}</strong>?<br><br>This will ${selectedTradeAction === 'BUY' ? 'deduct funds from' : 'add funds to'} your portfolio.`,
+                    { confirmText: `Execute ${selectedTradeAction}`, confirmColor: selectedTradeAction === 'BUY' ? '#10b981' : '#ef4444' }
+                );
+                if (!confirmed) return;
             }
             
             try {
@@ -3140,7 +3239,8 @@
                     symbol,
                     side: selectedTradeAction,
                     quantity: actualQuantity,
-                    reasoning: 'Manual trade - User decision'
+                    reasoning: 'Manual trade - User decision',
+                    confirmWarnings
                 };
                 
                 // Add stop-loss and take-profit if provided
@@ -3158,12 +3258,49 @@
                     body: JSON.stringify(tradePayload)
                 });
                 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || 'Trade execution failed');
+                const result = await response.json();
+                
+                // Check if warnings need confirmation
+                if (result.requiresConfirmation && result.warnings) {
+                    const confirmed = await showWarning(
+                        'Risk Warnings',
+                        result.warnings,
+                        { 
+                            confirmText: 'Proceed Anyway',
+                            cancelText: 'Cancel Trade'
+                        }
+                    );
+                    
+                    if (confirmed) {
+                        // Re-execute with confirmation
+                        return executeManualTrade(true);
+                    } else {
+                        previewArea.innerHTML = `
+                            <div style="padding: 20px; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 18px; font-weight: 600; color: #92400e; margin-bottom: 10px;">
+                                    Trade Cancelled
+                                </div>
+                                <div style="color: #6b7280; font-size: 14px;">
+                                    You chose not to proceed with the trade due to risk warnings.
+                                </div>
+                                <button 
+                                    class="button" 
+                                    onclick="previewTrade()"
+                                    style="margin-top: 15px; background: #667eea;">
+                                    ← Back to Preview
+                                </button>
+                            </div>
+                        `;
+                        return;
+                    }
                 }
                 
-                const trade = await response.json();
+                if (!response.ok) {
+                    const errorMessage = result.message || result.error || 'Trade execution failed';
+                    throw new Error(errorMessage);
+                }
+                
+                const trade = result;
                 
                 // Show success message
                 previewArea.innerHTML = `
@@ -3221,7 +3358,7 @@
                 // Refresh portfolio and trade history
                 setTimeout(() => {
                     loadPortfolio();
-                    loadTradeHistory();
+                    loadTrades();
                 }, 1000);
                 
                 // Clear form after 3 seconds
@@ -3265,9 +3402,16 @@
 
         async function sellPosition(symbol, quantity) {
             // Confirm sale
-            if (!confirm(`Sell entire ${symbol} position?\n\nQuantity: ${quantity.toFixed(8)} ${symbol}\n\nThis will close your position and convert to cash.`)) {
-                return;
-            }
+            const confirmed = await showConfirm(
+                'Sell Position',
+                `Sell entire <strong>${symbol}</strong> position?<br><br>` +
+                `<div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin: 12px 0;">` +
+                `<strong>Quantity:</strong> ${quantity.toFixed(8)} ${symbol}` +
+                `</div>` +
+                `This will close your position and convert to cash.`,
+                { confirmText: 'Sell Position', confirmColor: '#ef4444' }
+            );
+            if (!confirmed) return;
 
             try {
                 // Get current price
@@ -3291,27 +3435,37 @@
                         symbol,
                         side: 'SELL',
                         quantity: quantity,
-                        reasoning: 'Manual sell - User closed position'
+                        reasoning: 'Manual sell - User closed position',
+                        confirmWarnings: true  // SELL operations don't need warnings
                     })
                 });
 
+                const result = await response.json();
+                
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || 'Sell execution failed');
+                    const errorMessage = result.message || result.error || 'Failed to sell position';
+                    throw new Error(errorMessage);
                 }
 
-                const trade = await response.json();
+                const trade = result;
 
                 // Show success message
-                alert(`✅ Position Sold Successfully!\n\nSold: ${quantity.toFixed(8)} ${symbol}\nPrice: $${currentPrice.toFixed(2)}\nProceeds: $${proceeds.toFixed(2)}`);
+                await showSuccess(
+                    'Position Sold Successfully!',
+                    `<div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin: 12px 0;">` +
+                    `<div style="margin: 8px 0;"><strong>Sold:</strong> ${quantity.toFixed(8)} ${symbol}</div>` +
+                    `<div style="margin: 8px 0;"><strong>Price:</strong> $${currentPrice.toFixed(2)}</div>` +
+                    `<div style="margin: 8px 0;"><strong>Proceeds:</strong> $${proceeds.toFixed(2)}</div>` +
+                    `</div>`
+                );
 
                 // Refresh portfolio
                 loadPortfolio();
-                loadTradeHistory();
+                loadTrades();
 
             } catch (error) {
                 console.error('Sell execution error:', error);
-                alert('❌ Sell failed: ' + error.message);
+                await showError('Sell Failed', error.message);
             }
         }
 
@@ -3323,6 +3477,7 @@
         window.onclick = function(event) {
             const settingsModal = document.getElementById('settingsModal');
             const infoModal = document.getElementById('infoModal');
+            const customModal = document.getElementById('customModal');
             
             if (event.target === settingsModal) {
                 closeSettingsModal();
@@ -3330,8 +3485,161 @@
             if (event.target === infoModal) {
                 closeInfoModal();
             }
+            if (event.target === customModal) {
+                closeCustomModal();
+            }
         }
+
+        // ============================================
+        // CUSTOM MODAL SYSTEM
+        // ============================================
+
+        let modalResolveCallback = null;
+
+        function showModal(options) {
+            return new Promise((resolve) => {
+                modalResolveCallback = resolve;
+                
+                const modal = document.getElementById('customModal');
+                const header = document.getElementById('modalHeader');
+                const body = document.getElementById('modalBody');
+                const footer = document.getElementById('modalFooter');
+                
+                // Set icon and title
+                header.innerHTML = `<h3>${options.icon || ''} ${options.title || 'Notification'}</h3>`;
+                
+                // Set body content
+                body.innerHTML = options.message || '';
+                
+                // Clear and set footer buttons
+                footer.innerHTML = '';
+                
+                if (options.type === 'confirm') {
+                    // Confirm dialog with Yes/No
+                    footer.innerHTML = `
+                        <button class="button" onclick="modalResponse(false)" style="background: #6b7280;">
+                            ${options.cancelText || 'Cancel'}
+                        </button>
+                        <button class="button" onclick="modalResponse(true)" style="background: ${options.confirmColor || '#667eea'};">
+                            ${options.confirmText || 'Confirm'}
+                        </button>
+                    `;
+                } else {
+                    // Alert dialog with OK only
+                    footer.innerHTML = `
+                        <button class="button" onclick="modalResponse(true)" style="background: ${options.confirmColor || '#667eea'};">
+                            ${options.confirmText || 'OK'}
+                        </button>
+                    `;
+                }
+                
+                // Show modal
+                modal.classList.add('active');
+            });
+        }
+
+        function modalResponse(result) {
+            closeCustomModal();
+            if (modalResolveCallback) {
+                modalResolveCallback(result);
+                modalResolveCallback = null;
+            }
+        }
+
+        function closeCustomModal() {
+            const modal = document.getElementById('customModal');
+            modal.classList.remove('active');
+        }
+
+        // Convenience functions
+        async function showAlert(title, message, options = {}) {
+            return await showModal({
+                type: 'alert',
+                icon: options.icon || '💡',
+                title,
+                message,
+                confirmText: options.confirmText || 'OK',
+                confirmColor: options.confirmColor
+            });
+        }
+
+        async function showConfirm(title, message, options = {}) {
+            return await showModal({
+                type: 'confirm',
+                icon: options.icon || '❓',
+                title,
+                message,
+                confirmText: options.confirmText || 'Confirm',
+                cancelText: options.cancelText || 'Cancel',
+                confirmColor: options.confirmColor
+            });
+        }
+
+        async function showWarning(title, warnings, options = {}) {
+            const warningList = warnings.map((w, i) => `<li>${w}</li>`).join('');
+            const message = `
+                <div class="modal-warning-list">
+                    <ol style="margin: 0; padding-left: 20px;">
+                        ${warningList}
+                    </ol>
+                </div>
+                <p style="margin-top: 16px; color: #6b7280;">
+                    ${options.description || 'These conditions exceed automated trading guidelines.'}
+                </p>
+            `;
+            
+            return await showModal({
+                type: 'confirm',
+                icon: '⚠️',
+                title,
+                message,
+                confirmText: options.confirmText || 'Proceed Anyway',
+                cancelText: options.cancelText || 'Cancel',
+                confirmColor: '#f59e0b'
+            });
+        }
+
+        async function showSuccess(title, message, options = {}) {
+            return await showModal({
+                type: 'alert',
+                icon: '✅',
+                title,
+                message,
+                confirmText: options.confirmText || 'OK',
+                confirmColor: '#10b981'
+            });
+        }
+
+        async function showError(title, message, options = {}) {
+            return await showModal({
+                type: 'alert',
+                icon: '❌',
+                title,
+                message,
+                confirmText: options.confirmText || 'OK',
+                confirmColor: '#ef4444'
+            });
+        }
+
+        // ============================================
+        // END CUSTOM MODAL SYSTEM
+        // ============================================
     </script>
+
+    <!-- Custom Modal -->
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-content">
+            <div id="modalHeader" class="modal-header">
+                <h3>Notification</h3>
+            </div>
+            <div id="modalBody" class="modal-body">
+                Modal content goes here
+            </div>
+            <div id="modalFooter" class="modal-footer">
+                <button class="button">OK</button>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

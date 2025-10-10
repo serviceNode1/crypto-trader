@@ -168,12 +168,13 @@ router.post('/trades', async (req: Request, res: Response) => {
  */
 router.post('/trade', async (req: Request, res: Response) => {
   try {
-    const { symbol, side, quantity, stopLoss, takeProfit, reasoning, recommendationId } = req.body;
+    const { symbol, side, quantity, stopLoss, takeProfit, reasoning, recommendationId, confirmWarnings } = req.body;
 
     // Validate input
     if (!symbol || !side || !quantity) {
       return res.status(400).json({
-        error: 'Missing required fields: symbol, side, quantity',
+        error: 'Missing required fields',
+        message: 'Please provide symbol, side, and quantity for the trade.',
       });
     }
 
@@ -186,7 +187,16 @@ router.post('/trade', async (req: Request, res: Response) => {
     if (!riskCheck.allowed) {
       return res.status(403).json({
         error: 'Trade not allowed',
-        reason: riskCheck.reason,
+        message: riskCheck.reason,
+      });
+    }
+
+    // If there are warnings and user hasn't confirmed, return them for confirmation
+    if (riskCheck.warnings && riskCheck.warnings.length > 0 && !confirmWarnings) {
+      return res.status(200).json({
+        requiresConfirmation: true,
+        warnings: riskCheck.warnings,
+        message: 'This trade has risk warnings. Please review and confirm.',
       });
     }
 
@@ -199,11 +209,14 @@ router.post('/trade', async (req: Request, res: Response) => {
       recommendationId
     );
 
-    logger.info('Manual trade executed via API', { symbol, side, quantity, stopLoss, takeProfit });
+    logger.info('Manual trade executed via API', { symbol, side, quantity, stopLoss, takeProfit, hadWarnings: !!riskCheck.warnings });
     res.status(201).json(trade);
   } catch (error: any) {
     logger.error('Failed to execute trade', { error });
-    res.status(500).json({ error: error.message || 'Failed to execute trade' });
+    res.status(500).json({ 
+      error: 'Trade execution failed',
+      message: error.message || 'An unexpected error occurred while executing the trade.',
+    });
   }
 });
 
