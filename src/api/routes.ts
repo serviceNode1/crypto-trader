@@ -963,7 +963,7 @@ router.put('/holdings/:symbol/protection', async (req: Request, res: Response) =
     }
 
     // Update protection levels (preserving existing values)
-    const result = await query(`
+    await query(`
       UPDATE holdings 
       SET 
         stop_loss = $1,

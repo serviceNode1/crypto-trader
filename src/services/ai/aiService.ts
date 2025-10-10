@@ -4,6 +4,9 @@ import { AI_MODELS, TRADE_ACTIONS, RISK_LEVELS } from '../../config/constants';
 import { withRetryJitter } from '../../utils/retry';
 import { withRateLimit, rateLimiters } from '../../utils/rateLimiter';
 import { aiLogger as logger } from '../../utils/logger';
+import { TechnicalIndicators } from '../analysis/technicalAnalysis';
+import { AggregatedSentiment } from '../analysis/sentimentAnalysis';
+import { MarketContext } from '../analysis/marketContext';
 
 // Initialize OpenAI
 let openai: OpenAI | null = null;
@@ -57,11 +60,11 @@ export interface TradeRecommendation {
 export interface AnalysisInput {
   symbol: string;
   currentPrice: number;
-  technicalIndicators: any;
-  sentiment: any;
-  news: any[];
-  marketContext: any;
-  correlations?: any;
+  technicalIndicators: TechnicalIndicators;
+  sentiment: AggregatedSentiment;
+  news: Array<{ title: string; sentiment?: number; url?: string }>;
+  marketContext: MarketContext;
+  correlations?: Record<string, number>;
 }
 
 /**
@@ -165,12 +168,13 @@ async function getClaudeRecommendation(
           });
 
           return recommendation;
-        } catch (error: any) {
+        } catch (error: unknown) {
+          const err = error as { message?: string; status?: number; error?: { message?: string }; toString: () => string };
           logger.error('Claude API request failed', {
             symbol: input.symbol,
-            error: error.message,
-            statusCode: error.status,
-            details: error.error?.message || error.toString(),
+            error: err.message,
+            statusCode: err.status,
+            details: err.error?.message || err.toString(),
           });
           throw error;
         }
@@ -214,7 +218,7 @@ function buildAnalysisPrompt(input: AnalysisInput): string {
 - Sentiment Velocity: ${sentiment.velocity?.toFixed(3) || 'N/A'}
 
 **Recent News Headlines** (top 5):
-${news.slice(0, 5).map((n: any, i: number) => `${i + 1}. ${n.title}`).join('\n')}
+${news.slice(0, 5).map((n, i) => `${i + 1}. ${n.title}`).join('\n')}
 
 **Market Context**:
 - BTC Dominance: ${marketContext.btcDominance?.toFixed(2) || 'N/A'}%
@@ -320,7 +324,7 @@ export async function getAIRecommendation(
 function combineRecommendations(
   rec1: TradeRecommendation,
   rec2: TradeRecommendation,
-  input: AnalysisInput
+  _input: AnalysisInput
 ): TradeRecommendation {
   logger.info('Combining recommendations from multiple models');
 

@@ -1,8 +1,7 @@
 import Sentiment from 'sentiment';
-import { RedditPost, RedditComment, calculateCredibility } from '../dataCollection/redditService';
+import { RedditPost, calculateCredibility } from '../dataCollection/redditService';
 import { NewsArticle, calculateNewsSentiment } from '../dataCollection/cryptoPanicService';
 import { UnifiedArticle, calculateAggregateSentiment as calculateUnifiedSentiment } from '../dataCollection/newsAggregator';
-import { SENTIMENT_SCORES } from '../../config/constants';
 import { logger } from '../../utils/logger';
 
 const sentimentAnalyzer = new Sentiment();

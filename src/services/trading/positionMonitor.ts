@@ -1,6 +1,5 @@
 import { getPortfolio, executeTrade } from './paperTrading';
-import { getCurrentPrice } from '../dataCollection/coinGeckoService';
-import { getUserSettings } from '../settings/settingsService';
+import { getUserSettings, UserSettings } from '../settings/settingsService';
 import { query } from '../../config/database';
 import { tradingLogger as logger } from '../../utils/logger';
 
@@ -142,7 +141,7 @@ export async function monitorPositions(): Promise<{
  */
 async function getMonitoredPosition(
   symbol: string,
-  settings: any
+  _settings: UserSettings
 ): Promise<MonitoredPosition | null> {
   try {
     // Get portfolio position with stop_loss and take_profit from holdings table
@@ -198,12 +197,12 @@ async function triggerStopLoss(position: MonitoredPosition): Promise<void> {
       position.symbol,
       'SELL',
       position.quantity,
-      `STOP-LOSS: Price ${position.currentPrice.toFixed(2)} hit stop-loss at ${position.stopLoss.toFixed(2)}`,
+      `STOP-LOSS: Price ${position.currentPrice.toFixed(2)} hit stop-loss at ${position.stopLoss!.toFixed(2)}`,
       undefined, // recommendationId
       undefined, // stopLoss
       undefined, // takeProfit
       'stop_loss', // tradeType
-      `stop_loss_$${position.stopLoss.toFixed(2)}` // triggeredBy
+      `stop_loss_$${position.stopLoss!.toFixed(2)}` // triggeredBy
     );
 
     // Log the stop-loss trigger
@@ -221,7 +220,7 @@ async function triggerStopLoss(position: MonitoredPosition): Promise<void> {
  */
 async function checkTakeProfit(
   position: MonitoredPosition,
-  settings: any
+  settings: UserSettings
 ): Promise<{ triggered: boolean; positionClosed: boolean }> {
   try {
     // Check first take-profit level

@@ -82,7 +82,7 @@ export async function updateUserSettings(
 
     // Build dynamic UPDATE query
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: (string | number | boolean)[] = [];
     let paramCount = 1;
 
     if (settings.autoExecute !== undefined) {
@@ -201,7 +201,7 @@ export async function resetUserSettings(userId: number = 1): Promise<UserSetting
  * Create default settings for new user
  */
 async function createDefaultSettings(userId: number): Promise<UserSettings> {
-  const result = await query(
+  await query(
     `INSERT INTO user_settings (
       user_id, auto_execute, confidence_threshold, human_approval,
       position_sizing_strategy, max_position_size, take_profit_strategy,

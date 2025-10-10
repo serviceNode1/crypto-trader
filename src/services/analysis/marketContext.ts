@@ -40,7 +40,10 @@ export interface RegimeAnalysis {
 export async function getMarketContext(): Promise<MarketContext> {
   try {
     // Fetch crypto market data
-    const globalData = await getGlobalMarketData();
+    const globalData = await getGlobalMarketData() as {
+      market_cap_percentage?: { btc?: number };
+      total_market_cap?: { usd?: number };
+    };
 
     // Fetch traditional markets data (with error handling for rate limits)
     let traditionalData;
@@ -49,7 +52,14 @@ export async function getMarketContext(): Promise<MarketContext> {
     } catch (error) {
       logger.warn('Failed to fetch traditional markets, using defaults', { error });
       traditionalData = {
-        sp500: { price: 0, changePercent: 0 } as any,
+        sp500: { 
+          symbol: 'SPY',
+          price: 0, 
+          change: 0,
+          changePercent: 0,
+          volume: 0,
+          timestamp: new Date().toISOString()
+        },
         gold: 0,
         vix: 20,
       };
@@ -103,7 +113,7 @@ export async function getMarketContext(): Promise<MarketContext> {
  * Determine market regime based on historical data and current conditions
  */
 async function determineMarketRegime(
-  btcDominance: number
+  _btcDominance: number
 ): Promise<'bull' | 'bear' | 'sideways' | 'high_volatility'> {
   try {
     // Get recent BTC price data
@@ -346,7 +356,7 @@ export function shouldTrade(context: MarketContext): {
  * Get correlation between crypto and traditional markets
  */
 export async function calculateMarketCorrelation(
-  days: number = 30
+  _days: number = 30
 ): Promise<{
   btcSp500: number;
   btcGold: number;

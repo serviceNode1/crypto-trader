@@ -301,44 +301,56 @@ export async function estimateSlippage(
   side: 'BUY' | 'SELL',
   usdAmount: number
 ): Promise<number> {
-  const orderBook = await getOrderBookDepth(symbol, 50);
+  try {
+    const orderBook = await getOrderBookDepth(symbol, 50);
 
-  const orders = side === 'BUY' ? orderBook.asks : orderBook.bids;
+    const orders = side === 'BUY' ? orderBook.asks : orderBook.bids;
 
-  let remainingAmount = usdAmount;
-  let totalCost = 0;
-  let totalQuantity = 0;
+    let remainingAmount = usdAmount;
+    let totalCost = 0;
+    let totalQuantity = 0;
 
-  for (const [price, size] of orders) {
-    const priceNum = parseFloat(price);
-    const sizeNum = parseFloat(size);
-    const orderValue = priceNum * sizeNum;
+    for (const [price, size] of orders) {
+      const priceNum = parseFloat(price);
+      const sizeNum = parseFloat(size);
+      const orderValue = priceNum * sizeNum;
 
-    if (orderValue >= remainingAmount) {
-      const partialQuantity = remainingAmount / priceNum;
-      totalCost += remainingAmount;
-      totalQuantity += partialQuantity;
-      break;
-    } else {
-      totalCost += orderValue;
-      totalQuantity += sizeNum;
-      remainingAmount -= orderValue;
+      if (orderValue >= remainingAmount) {
+        const partialQuantity = remainingAmount / priceNum;
+        totalCost += remainingAmount;
+        totalQuantity += partialQuantity;
+        break;
+      } else {
+        totalCost += orderValue;
+        totalQuantity += sizeNum;
+        remainingAmount -= orderValue;
+      }
     }
-  }
 
-  if (remainingAmount > 0) {
-    logger.warn('Order book depth insufficient for amount', {
+    if (remainingAmount > 0) {
+      logger.warn('Order book depth insufficient for amount', {
+        symbol,
+        usdAmount,
+        remainingAmount,
+      });
+    }
+
+    const avgPrice = totalCost / totalQuantity;
+    const marketPrice = parseFloat(orders[0][0]);
+    const slippage = Math.abs((avgPrice - marketPrice) / marketPrice);
+
+    return slippage;
+  } catch (error) {
+    // If coin not available on Coinbase (404), use default slippage estimate
+    logger.warn('Could not get Coinbase order book, using default slippage estimate', {
       symbol,
-      usdAmount,
-      remainingAmount,
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
+    
+    // Default slippage for less liquid coins: 0.75% (0.0075)
+    // This is conservative for paper trading
+    return 0.0075;
   }
-
-  const avgPrice = totalCost / totalQuantity;
-  const marketPrice = parseFloat(orders[0][0]);
-  const slippage = Math.abs((avgPrice - marketPrice) / marketPrice);
-
-  return slippage;
 }
 
 /**

@@ -39,7 +39,7 @@ export function setupProcessors(): void {
   });
 
   // Position monitor processor
-  positionMonitorQueue.process(async (job) => {
+  positionMonitorQueue.process(async (_job) => {
     return monitorPositions();
   });
 

@@ -18,7 +18,7 @@ export class RateLimiter {
     reject: (error: Error) => void;
   }> = [];
 
-  constructor(private options: RateLimiterOptions) {
+  constructor(options: RateLimiterOptions) {
     this.maxTokens = options.maxRequests;
     this.tokens = this.maxTokens;
     this.refillRate = options.maxRequests / options.intervalMs;

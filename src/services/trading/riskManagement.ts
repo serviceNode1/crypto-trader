@@ -108,7 +108,7 @@ export async function validateTrade(
     }
 
     // 5. Check total portfolio risk (warning for manual, block for auto)
-    const currentPortfolioRisk = await calculateTotalPortfolioRisk(portfolio);
+    const currentPortfolioRisk = await calculateTotalPortfolioRisk();
     const newPositionRisk = stopLoss ? quantity * (price - stopLoss) : 0;
     const totalRisk = (currentPortfolioRisk + newPositionRisk) / portfolio.totalValue;
 
@@ -202,7 +202,7 @@ export async function validateTrade(
 /**
  * Calculate total portfolio risk (potential loss from all stop losses)
  */
-async function calculateTotalPortfolioRisk(portfolio: any): Promise<number> {
+async function calculateTotalPortfolioRisk(): Promise<number> {
   let totalRisk = 0;
 
   // Get stop losses for all open positions
@@ -271,7 +271,7 @@ async function getLastTradeTime(symbol: string): Promise<Date | null> {
  */
 async function checkPositionCorrelation(
   newSymbol: string,
-  portfolio: any
+  portfolio: { positions: Array<{ symbol: string }> }
 ): Promise<number> {
   // Simplified: assume high correlation between similar coins
   // In production, calculate actual price correlation from historical data
@@ -283,7 +283,7 @@ async function checkPositionCorrelation(
     // Add more correlations as needed
   };
 
-  const existingSymbols = portfolio.positions.map((p: any) => p.symbol);
+  const existingSymbols = portfolio.positions.map((p) => p.symbol);
   const correlatedSymbols = correlationMap[newSymbol] || [];
 
   // Check if any existing position is highly correlated
@@ -427,7 +427,7 @@ export async function getRiskExposure(): Promise<{
   utilizationPercent: number;
 }> {
   const portfolio = await getPortfolio();
-  const portfolioRisk = await calculateTotalPortfolioRisk(portfolio);
+  const portfolioRisk = await calculateTotalPortfolioRisk();
   const dailyLoss = await calculateDailyLoss();
 
   const utilizationPercent =
