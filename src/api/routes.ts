@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import {
   getPortfolio,
-  getTradeHistory,
   executeTrade,
   calculatePerformanceMetrics,
 } from '../services/trading/paperTrading';
@@ -458,8 +457,22 @@ router.get('/analyze/:symbol', async (req: Request, res: Response) => {
       });
       
       // Fallback to CoinGecko OHLC
-      const { getCandlesticksFromCoinGecko } = await import('../services/dataCollection/coinGeckoService');
-      candlesticks = await getCandlesticksFromCoinGecko(symbol, 7);
+      const { getOHLCData } = await import('../services/dataCollection/coinGeckoService');
+      const ohlcData = await getOHLCData(symbol, 7);
+      
+      // Convert OHLCData to Candlestick format
+      candlesticks = ohlcData.map((ohlc) => ({
+        openTime: ohlc.timestamp,
+        open: ohlc.open,
+        high: ohlc.high,
+        low: ohlc.low,
+        close: ohlc.close,
+        volume: 0, // CoinGecko OHLC doesn't provide volume in this endpoint
+        closeTime: ohlc.timestamp + 3600000, // Assume 1 hour candles
+        quoteAssetVolume: 0,
+        trades: 0,
+      }));
+      
       logger.info('Successfully fetched candlesticks from CoinGecko', { symbol });
     }
 

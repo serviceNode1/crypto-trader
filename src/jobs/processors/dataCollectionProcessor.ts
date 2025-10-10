@@ -1,6 +1,5 @@
 import { Job } from 'bull';
 import { getCurrentPrice } from '../../services/dataCollection/coinGeckoService';
-import { getCandlesticks } from '../../services/dataCollection/coinbaseService';
 import { getCryptoNews } from '../../services/dataCollection/cryptoPanicService';
 import { getCryptoMentions } from '../../services/dataCollection/redditService';
 import { getMarketContext } from '../../services/analysis/marketContext';
@@ -90,12 +89,16 @@ async function collectSentiment(): Promise<void> {
       
       // Store sentiment data
       for (const post of posts) {
+        // Generate post_id from URL or content hash
+        const timestamp = post.createdAt ? new Date(post.createdAt).getTime() : Date.now();
+        const postId = post.url || `${symbol}_${post.author}_${timestamp}`;
+        
         await query(
           `INSERT INTO sentiment (
             symbol, source, content, score, author, author_karma,
-            upvotes, comments, created_at, url
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-           ON CONFLICT (url) DO UPDATE SET
+            upvotes, comments, created_at, url, post_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           ON CONFLICT (post_id) DO UPDATE SET
              score = EXCLUDED.score,
              upvotes = EXCLUDED.upvotes,
              comments = EXCLUDED.comments`,
@@ -110,6 +113,7 @@ async function collectSentiment(): Promise<void> {
             post.numComments,
             post.createdAt,
             post.url,
+            postId,
           ]
         );
       }
