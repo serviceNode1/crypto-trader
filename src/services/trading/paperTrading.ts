@@ -11,6 +11,8 @@ export interface Position {
   currentValue: number;
   unrealizedPnL: number;
   unrealizedPnLPercent: number;
+  stopLoss?: number | null;
+  takeProfit?: number | null;
 }
 
 export interface Portfolio {
@@ -49,9 +51,9 @@ export async function getPortfolio(): Promise<Portfolio> {
       ? parseFloat(balanceResult.rows[0].cash)
       : 10000;
 
-    // Get all holdings
+    // Get all holdings with protection levels
     const holdingsResult = await query(
-      'SELECT symbol, quantity, average_price FROM holdings WHERE quantity > 0'
+      'SELECT symbol, quantity, average_price, stop_loss, take_profit FROM holdings WHERE quantity > 0'
     );
 
     const positions: Position[] = [];
@@ -75,6 +77,8 @@ export async function getPortfolio(): Promise<Portfolio> {
         currentValue,
         unrealizedPnL,
         unrealizedPnLPercent,
+        stopLoss: holding.stop_loss ? parseFloat(holding.stop_loss) : null,
+        takeProfit: holding.take_profit ? parseFloat(holding.take_profit) : null,
       });
 
       totalPositionValue += currentValue;
@@ -112,7 +116,9 @@ export async function executeTrade(
   side: 'BUY' | 'SELL',
   quantity: number,
   reasoning?: string,
-  recommendationId?: number
+  recommendationId?: number,
+  stopLoss?: number,
+  takeProfit?: number
 ): Promise<Trade> {
   return transaction(async (client) => {
     try {
@@ -175,15 +181,28 @@ export async function executeTrade(
           const newAvgPrice =
             (existingQty * existingAvgPrice + quantity * executionPrice) / newQty;
 
-          await client.query(
-            'UPDATE holdings SET quantity = $1, average_price = $2, updated_at = NOW() WHERE symbol = $3',
-            [newQty, newAvgPrice, symbol]
-          );
+          // Only update stop_loss/take_profit if provided (don't overwrite existing values)
+          if (stopLoss !== undefined || takeProfit !== undefined) {
+            await client.query(
+              `UPDATE holdings 
+               SET quantity = $1, average_price = $2, 
+                   stop_loss = COALESCE($3, stop_loss), 
+                   take_profit = COALESCE($4, take_profit),
+                   updated_at = NOW() 
+               WHERE symbol = $5`,
+              [newQty, newAvgPrice, stopLoss, takeProfit, symbol]
+            );
+          } else {
+            await client.query(
+              'UPDATE holdings SET quantity = $1, average_price = $2, updated_at = NOW() WHERE symbol = $3',
+              [newQty, newAvgPrice, symbol]
+            );
+          }
         } else {
-          // Create new holding
+          // Create new holding with optional stop_loss and take_profit
           await client.query(
-            'INSERT INTO holdings (symbol, quantity, average_price) VALUES ($1, $2, $3)',
-            [symbol, quantity, executionPrice]
+            'INSERT INTO holdings (symbol, quantity, average_price, stop_loss, take_profit) VALUES ($1, $2, $3, $4, $5)',
+            [symbol, quantity, executionPrice, stopLoss || null, takeProfit || null]
           );
         }
 

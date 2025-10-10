@@ -160,16 +160,36 @@ router.get('/price/:symbol', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/trades - Get trade history
+ * GET /api/trades - Get trade history with pagination
  */
 router.get('/trades', async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 50;
-    const trades = await getTradeHistory(limit);
-    res.json(trades);
+    const offset = parseInt(req.query.offset as string) || 0;
+    
+    const result = await query(`
+      SELECT * FROM trades 
+      ORDER BY executed_at DESC 
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
+    
+    res.json(result.rows);
   } catch (error) {
     logger.error('Failed to get trade history', { error });
     res.status(500).json({ error: 'Failed to retrieve trade history' });
+  }
+});
+
+/**
+ * GET /api/trades/count - Get total number of trades
+ */
+router.get('/trades/count', async (_req: Request, res: Response) => {
+  try {
+    const result = await query('SELECT COUNT(*) as count FROM trades');
+    res.json({ count: parseInt(result.rows[0].count) });
+  } catch (error) {
+    logger.error('Failed to get trade count', { error });
+    res.status(500).json({ error: 'Failed to retrieve trade count' });
   }
 });
 
@@ -255,13 +275,15 @@ router.post('/trade', async (req: Request, res: Response) => {
       });
     }
 
-    // Execute trade
+    // Execute trade with stop loss and take profit
     const trade = await executeTrade(
       symbol,
       side,
       quantity,
       reasoning,
-      recommendationId
+      recommendationId,
+      stopLoss,
+      takeProfit
     );
 
     logger.info('Manual trade executed via API', { symbol, side, quantity, stopLoss, takeProfit, hadWarnings: !!riskCheck.warnings });
@@ -854,6 +876,97 @@ router.post('/approvals/:id/reject', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Failed to reject trade', { error });
     res.status(500).json({ error: 'Failed to reject trade' });
+  }
+});
+
+/**
+ * PUT /api/holdings/:symbol/protection - Update stop loss and take profit for a position
+ */
+router.put('/holdings/:symbol/protection', async (req: Request, res: Response) => {
+  try {
+    const symbol = req.params.symbol.toUpperCase();
+    const { stopLoss, takeProfit } = req.body;
+
+    // Validate inputs
+    if (stopLoss !== undefined && stopLoss !== null && (typeof stopLoss !== 'number' || stopLoss <= 0)) {
+      return res.status(400).json({
+        error: 'Invalid stop loss',
+        message: 'Stop loss must be a positive number or null to remove'
+      });
+    }
+
+    if (takeProfit !== undefined && takeProfit !== null && (typeof takeProfit !== 'number' || takeProfit <= 0)) {
+      return res.status(400).json({
+        error: 'Invalid take profit',
+        message: 'Take profit must be a positive number or null to remove'
+      });
+    }
+
+    // Check if holding exists and get current protection levels
+    const holdingCheck = await query('SELECT * FROM holdings WHERE symbol = $1', [symbol]);
+    if (holdingCheck.rows.length === 0) {
+      return res.status(404).json({
+        error: 'Position not found',
+        message: `No open position for ${symbol}`
+      });
+    }
+
+    const currentPrice = await getCurrentPrice(symbol);
+    const holding = holdingCheck.rows[0];
+
+    // Preserve existing values if not being updated
+    const finalStopLoss = stopLoss !== undefined ? stopLoss : holding.stop_loss;
+    const finalTakeProfit = takeProfit !== undefined ? takeProfit : holding.take_profit;
+
+    // Validate stop loss is below current price
+    if (finalStopLoss && finalStopLoss >= currentPrice) {
+      return res.status(400).json({
+        error: 'Invalid stop loss',
+        message: `Stop loss ($${finalStopLoss.toFixed(2)}) must be below current price ($${currentPrice.toFixed(2)})`
+      });
+    }
+
+    // Validate take profit is above current price
+    if (finalTakeProfit && finalTakeProfit <= currentPrice) {
+      return res.status(400).json({
+        error: 'Invalid take profit',
+        message: `Take profit ($${finalTakeProfit.toFixed(2)}) must be above current price ($${currentPrice.toFixed(2)})`
+      });
+    }
+
+    // Update protection levels (preserving existing values)
+    const result = await query(`
+      UPDATE holdings 
+      SET 
+        stop_loss = $1,
+        take_profit = $2,
+        protection_updated_at = NOW()
+      WHERE symbol = $3
+      RETURNING *
+    `, [finalStopLoss, finalTakeProfit, symbol]);
+
+    logger.info('Position protection updated', {
+      symbol,
+      stopLoss,
+      takeProfit,
+      currentPrice
+    });
+
+    res.json({
+      success: true,
+      symbol,
+      stopLoss,
+      takeProfit,
+      currentPrice,
+      stopLossPercent: stopLoss ? (((currentPrice - stopLoss) / currentPrice) * 100).toFixed(2) : null,
+      takeProfitPercent: takeProfit ? (((takeProfit - currentPrice) / currentPrice) * 100).toFixed(2) : null
+    });
+  } catch (error: any) {
+    logger.error('Failed to update position protection', { error });
+    res.status(500).json({
+      error: 'Update failed',
+      message: error.message || 'Failed to update position protection'
+    });
   }
 });
 
