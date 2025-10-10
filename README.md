@@ -243,6 +243,59 @@ All trades are tagged with their origin:
 
 ---
 
+## 🎯 Exit Strategies
+
+Choose how your positions are closed when take profit levels are reached.
+
+### Available Strategies
+
+#### 1. Full Exit (Default)
+**Sells 100% of position when take profit is hit.**
+
+**Best for:** Conservative traders, clear profit targets, simplicity
+
+**Example:**
+```
+Buy: 2.0 ETH @ $2,000
+Take Profit: $2,200
+Result: Sell all 2.0 ETH @ $2,200 → Lock in full profit
+```
+
+#### 2. Ladder Exit
+**Sells 50% of remaining position each time level is hit.**
+
+**Best for:** Strong trends, high conviction, letting winners run
+
+**Example:**
+```
+Buy: 2.0 ETH @ $2,000
+Take Profit: $2,200
+
+Hit 1: Sell 1.0 ETH (50%)
+Hit 2: Sell 0.5 ETH (25% of original)
+Hit 3: Sell 0.25 ETH (12.5% of original)
+...gradual exit as price holds/rises
+```
+
+### Setting Your Strategy
+
+Update via database (UI coming soon):
+```sql
+-- Full Exit (default)
+UPDATE user_settings SET take_profit_strategy = 'full' WHERE user_id = 1;
+
+-- Ladder Exit
+UPDATE user_settings SET take_profit_strategy = 'partial' WHERE user_id = 1;
+```
+
+### Important Notes
+
+- ⚠️ **Stop losses always sell 100%** - Risk management priority
+- 📚 **Full comparison:** See `EXIT_STRATEGIES.md` for detailed examples, use cases, and performance analysis
+- 🔮 **Future strategies:** Trailing stop, multi-level ladder, volatility-based exits
+
+---
+
 ## Technology Stack
 
 ### Core Technologies

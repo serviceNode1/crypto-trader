@@ -1869,6 +1869,44 @@
                             <p style="margin-top: 10px; color: #1e40af;"><strong>💡 Think of it like:</strong> Placing a limit order on an exchange. You've already made the decision - execution is just fulfillment.</p>
                         </div>
 
+                        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                            <h4 style="margin: 0 0 10px 0; color: #b45309;">🎯 Exit Strategies - NEW!</h4>
+                            <p style="margin-bottom: 10px;"><strong>Choose how your positions are closed when take profit is reached</strong></p>
+                            
+                            <div style="margin: 15px 0; padding: 12px; background: white; border-radius: 4px;">
+                                <strong style="color: #10b981;">📤 Full Exit (Default)</strong>
+                                <ul style="margin: 8px 0 0 20px; font-size: 14px;">
+                                    <li>Sells 100% of position when level hit</li>
+                                    <li>Simple, clear, locks in all profits</li>
+                                    <li><strong>Best for:</strong> Conservative traders, clear targets</li>
+                                </ul>
+                            </div>
+                            
+                            <div style="margin: 15px 0; padding: 12px; background: white; border-radius: 4px;">
+                                <strong style="color: #f59e0b;">📊 Ladder Exit</strong>
+                                <ul style="margin: 8px 0 0 20px; font-size: 14px;">
+                                    <li>Sells 50% each time level is hit</li>
+                                    <li>Lets winners run, reduces FOMO</li>
+                                    <li><strong>Best for:</strong> Strong trends, high conviction trades</li>
+                                    <li><strong>Example:</strong> Hit 1: Sell 50% | Hit 2: Sell 25% | Hit 3: Sell 12.5%...</li>
+                                </ul>
+                            </div>
+                            
+                            <p style="margin-top: 10px; font-size: 14px; color: #b45309;">
+                                <strong>ℹ️ Note:</strong> Stop losses always sell 100% (risk management priority).<br>
+                                <strong>📚 Details:</strong> See <code>EXIT_STRATEGIES.md</code> for full comparison and examples.
+                            </p>
+                            
+                            <div style="margin-top: 12px; padding: 10px; background: #fee2e2; border-radius: 4px; font-size: 13px;">
+                                <strong>⚙️ How to Set Your Strategy:</strong> Currently requires database update. UI settings coming soon!
+                                <pre style="margin: 8px 0; padding: 8px; background: #000; color: #0f0; border-radius: 3px; font-size: 12px; overflow-x: auto;">-- Full Exit (default)
+UPDATE user_settings SET take_profit_strategy = 'full' WHERE user_id = 1;
+
+-- Ladder Exit
+UPDATE user_settings SET take_profit_strategy = 'partial' WHERE user_id = 1;</pre>
+                            </div>
+                        </div>
+
                         <div class="success-box" style="margin-bottom: 20px;">
                             <strong>🚀 Discovery Strategy System - LIVE!</strong><br>
                             Choose your risk/reward profile for finding trading opportunities.
