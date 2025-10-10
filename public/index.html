@@ -859,6 +859,97 @@
             </div>
         </div>
 
+        <!-- Manual Trading Widget -->
+        <div class="card" style="margin-bottom: 30px;">
+            <h2>💰 Buy Cryptocurrency</h2>
+            <p style="color: #6b7280; margin-bottom: 20px; font-size: 13px;">
+                Purchase any cryptocurrency manually. Use "Current Holdings" below to sell existing positions.
+            </p>
+            
+            <div style="display: grid; gap: 12px;">
+                <!-- Symbol and Amount in one row -->
+                <div style="display: grid; grid-template-columns: 140px 1fr auto; gap: 10px; align-items: end;">
+                    <div>
+                        <label style="font-weight: 600; margin-bottom: 5px; display: block; color: #374151; font-size: 13px;">Symbol</label>
+                        <input 
+                            type="text" 
+                            id="manualTradeSymbol" 
+                            placeholder="e.g., ZEC"
+                            style="width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
+                            onkeyup="this.value = this.value.toUpperCase()"
+                        >
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; margin-bottom: 5px; display: block; color: #374151; font-size: 13px;">Amount</label>
+                        <input 
+                            type="number" 
+                            id="manualTradeQuantity" 
+                            placeholder="Enter amount"
+                            step="0.00000001"
+                            min="0"
+                            style="width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
+                        >
+                    </div>
+                    <select 
+                        id="quantityType" 
+                        onchange="updateQuantityPlaceholder()"
+                        style="padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; min-width: 130px;">
+                        <option value="usd">USD Amount</option>
+                        <option value="units">Units</option>
+                        <option value="percent">% of Portfolio</option>
+                    </select>
+                </div>
+                <div id="quantityHelper" style="font-size: 12px; color: #6b7280; margin-top: -8px;"></div>
+
+                <!-- Optional: Stop Loss & Take Profit -->
+                <div>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="addStopLoss" onchange="toggleAdvancedOptions()" style="cursor: pointer;">
+                        <span style="font-weight: 600; color: #374151;">Add Stop-Loss & Take-Profit</span>
+                    </label>
+                    <div id="advancedOptions" style="display: none; margin-top: 10px; padding: 15px; background: #f9fafb; border-radius: 6px; border: 1px solid #e5e7eb;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-size: 14px; font-weight: 500; color: #374151; display: block; margin-bottom: 5px;">
+                                🛑 Stop-Loss Price ($)
+                            </label>
+                            <input 
+                                type="number" 
+                                id="stopLossPrice" 
+                                step="0.01" 
+                                min="0"
+                                placeholder="Auto-sell if price drops to..."
+                                style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 14px; font-weight: 500; color: #374151; display: block; margin-bottom: 5px;">
+                                🎯 Take-Profit Price ($)
+                            </label>
+                            <input 
+                                type="number" 
+                                id="takeProfitPrice" 
+                                step="0.01" 
+                                min="0"
+                                placeholder="Auto-sell if price reaches..."
+                                style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Button -->
+                <div>
+                    <button 
+                        class="button" 
+                        onclick="previewTrade()"
+                        style="width: 100%; background: #667eea;">
+                        👁️ Preview Trade
+                    </button>
+                </div>
+
+                <!-- Trade Preview & Execute Area -->
+                <div id="tradePreviewArea" style="display: none;"></div>
+            </div>
+        </div>
+
         <!-- Portfolio Overview -->
         <div class="grid">
             <div class="card">
@@ -957,6 +1048,7 @@
                                     <th>Avg Price</th>
                                     <th>Current Value</th>
                                     <th>P&L</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -969,6 +1061,14 @@
                                         <td class="${pos.unrealizedPnL >= 0 ? 'positive' : 'negative'}">
                                             ${pos.unrealizedPnL >= 0 ? '+' : ''}$${pos.unrealizedPnL.toFixed(2)}
                                             (${pos.unrealizedPnLPercent.toFixed(2)}%)
+                                        </td>
+                                        <td>
+                                            <button 
+                                                class="button" 
+                                                onclick="sellPosition('${pos.symbol}', ${pos.quantity})"
+                                                style="background: #ef4444; padding: 6px 12px; font-size: 12px; white-space: nowrap;">
+                                                📉 Sell
+                                            </button>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -1592,12 +1692,37 @@
                     </div>
 
                     <div class="info-section">
+                        <h3>💰 Manual Trading Widget - NEW!</h3>
+                        
+                        <div class="success-box" style="margin-bottom: 15px;">
+                            <strong>🎉 Now you can execute trades manually with full control!</strong>
+                        </div>
+                        
+                        <p><strong>Features:</strong></p>
+                        <ul style="margin-left: 20px;">
+                            <li>✅ <strong>Quick Trade Entry:</strong> Buy or sell any cryptocurrency</li>
+                            <li>✅ <strong>Flexible Amounts:</strong> Enter quantity in units, USD, or % of portfolio</li>
+                            <li>✅ <strong>Trade Preview:</strong> See costs, fees, and slippage before executing</li>
+                            <li>✅ <strong>Stop-Loss & Take-Profit:</strong> Set protective orders automatically</li>
+                            <li>✅ <strong>Real-time Validation:</strong> Instant feedback on invalid inputs</li>
+                            <li>✅ <strong>Auto Portfolio Updates:</strong> Holdings refresh after each trade</li>
+                        </ul>
+                        
+                        <div class="tip-box" style="margin-top: 15px;">
+                            <strong>💡 How to use:</strong> Scroll down to the "💰 Manual Trading" section, enter a symbol (e.g., ZEC), choose amount, preview, and execute!
+                        </div>
+                    </div>
+
+                    <div class="info-section">
                         <h3>🔧 Other Recent Improvements</h3>
                         
                         <ul style="margin-left: 20px;">
+                            <li>✅ <strong>Sparkline Charts:</strong> See 48-hour price trends in discovery table</li>
+                            <li>✅ <strong>Current Prices:</strong> Live prices with 24h change in discoveries</li>
+                            <li>✅ <strong>70+ Altcoins Supported:</strong> Including ZEC, XMR, DASH, and more</li>
+                            <li>✅ <strong>Dynamic Coin Discovery:</strong> Auto-finds coin IDs for unknown symbols</li>
                             <li>✅ <strong>Force Refresh:</strong> Bypass cache for fresh data</li>
                             <li>✅ <strong>Execution Tracking:</strong> See when discovery last ran</li>
-                            <li>✅ <strong>Cache Status:</strong> Know if using cached or fresh data</li>
                             <li>✅ <strong>Coinbase Integration:</strong> Replaced Binance for US compliance</li>
                             <li>✅ <strong>RSS News Feeds:</strong> Unlimited news from 5 sources</li>
                             <li>✅ <strong>Optimized Caching:</strong> 97% reduction in API calls</li>
@@ -1610,6 +1735,7 @@
                         
                         <p>Detailed plans available in project files:</p>
                         <ul style="margin-left: 20px;">
+                            <li><code>MANUAL_TRADING_WORKFLOW.md</code> - Manual trading guide</li>
                             <li><code>DISCOVERY_STRATEGY_PLAN.md</code> - Full strategy documentation</li>
                             <li><code>INTEGRATION_COMPLETE.md</code> - API integration details</li>
                             <li><code>QUICKSTART.md</code> - Getting started guide</li>
@@ -2585,7 +2711,49 @@
         }
 
         function formatDiscoveries(discoveries) {
+            // Calculate discovery age for freshness badge
+            let freshnessHTML = '';
+            if (discoveries.length > 0 && discoveries[0].discoveredAt) {
+                const discoveredAt = new Date(discoveries[0].discoveredAt);
+                const now = new Date();
+                const ageMinutes = Math.floor((now - discoveredAt) / (1000 * 60));
+                const ageHours = Math.floor(ageMinutes / 60);
+                
+                let badgeColor, badgeText, warningHTML = '';
+                
+                if (ageHours < 2) {
+                    // Fresh (0-2 hours)
+                    badgeColor = '#10b981';
+                    badgeText = `✅ Fresh (${ageMinutes < 60 ? ageMinutes + ' min' : ageHours + 'h'} ago)`;
+                } else if (ageHours < 4) {
+                    // Recent (2-4 hours)
+                    badgeColor = '#f59e0b';
+                    badgeText = `⚠️ Recent (${ageHours}h ago)`;
+                    warningHTML = '<div style="padding: 10px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; margin-bottom: 15px; color: #92400e; font-size: 13px;">⚠️ Discovery data is a few hours old. Consider running a fresh discovery for current opportunities.</div>';
+                } else if (ageHours < 6) {
+                    // Stale (4-6 hours)
+                    badgeColor = '#ef4444';
+                    badgeText = `🕐 Stale (${ageHours}h ago)`;
+                    warningHTML = '<div style="padding: 10px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; margin-bottom: 15px; color: #991b1b; font-size: 13px;">🕐 <strong>Data is stale.</strong> Market conditions may have changed significantly. Run discovery for current opportunities.</div>';
+                } else {
+                    // Very stale (6+ hours)
+                    badgeColor = '#6b7280';
+                    badgeText = `❌ Expired (${ageHours}h ago)`;
+                    warningHTML = '<div style="padding: 10px; background: #f3f4f6; border: 1px solid #6b7280; border-radius: 6px; margin-bottom: 15px; color: #374151; font-size: 13px;">❌ <strong>Data has expired.</strong> These opportunities are outdated. Please run discovery to find current opportunities.</div>';
+                }
+                
+                freshnessHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <span style="padding: 6px 12px; background: ${badgeColor}; color: white; border-radius: 6px; font-size: 13px; font-weight: 600;">
+                            ${badgeText}
+                        </span>
+                    </div>
+                    ${warningHTML}
+                `;
+            }
+            
             return `
+                ${freshnessHTML}
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead>
                         <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
@@ -2737,6 +2905,419 @@
                 console.log('No saved discoveries yet');
             }
         }
+
+        // ============================================
+        // MANUAL TRADING FUNCTIONS
+        // ============================================
+        
+        let selectedTradeAction = 'BUY'; // Manual trading is always BUY (SELL done in holdings)
+
+        function toggleAdvancedOptions() {
+            const checkbox = document.getElementById('addStopLoss');
+            const options = document.getElementById('advancedOptions');
+            options.style.display = checkbox.checked ? 'block' : 'none';
+        }
+
+        function updateQuantityPlaceholder() {
+            const type = document.getElementById('quantityType').value;
+            const input = document.getElementById('manualTradeQuantity');
+            const helper = document.getElementById('quantityHelper');
+            
+            if (type === 'units') {
+                input.placeholder = 'Enter number of coins';
+                helper.textContent = 'Example: 0.5 BTC';
+            } else if (type === 'usd') {
+                input.placeholder = 'Enter dollar amount';
+                helper.textContent = 'Example: $1000';
+            } else if (type === 'percent') {
+                input.placeholder = 'Enter percentage';
+                helper.textContent = 'Example: 5 (for 5% of portfolio)';
+            }
+        }
+
+        async function previewTrade() {
+            const symbol = document.getElementById('manualTradeSymbol').value.toUpperCase().trim();
+            const quantity = parseFloat(document.getElementById('manualTradeQuantity').value);
+            const quantityType = document.getElementById('quantityType').value;
+            const addStopLoss = document.getElementById('addStopLoss').checked;
+            const stopLossPrice = addStopLoss ? parseFloat(document.getElementById('stopLossPrice').value) : null;
+            const takeProfitPrice = addStopLoss ? parseFloat(document.getElementById('takeProfitPrice').value) : null;
+            
+            const previewArea = document.getElementById('tradePreviewArea');
+            
+            if (!symbol || !quantity || quantity <= 0) {
+                previewArea.style.display = 'block';
+                previewArea.innerHTML = `
+                    <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
+                        ⚠️ Please enter a valid symbol and quantity
+                    </div>
+                `;
+                return;
+            }
+            
+            if (addStopLoss && (!stopLossPrice || stopLossPrice <= 0)) {
+                previewArea.style.display = 'block';
+                previewArea.innerHTML = `
+                    <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
+                        ⚠️ Please enter a valid stop-loss price
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                // Show loading state
+                previewArea.style.display = 'block';
+                previewArea.innerHTML = `
+                    <div style="padding: 12px; background: #dbeafe; border: 1px solid #3b82f6; border-radius: 6px; color: #1e40af;">
+                        📊 Calculating trade preview...
+                    </div>
+                `;
+                
+                // Get current price
+                const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+                if (!priceResponse.ok) {
+                    throw new Error('Could not fetch price for ' + symbol);
+                }
+                const priceData = await priceResponse.json();
+                const currentPrice = priceData.price;
+                
+                // Get portfolio for percentage calculations
+                let actualQuantity = quantity;
+                if (quantityType === 'usd') {
+                    actualQuantity = quantity / currentPrice;
+                } else if (quantityType === 'percent') {
+                    const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
+                    const portfolio = await portfolioResponse.json();
+                    const portfolioValue = portfolio.totalValue;
+                    const usdAmount = (portfolioValue * quantity) / 100;
+                    actualQuantity = usdAmount / currentPrice;
+                }
+                
+                // Calculate costs
+                const subtotal = actualQuantity * currentPrice;
+                const fee = subtotal * 0.001; // 0.1% fee
+                const slippage = subtotal * 0.0005; // 0.05% slippage estimate
+                
+                let total;
+                if (selectedTradeAction === 'BUY') {
+                    total = subtotal + fee + slippage;
+                } else {
+                    total = subtotal - fee - slippage;
+                }
+                
+                // Calculate stop-loss and take-profit percentages if provided
+                let stopLossPercent = null;
+                let takeProfitPercent = null;
+                if (stopLossPrice && selectedTradeAction === 'BUY') {
+                    stopLossPercent = ((stopLossPrice - currentPrice) / currentPrice) * 100;
+                }
+                if (takeProfitPrice && selectedTradeAction === 'BUY') {
+                    takeProfitPercent = ((takeProfitPrice - currentPrice) / currentPrice) * 100;
+                }
+                
+                // Show preview with execute button
+                previewArea.innerHTML = `
+                    <div style="padding: 20px; background: ${selectedTradeAction === 'BUY' ? '#d1fae5' : '#fee2e2'}; border: 2px solid ${selectedTradeAction === 'BUY' ? '#10b981' : '#ef4444'}; border-radius: 8px;">
+                        <div style="text-align: center; margin-bottom: 15px;">
+                            <h3 style="margin: 0 0 5px 0; color: #1f2937;">📊 Trade Preview</h3>
+                            <div style="font-size: 24px; font-weight: 700; color: ${selectedTradeAction === 'BUY' ? '#10b981' : '#ef4444'};">
+                                ${selectedTradeAction} ${symbol}
+                            </div>
+                        </div>
+                        
+                        <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                            <div style="display: grid; gap: 10px; font-size: 14px;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #6b7280;">Quantity:</span>
+                                    <strong>${actualQuantity.toFixed(8)} ${symbol}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #6b7280;">Current Price:</span>
+                                    <strong>$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 8})}</strong>
+                                </div>
+                                <hr style="margin: 5px 0; border: none; border-top: 1px solid #e5e7eb;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #6b7280;">Subtotal:</span>
+                                    <span>$${subtotal.toFixed(2)}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #6b7280;">Fee (0.1%):</span>
+                                    <span>$${fee.toFixed(2)}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #6b7280;">Est. Slippage:</span>
+                                    <span>$${slippage.toFixed(2)}</span>
+                                </div>
+                                <hr style="margin: 5px 0; border: none; border-top: 1px solid #e5e7eb;">
+                                <div style="display: flex; justify-content: space-between; font-size: 16px;">
+                                    <strong>${selectedTradeAction === 'BUY' ? 'Total Cost:' : 'Total Proceeds:'}</strong>
+                                    <strong style="color: ${selectedTradeAction === 'BUY' ? '#ef4444' : '#10b981'};">$${total.toFixed(2)}</strong>
+                                </div>
+                                ${stopLossPrice ? `
+                                <hr style="margin: 5px 0; border: none; border-top: 1px solid #e5e7eb;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #6b7280;">🛑 Stop-Loss:</span>
+                                    <strong style="color: #ef4444;">$${stopLossPrice.toFixed(2)} (${stopLossPercent?.toFixed(1)}%)</strong>
+                                </div>
+                                ` : ''}
+                                ${takeProfitPrice ? `
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #6b7280;">🎯 Take-Profit:</span>
+                                    <strong style="color: #10b981;">$${takeProfitPrice.toFixed(2)} (${takeProfitPercent?.toFixed(1)}%)</strong>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        <button 
+                            class="button" 
+                            onclick="executeManualTrade()"
+                            style="width: 100%; background: ${selectedTradeAction === 'BUY' ? '#10b981' : '#ef4444'}; font-size: 16px; padding: 14px; font-weight: 600;">
+                            ⚡ Execute ${selectedTradeAction} Order
+                        </button>
+                    </div>
+                `;
+                
+            } catch (error) {
+                previewArea.innerHTML = `
+                    <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
+                        ❌ Preview failed: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function executeManualTrade() {
+            const symbol = document.getElementById('manualTradeSymbol').value.toUpperCase().trim();
+            const quantity = parseFloat(document.getElementById('manualTradeQuantity').value);
+            const quantityType = document.getElementById('quantityType').value;
+            const addStopLoss = document.getElementById('addStopLoss').checked;
+            const stopLossPrice = addStopLoss ? parseFloat(document.getElementById('stopLossPrice').value) : null;
+            const takeProfitPrice = addStopLoss ? parseFloat(document.getElementById('takeProfitPrice').value) : null;
+            
+            const previewArea = document.getElementById('tradePreviewArea');
+            
+            // Confirm trade
+            if (!confirm(`Execute ${selectedTradeAction} order for ${symbol}?\n\nThis will ${selectedTradeAction === 'BUY' ? 'deduct funds from' : 'add funds to'} your portfolio.`)) {
+                return;
+            }
+            
+            try {
+                // Show executing state
+                previewArea.innerHTML = `
+                    <div style="padding: 20px; background: #dbeafe; border: 2px solid #3b82f6; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 18px; font-weight: 600; color: #1e40af; margin-bottom: 10px;">
+                            ⏳ Executing Trade...
+                        </div>
+                        <div style="color: #6b7280; font-size: 14px;">
+                            Processing your ${selectedTradeAction} order for ${symbol}
+                        </div>
+                    </div>
+                `;
+                
+                // Get current price and calculate actual quantity
+                const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+                if (!priceResponse.ok) {
+                    throw new Error('Could not fetch price for ' + symbol);
+                }
+                const priceData = await priceResponse.json();
+                const currentPrice = priceData.price;
+                
+                let actualQuantity = quantity;
+                if (quantityType === 'usd') {
+                    actualQuantity = quantity / currentPrice;
+                } else if (quantityType === 'percent') {
+                    const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
+                    const portfolio = await portfolioResponse.json();
+                    const portfolioValue = portfolio.totalValue;
+                    const usdAmount = (portfolioValue * quantity) / 100;
+                    actualQuantity = usdAmount / currentPrice;
+                }
+                
+                // Prepare trade payload
+                const tradePayload = {
+                    symbol,
+                    side: selectedTradeAction,
+                    quantity: actualQuantity,
+                    reasoning: 'Manual trade - User decision'
+                };
+                
+                // Add stop-loss and take-profit if provided
+                if (stopLossPrice) {
+                    tradePayload.stopLoss = stopLossPrice;
+                }
+                if (takeProfitPrice) {
+                    tradePayload.takeProfit = takeProfitPrice;
+                }
+                
+                // Execute trade via API
+                const response = await fetch(`${API_BASE}/trade`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tradePayload)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Trade execution failed');
+                }
+                
+                const trade = await response.json();
+                
+                // Show success message
+                previewArea.innerHTML = `
+                    <div style="padding: 20px; background: #d1fae5; border: 2px solid #10b981; border-radius: 8px;">
+                        <div style="text-align: center; margin-bottom: 15px;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                            <h3 style="margin: 0; color: #065f46;">Trade Executed Successfully!</h3>
+                        </div>
+                        
+                        <div style="background: white; padding: 15px; border-radius: 6px; font-size: 14px;">
+                            <div style="display: grid; gap: 10px;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #6b7280;">Action:</span>
+                                    <strong style="color: ${selectedTradeAction === 'BUY' ? '#10b981' : '#ef4444'};">${selectedTradeAction}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #6b7280;">Symbol:</span>
+                                    <strong>${symbol}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #6b7280;">Quantity:</span>
+                                    <strong>${actualQuantity.toFixed(8)} ${symbol}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #6b7280;">Price:</span>
+                                    <strong>$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 8})}</strong>
+                                </div>
+                                <hr style="margin: 5px 0; border: none; border-top: 1px solid #e5e7eb;">
+                                <div style="display: flex; justify-content: space-between; font-size: 16px;">
+                                    <strong>Total:</strong>
+                                    <strong style="color: #10b981;">$${trade.totalCost?.toFixed(2) || (actualQuantity * currentPrice).toFixed(2)}</strong>
+                                </div>
+                                ${stopLossPrice ? `
+                                <hr style="margin: 5px 0; border: none; border-top: 1px solid #e5e7eb;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #6b7280;">🛑 Stop-Loss Active:</span>
+                                    <strong style="color: #ef4444;">$${stopLossPrice.toFixed(2)}</strong>
+                                </div>
+                                ` : ''}
+                                ${takeProfitPrice ? `
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #6b7280;">🎯 Take-Profit Active:</span>
+                                    <strong style="color: #10b981;">$${takeProfitPrice.toFixed(2)}</strong>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 15px; padding: 12px; background: #fef3c7; border-radius: 6px; font-size: 13px; color: #92400e; text-align: center;">
+                            <strong>📊 Portfolio Updated!</strong> Your holdings and balance have been updated.
+                        </div>
+                    </div>
+                `;
+                
+                // Refresh portfolio and trade history
+                setTimeout(() => {
+                    loadPortfolio();
+                    loadTradeHistory();
+                }, 1000);
+                
+                // Clear form after 3 seconds
+                setTimeout(() => {
+                    document.getElementById('manualTradeSymbol').value = '';
+                    document.getElementById('manualTradeQuantity').value = '';
+                    document.getElementById('addStopLoss').checked = false;
+                    document.getElementById('stopLossPrice').value = '';
+                    document.getElementById('takeProfitPrice').value = '';
+                    toggleAdvancedOptions();
+                    previewArea.style.display = 'none';
+                }, 4000);
+                
+            } catch (error) {
+                console.error('Trade execution error:', error);
+                previewArea.innerHTML = `
+                    <div style="padding: 20px; background: #fee2e2; border: 2px solid #ef4444; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">❌</div>
+                        <h3 style="margin: 0 0 10px 0; color: #991b1b;">Trade Execution Failed</h3>
+                        <div style="background: white; padding: 12px; border-radius: 6px; color: #6b7280; font-size: 14px;">
+                            ${error.message}
+                        </div>
+                        <button 
+                            class="button" 
+                            onclick="previewTrade()"
+                            style="margin-top: 15px; background: #667eea;">
+                            ← Back to Preview
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // ============================================
+        // END MANUAL TRADING FUNCTIONS
+        // ============================================
+
+        // ============================================
+        // SELL POSITION FUNCTIONS
+        // ============================================
+
+        async function sellPosition(symbol, quantity) {
+            // Confirm sale
+            if (!confirm(`Sell entire ${symbol} position?\n\nQuantity: ${quantity.toFixed(8)} ${symbol}\n\nThis will close your position and convert to cash.`)) {
+                return;
+            }
+
+            try {
+                // Get current price
+                const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+                if (!priceResponse.ok) {
+                    throw new Error('Could not fetch price for ' + symbol);
+                }
+                const priceData = await priceResponse.json();
+                const currentPrice = priceData.price;
+
+                // Calculate expected proceeds
+                const subtotal = quantity * currentPrice;
+                const fee = subtotal * 0.001;
+                const proceeds = subtotal - fee;
+
+                // Execute sell trade
+                const response = await fetch(`${API_BASE}/trade`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        symbol,
+                        side: 'SELL',
+                        quantity: quantity,
+                        reasoning: 'Manual sell - User closed position'
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Sell execution failed');
+                }
+
+                const trade = await response.json();
+
+                // Show success message
+                alert(`✅ Position Sold Successfully!\n\nSold: ${quantity.toFixed(8)} ${symbol}\nPrice: $${currentPrice.toFixed(2)}\nProceeds: $${proceeds.toFixed(2)}`);
+
+                // Refresh portfolio
+                loadPortfolio();
+                loadTradeHistory();
+
+            } catch (error) {
+                console.error('Sell execution error:', error);
+                alert('❌ Sell failed: ' + error.message);
+            }
+        }
+
+        // ============================================
+        // END SELL POSITION FUNCTIONS
+        // ============================================
 
         // Close modals when clicking outside
         window.onclick = function(event) {

@@ -17,6 +17,8 @@ export interface CoinCandidate {
   momentumScore: number;
   sentimentScore: number;
   compositeScore: number;
+  discoveredAt?: Date;  // When this was discovered (optional, for cached results)
+  sparklineFetchedAt?: Date;  // When sparkline data was fetched (optional)
 }
 
 export interface CoinAnalysisLog {
@@ -445,8 +447,9 @@ async function storeDiscoveredCoins(candidates: CoinCandidate[]): Promise<void> 
       await query(
         `INSERT INTO discovered_coins (
           symbol, name, market_cap_rank, market_cap, current_price,
-          volume_24h, volume_score, price_momentum_score, sentiment_score, composite_score
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          volume_24h, volume_score, price_momentum_score, sentiment_score, composite_score,
+          sparkline_data, sparkline_fetched_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
         ON CONFLICT (symbol) DO UPDATE SET
           market_cap = EXCLUDED.market_cap,
           current_price = EXCLUDED.current_price,
@@ -455,6 +458,8 @@ async function storeDiscoveredCoins(candidates: CoinCandidate[]): Promise<void> 
           price_momentum_score = EXCLUDED.price_momentum_score,
           sentiment_score = EXCLUDED.sentiment_score,
           composite_score = EXCLUDED.composite_score,
+          sparkline_data = EXCLUDED.sparkline_data,
+          sparkline_fetched_at = NOW(),
           discovered_at = NOW()`,
         [
           coin.symbol,
@@ -467,11 +472,12 @@ async function storeDiscoveredCoins(candidates: CoinCandidate[]): Promise<void> 
           coin.momentumScore,
           coin.sentimentScore,
           coin.compositeScore,
+          JSON.stringify(coin.sparkline), // Store sparkline as JSON
         ]
       );
     }
 
-    logger.info(`Stored ${candidates.length} discovered coins in database`);
+    logger.info(`Stored ${candidates.length} discovered coins in database with sparkline data`);
   } catch (error) {
     logger.error('Failed to store discovered coins', { error });
     throw error;
@@ -491,21 +497,37 @@ export async function getTopDiscoveries(limit: number = 10): Promise<CoinCandida
       [limit]
     );
 
-    return result.rows.map(row => ({
-      symbol: row.symbol,
-      name: row.name,
-      marketCapRank: row.market_cap_rank,
-      marketCap: parseFloat(row.market_cap),
-      currentPrice: parseFloat(row.current_price),
-      volume24h: parseFloat(row.volume_24h),
-      priceChange24h: 0, // Not stored
-      priceChange7d: 0,  // Not stored
-      sparkline: [],     // Not stored in DB (would be stale anyway)
-      volumeScore: parseFloat(row.volume_score),
-      momentumScore: parseFloat(row.price_momentum_score),
-      sentimentScore: parseFloat(row.sentiment_score),
-      compositeScore: parseFloat(row.composite_score),
-    }));
+    return result.rows.map(row => {
+      // Parse sparkline data if available
+      let sparkline: number[] = [];
+      if (row.sparkline_data) {
+        try {
+          sparkline = typeof row.sparkline_data === 'string' 
+            ? JSON.parse(row.sparkline_data) 
+            : row.sparkline_data;
+        } catch (e) {
+          logger.warn(`Failed to parse sparkline for ${row.symbol}`, { error: e });
+        }
+      }
+
+      return {
+        symbol: row.symbol,
+        name: row.name,
+        marketCapRank: row.market_cap_rank,
+        marketCap: parseFloat(row.market_cap),
+        currentPrice: parseFloat(row.current_price),
+        volume24h: parseFloat(row.volume_24h),
+        priceChange24h: 0, // Not stored separately
+        priceChange7d: 0,  // Not stored separately
+        sparkline,
+        volumeScore: parseFloat(row.volume_score),
+        momentumScore: parseFloat(row.price_momentum_score),
+        sentimentScore: parseFloat(row.sentiment_score),
+        compositeScore: parseFloat(row.composite_score),
+        discoveredAt: row.discovered_at,
+        sparklineFetchedAt: row.sparkline_fetched_at,
+      };
+    });
   } catch (error) {
     logger.error('Failed to get top discoveries', { error });
     throw error;

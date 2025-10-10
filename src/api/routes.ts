@@ -89,6 +89,22 @@ router.get('/portfolio/risk', async (_req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/price/:symbol - Get current price for a symbol
+ */
+router.get('/price/:symbol', async (req: Request, res: Response) => {
+  try {
+    const symbol = req.params.symbol.toUpperCase();
+    logger.info('Fetching current price', { symbol });
+    
+    const price = await getCurrentPrice(symbol);
+    res.json({ symbol, price });
+  } catch (error) {
+    logger.error('Failed to get current price', { symbol: req.params.symbol, error });
+    res.status(500).json({ error: `Failed to fetch price for ${req.params.symbol}` });
+  }
+});
+
+/**
  * GET /api/trades - Get trade history
  */
 router.get('/trades', async (req: Request, res: Response) => {
@@ -139,6 +155,51 @@ router.post('/trades', async (req: Request, res: Response) => {
     );
 
     logger.info('Trade executed via API', { symbol, side, quantity });
+    res.status(201).json(trade);
+  } catch (error: any) {
+    logger.error('Failed to execute trade', { error });
+    res.status(500).json({ error: error.message || 'Failed to execute trade' });
+  }
+});
+
+/**
+ * POST /api/trade - Execute a trade (alias for /api/trades)
+ * This endpoint is used for MANUAL trades and has relaxed risk limits
+ */
+router.post('/trade', async (req: Request, res: Response) => {
+  try {
+    const { symbol, side, quantity, stopLoss, takeProfit, reasoning, recommendationId } = req.body;
+
+    // Validate input
+    if (!symbol || !side || !quantity) {
+      return res.status(400).json({
+        error: 'Missing required fields: symbol, side, quantity',
+      });
+    }
+
+    // Get current price
+    const price = await getCurrentPrice(symbol);
+
+    // Validate trade against risk limits (with relaxed rules for manual trades)
+    const riskCheck = await validateTrade(symbol, side, quantity, price, stopLoss, true);
+
+    if (!riskCheck.allowed) {
+      return res.status(403).json({
+        error: 'Trade not allowed',
+        reason: riskCheck.reason,
+      });
+    }
+
+    // Execute trade
+    const trade = await executeTrade(
+      symbol,
+      side,
+      quantity,
+      reasoning,
+      recommendationId
+    );
+
+    logger.info('Manual trade executed via API', { symbol, side, quantity, stopLoss, takeProfit });
     res.status(201).json(trade);
   } catch (error: any) {
     logger.error('Failed to execute trade', { error });

@@ -21,13 +21,15 @@ export interface PositionRisk {
 
 /**
  * Validate if a trade can be executed based on risk limits
+ * @param isManualTrade - If true, relaxes position size and stop-loss width restrictions
  */
 export async function validateTrade(
   symbol: string,
   side: 'BUY' | 'SELL',
   quantity: number,
   price: number,
-  stopLoss?: number
+  stopLoss?: number,
+  isManualTrade: boolean = false
 ): Promise<RiskCheck> {
   try {
     const portfolio = await getPortfolio();
@@ -41,31 +43,34 @@ export async function validateTrade(
     const totalCost = quantity * price;
     const positionSizePercent = totalCost / portfolio.totalValue;
 
-    // 1. Check maximum position size
-    if (positionSizePercent > RISK_LIMITS.MAX_POSITION_SIZE) {
+    // 1. Check maximum position size (relaxed for manual trades)
+    const maxPositionSize = isManualTrade ? 0.20 : RISK_LIMITS.MAX_POSITION_SIZE; // 20% for manual, 5% for auto
+    if (positionSizePercent > maxPositionSize) {
       return {
         allowed: false,
-        reason: `Position size ${(positionSizePercent * 100).toFixed(1)}% exceeds maximum ${(RISK_LIMITS.MAX_POSITION_SIZE * 100).toFixed(1)}%`,
+        reason: `Position size ${(positionSizePercent * 100).toFixed(1)}% exceeds maximum ${(maxPositionSize * 100).toFixed(1)}%`,
         currentRisk: positionSizePercent,
-        maxRisk: RISK_LIMITS.MAX_POSITION_SIZE,
+        maxRisk: maxPositionSize,
       };
     }
 
-    // 2. Check if stop loss is provided
-    if (!stopLoss) {
+    // 2. Check if stop loss is provided (optional for manual trades)
+    if (!stopLoss && !isManualTrade) {
       return {
         allowed: false,
-        reason: 'Stop loss is mandatory for BUY orders',
+        reason: 'Stop loss is mandatory for automated BUY orders',
       };
     }
 
-    // 3. Validate stop loss is reasonable (max 10% below entry)
-    const stopLossPercent = (price - stopLoss) / price;
-    if (stopLossPercent > 0.1) {
-      return {
-        allowed: false,
-        reason: `Stop loss ${(stopLossPercent * 100).toFixed(1)}% below entry is too wide (max 10%)`,
-      };
+    // 3. Validate stop loss is reasonable (only for automated trades or if stop loss is provided)
+    if (stopLoss && !isManualTrade) {
+      const stopLossPercent = (price - stopLoss) / price;
+      if (stopLossPercent > 0.1) {
+        return {
+          allowed: false,
+          reason: `Stop loss ${(stopLossPercent * 100).toFixed(1)}% below entry is too wide (max 10%)`,
+        };
+      }
     }
 
     // 4. Check maximum open positions
