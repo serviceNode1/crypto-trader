@@ -937,12 +937,17 @@ router.put('/holdings/:symbol/protection', async (req: Request, res: Response) =
     const currentPrice = await getCurrentPrice(symbol);
     const holding = holdingCheck.rows[0];
 
-    // Preserve existing values if not being updated
-    const finalStopLoss = stopLoss !== undefined ? stopLoss : holding.stop_loss;
-    const finalTakeProfit = takeProfit !== undefined ? takeProfit : holding.take_profit;
+    // Preserve existing values if not being updated (convert to number or null)
+    const finalStopLoss = stopLoss !== undefined 
+      ? stopLoss 
+      : (holding.stop_loss ? parseFloat(holding.stop_loss) : null);
+    
+    const finalTakeProfit = takeProfit !== undefined 
+      ? takeProfit 
+      : (holding.take_profit ? parseFloat(holding.take_profit) : null);
 
     // Validate stop loss is below current price
-    if (finalStopLoss && finalStopLoss >= currentPrice) {
+    if (finalStopLoss !== null && finalStopLoss >= currentPrice) {
       return res.status(400).json({
         error: 'Invalid stop loss',
         message: `Stop loss ($${finalStopLoss.toFixed(2)}) must be below current price ($${currentPrice.toFixed(2)})`
@@ -950,7 +955,7 @@ router.put('/holdings/:symbol/protection', async (req: Request, res: Response) =
     }
 
     // Validate take profit is above current price
-    if (finalTakeProfit && finalTakeProfit <= currentPrice) {
+    if (finalTakeProfit !== null && finalTakeProfit <= currentPrice) {
       return res.status(400).json({
         error: 'Invalid take profit',
         message: `Take profit ($${finalTakeProfit.toFixed(2)}) must be above current price ($${currentPrice.toFixed(2)})`
