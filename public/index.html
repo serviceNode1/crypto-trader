@@ -14,7 +14,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0127ce 0%, #3c0177 100%);
             color: #333;
             min-height: 100vh;
             padding: 20px;
@@ -2592,6 +2592,8 @@
                             <th style="padding: 12px; text-align: left;">Rank</th>
                             <th style="padding: 12px; text-align: left;">Symbol</th>
                             <th style="padding: 12px; text-align: left;">Name</th>
+                            <th style="padding: 12px; text-align: right;">Price</th>
+                            <th style="padding: 12px; text-align: center;">7D Chart</th>
                             <th style="padding: 12px; text-align: right;">Score</th>
                             <th style="padding: 12px; text-align: right;">Volume 24h</th>
                             <th style="padding: 12px; text-align: right;">Market Cap</th>
@@ -2610,6 +2612,17 @@
                                     <strong style="color: #1f2937; font-size: 16px;">${coin.symbol}</strong>
                                 </td>
                                 <td style="padding: 12px; color: #6b7280;">${coin.name}</td>
+                                <td style="padding: 12px; text-align: right;">
+                                    <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                        <span style="font-weight: 600; color: #1f2937;">$${formatPrice(coin.currentPrice)}</span>
+                                        <span style="font-size: 12px; color: ${coin.priceChange24h >= 0 ? '#10b981' : '#ef4444'};">
+                                            ${coin.priceChange24h >= 0 ? '▲' : '▼'} ${Math.abs(coin.priceChange24h).toFixed(2)}%
+                                        </span>
+                                    </div>
+                                </td>
+                                <td style="padding: 12px; text-align: center;">
+                                    ${renderSparkline(coin.sparkline, coin.priceChange7d)}
+                                </td>
                                 <td style="padding: 12px; text-align: right;">
                                     <div style="display: flex; align-items: center; justify-content: flex-end;">
                                         <div style="width: 60px; height: 8px; background: #e5e7eb; border-radius: 4px; margin-right: 8px;">
@@ -2635,8 +2648,8 @@
                 </table>
                 
                 <div style="margin-top: 15px; padding: 12px; background: #f9fafb; border-radius: 6px; text-align: center; color: #6b7280; font-size: 14px;">
-                    <strong>Score Breakdown:</strong> 
-                    Volume (40%) + Momentum (35%) + Sentiment (25%)
+                    <strong>💡 Tip:</strong> 
+                    Price shows current value + 24h change. Chart shows last 48 hours of price movement.
                 </div>
             `;
         }
@@ -2652,6 +2665,53 @@
             if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
             if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
             return num.toFixed(2);
+        }
+
+        function formatPrice(price) {
+            if (price >= 1000) return price.toFixed(0);
+            if (price >= 1) return price.toFixed(2);
+            if (price >= 0.01) return price.toFixed(4);
+            if (price >= 0.0001) return price.toFixed(6);
+            return price.toFixed(8);
+        }
+
+        function renderSparkline(sparkline, priceChange) {
+            if (!sparkline || sparkline.length === 0) {
+                return '<span style="color: #9ca3af; font-size: 12px;">No data</span>';
+            }
+
+            // Take last 48 hours (sparkline has 168 points for 7 days, so last ~48 points for 2 days)
+            const data = sparkline.slice(-48);
+            
+            const width = 80;
+            const height = 30;
+            const padding = 2;
+            
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            const range = max - min || 1;
+            
+            // Create SVG path
+            const points = data.map((value, index) => {
+                const x = (index / (data.length - 1)) * (width - padding * 2) + padding;
+                const y = height - padding - ((value - min) / range) * (height - padding * 2);
+                return `${x},${y}`;
+            }).join(' ');
+            
+            const color = priceChange >= 0 ? '#10b981' : '#ef4444';
+            
+            return `
+                <svg width="${width}" height="${height}" style="display: inline-block;">
+                    <polyline
+                        points="${points}"
+                        fill="none"
+                        stroke="${color}"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+            `;
         }
 
         function analyzeDiscovered(symbol) {

@@ -1,7 +1,4 @@
-import { getCurrentPrice, getTrendingCoins } from '../dataCollection/coinGeckoService';
 import { getCryptoNews } from '../dataCollection/cryptoPanicService';
-import { getCryptoMentions } from '../dataCollection/redditService';
-import { aggregateSentiment } from '../analysis/sentimentAnalysis';
 import { query } from '../../config/database';
 import { logger } from '../../utils/logger';
 import axios from 'axios';
@@ -15,6 +12,7 @@ export interface CoinCandidate {
   volume24h: number;
   priceChange24h: number;
   priceChange7d: number;
+  sparkline: number[];  // 7-day price history for chart
   volumeScore: number;
   momentumScore: number;
   sentimentScore: number;
@@ -239,6 +237,7 @@ export async function discoverCoins(
             volume24h: coin.total_volume,
             priceChange24h: coin.price_change_percentage_24h || 0,
             priceChange7d: coin.price_change_percentage_7d || 0,
+            sparkline: coin.sparkline_in_7d?.price || [],  // 7-day price history
             volumeScore,
             momentumScore,
             sentimentScore,
@@ -332,7 +331,7 @@ async function fetchCoinsByMarketCap(limit: number, forceRefresh: boolean = fals
       order: 'market_cap_desc',
       per_page: limit,
       page: 1,
-      sparkline: false,
+      sparkline: true,  // Get 7-day price chart data
       price_change_percentage: '24h,7d',
     };
     
@@ -501,6 +500,7 @@ export async function getTopDiscoveries(limit: number = 10): Promise<CoinCandida
       volume24h: parseFloat(row.volume_24h),
       priceChange24h: 0, // Not stored
       priceChange7d: 0,  // Not stored
+      sparkline: [],     // Not stored in DB (would be stale anyway)
       volumeScore: parseFloat(row.volume_score),
       momentumScore: parseFloat(row.price_momentum_score),
       sentimentScore: parseFloat(row.sentiment_score),

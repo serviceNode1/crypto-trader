@@ -60,7 +60,7 @@ export async function getCurrentPrice(symbol: string): Promise<number> {
       async () => {
         return withRetryJitter(
           async () => {
-            const coinId = symbolToCoinId(symbol);
+            const coinId = await symbolToCoinIdAsync(symbol);
             const url = `${BASE_URL}/simple/price`;
 
             logger.debug('Fetching current price from CoinGecko', {
@@ -100,7 +100,7 @@ export async function getCurrentPrice(symbol: string): Promise<number> {
 export async function getMarketData(
   symbols: string[]
 ): Promise<CoinMarketData[]> {
-  const coinIds = symbols.map(symbolToCoinId).join(',');
+  const coinIds = symbols.map(symbolToCoinIdSync).join(',');
   const cacheKey = `marketcap:${coinIds}`;
 
   return cacheAside(cacheKey, CACHE_TTL.MARKETCAP, async () => {
@@ -156,7 +156,7 @@ export async function getHistoricalPrices(
       async () => {
         return withRetryJitter(
           async () => {
-            const coinId = symbolToCoinId(symbol);
+            const coinId = await symbolToCoinIdAsync(symbol);
             const url = `${BASE_URL}/coins/${coinId}/market_chart`;
 
             logger.debug('Fetching historical prices from CoinGecko', {
@@ -245,7 +245,7 @@ export async function getCandlesticksFromCoinGecko(
       async () => {
         return withRetryJitter(
           async () => {
-            const coinId = symbolToCoinId(symbol);
+            const coinId = await symbolToCoinIdAsync(symbol);
             const url = `${BASE_URL}/coins/${coinId}/ohlc`;
 
             logger.debug('Fetching OHLC data from CoinGecko', { symbol, days });
@@ -356,12 +356,62 @@ export async function searchCoins(query: string): Promise<any[]> {
   );
 }
 
+// Cache for dynamically discovered coin IDs
+const dynamicCoinIdCache: Record<string, string> = {};
+
 /**
  * Convert symbol to CoinGecko coin ID
- * This is a simplified mapping - in production, you'd want a more comprehensive database
+ * First checks static mapping, then uses search API as fallback
  */
-function symbolToCoinId(symbol: string): string {
+async function symbolToCoinIdAsync(symbol: string): Promise<string> {
+  // Try static mapping first
+  const staticId = symbolToCoinIdSync(symbol);
+  if (staticId !== symbol.toLowerCase()) {
+    return staticId; // Found in static map
+  }
+
+  // Check dynamic cache
+  if (dynamicCoinIdCache[symbol.toUpperCase()]) {
+    logger.info('Using cached coin ID from dynamic search', { 
+      symbol, 
+      coinId: dynamicCoinIdCache[symbol.toUpperCase()] 
+    });
+    return dynamicCoinIdCache[symbol.toUpperCase()];
+  }
+
+  // Try dynamic search as last resort
+  try {
+    logger.info('Searching for coin ID dynamically', { symbol });
+    const searchResults = await searchCoins(symbol);
+    
+    if (searchResults && searchResults.length > 0) {
+      // Find exact symbol match
+      const exactMatch = searchResults.find(
+        (coin: any) => coin.symbol.toUpperCase() === symbol.toUpperCase()
+      );
+      
+      if (exactMatch) {
+        const coinId = exactMatch.id;
+        dynamicCoinIdCache[symbol.toUpperCase()] = coinId;
+        logger.info('Found coin ID via dynamic search', { symbol, coinId });
+        return coinId;
+      }
+    }
+  } catch (error) {
+    logger.warn('Dynamic coin ID search failed', { symbol, error });
+  }
+
+  // Last resort: use lowercase symbol
+  logger.warn('Could not find coin ID, using lowercase symbol', { symbol });
+  return symbol.toLowerCase();
+}
+
+/**
+ * Synchronous version - only checks static mapping
+ */
+function symbolToCoinIdSync(symbol: string): string {
   const symbolMap: Record<string, string> = {
+    // Top 20
     BTC: 'bitcoin',
     ETH: 'ethereum',
     BNB: 'binancecoin',
@@ -382,11 +432,62 @@ function symbolToCoinId(symbol: string): string {
     BCH: 'bitcoin-cash',
     ALGO: 'algorand',
     VET: 'vechain',
+    
+    // Top 21-50
+    TRX: 'tron',
+    FIL: 'filecoin',
+    APT: 'aptos',
+    NEAR: 'near',
+    ARB: 'arbitrum',
+    OP: 'optimism',
+    MKR: 'maker',
+    AAVE: 'aave',
+    GRT: 'the-graph',
+    SNX: 'synthetix-network-token',
+    CRV: 'curve-dao-token',
+    COMP: 'compound-governance-token',
+    FTM: 'fantom',
+    SAND: 'the-sandbox',
+    MANA: 'decentraland',
+    AXS: 'axie-infinity',
+    THETA: 'theta-token',
+    XTZ: 'tezos',
+    EOS: 'eos',
+    FLOW: 'flow',
+    
+    // Popular altcoins
+    ZEC: 'zcash',  // FIX for your ZEC issue!
+    XMR: 'monero',
+    DASH: 'dash',
+    ZRX: '0x',
+    BAT: 'basic-attention-token',
+    ENJ: 'enjincoin',
+    CHZ: 'chiliz',
+    SUSHI: 'sushi',
+    YFI: 'yearn-finance',
+    '1INCH': '1inch',  // Property names starting with numbers must be quoted
+    LRC: 'loopring',
+    GALA: 'gala',
+    IMX: 'immutable-x',
+    APE: 'apecoin',
+    LDO: 'lido-dao',
+    QNT: 'quant-network',
+    FET: 'fetch-ai',
+    RNDR: 'render-token',
+    INJ: 'injective-protocol',
+    RUNE: 'thorchain',
+    
+    // Stablecoins
+    USDT: 'tether',
+    USDC: 'usd-coin',
+    DAI: 'dai',
+    BUSD: 'binance-usd',
+    TUSD: 'true-usd',
   };
 
   const coinId = symbolMap[symbol.toUpperCase()];
   if (!coinId) {
-    logger.warn('Unknown symbol, using as-is', { symbol });
+    logger.warn('Unknown symbol, using as-is (may cause API errors)', { symbol });
     return symbol.toLowerCase();
   }
 
