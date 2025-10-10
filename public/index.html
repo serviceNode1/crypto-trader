@@ -896,6 +896,12 @@
             </div>
         </div>
 
+        <!-- AI Recommendations -->
+        <div class="card">
+            <h2>🤖 AI Recommendations</h2>
+            <div id="recommendations-list" class="loading">Loading...</div>
+        </div>
+
         <!-- Discovery Dashboard -->
         <div class="card" style="margin-bottom: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
@@ -1066,17 +1072,10 @@
             </div>
         </div>
 
-        <!-- Holdings & Recommendations -->
-        <div class="grid">
-            <div class="card">
-                <h2>Current Holdings</h2>
-                <div id="holdings-list" class="loading">Loading...</div>
-            </div>
-
-            <div class="card">
-                <h2>AI Recommendations</h2>
-                <div id="recommendations-list" class="loading">Loading...</div>
-            </div>
+        <!-- Current Holdings (Full Width) -->
+        <div class="card">
+            <h2>💼 Current Holdings</h2>
+            <div id="holdings-list" class="loading">Loading...</div>
         </div>
 
         <!-- Portfolio Value Chart -->
@@ -1141,22 +1140,38 @@
                                 <tr>
                                     <th>Symbol</th>
                                     <th>Quantity</th>
-                                    <th>Avg Price</th>
+                                    <th>Entry Price</th>
+                                    <th>Current Price</th>
                                     <th>Current Value</th>
                                     <th>P&L</th>
+                                    <th>Stop Loss</th>
+                                    <th>Take Profit</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${data.positions.map(pos => `
+                                ${data.positions.map(pos => {
+                                    const currentPrice = pos.currentValue / pos.quantity;
+                                    const priceChange = ((currentPrice - pos.averagePrice) / pos.averagePrice) * 100;
+                                    return `
                                     <tr>
                                         <td><strong>${pos.symbol}</strong></td>
                                         <td>${pos.quantity.toFixed(4)}</td>
                                         <td>$${pos.averagePrice.toFixed(2)}</td>
+                                        <td style="font-weight: 600; color: ${priceChange >= 0 ? '#10b981' : '#ef4444'};">
+                                            $${currentPrice.toFixed(2)}
+                                            <span style="font-size: 11px;">(${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(1)}%)</span>
+                                        </td>
                                         <td>$${pos.currentValue.toFixed(2)}</td>
                                         <td class="${pos.unrealizedPnL >= 0 ? 'positive' : 'negative'}">
                                             ${pos.unrealizedPnL >= 0 ? '+' : ''}$${pos.unrealizedPnL.toFixed(2)}
                                             (${pos.unrealizedPnLPercent.toFixed(2)}%)
+                                        </td>
+                                        <td style="font-size: 13px; color: ${pos.stopLoss ? '#f59e0b' : '#9ca3af'};">
+                                            ${pos.stopLoss ? '$' + pos.stopLoss.toFixed(2) : '—'}
+                                        </td>
+                                        <td style="font-size: 13px; color: ${pos.takeProfit ? '#10b981' : '#9ca3af'};">
+                                            ${pos.takeProfit ? '$' + pos.takeProfit.toFixed(2) : '—'}
                                         </td>
                                         <td>
                                             <button 
@@ -1173,7 +1188,7 @@
                                             </button>
                                         </td>
                                     </tr>
-                                `).join('')}
+                                `;}).join('')}
                             </tbody>
                         </table>
                     `;
@@ -1328,13 +1343,13 @@
             try {
                 currentTradePage = page;
                 const offset = (page - 1) * tradesPerPage;
+                
+                // Single API call now returns both trades and count
                 const response = await fetch(`${API_BASE}/trades?limit=${tradesPerPage}&offset=${offset}`);
-                const data = await response.json();
-
-                // Get total count for pagination
-                const countResponse = await fetch(`${API_BASE}/trades/count`);
-                const countData = await countResponse.json();
-                const totalTrades = countData.count;
+                const result = await response.json();
+                
+                const data = result.trades || result; // Support both old and new format
+                const totalTrades = result.total || data.length;
                 const totalPages = Math.ceil(totalTrades / tradesPerPage);
 
                 if (data.length > 0) {
@@ -1353,12 +1368,12 @@
                             <tbody>
                                 ${data.map(trade => `
                                     <tr>
-                                        <td>${new Date(trade.executedAt).toLocaleString()}</td>
+                                        <td>${new Date(trade.executedAt || trade.executed_at).toLocaleString()}</td>
                                         <td><strong>${trade.symbol}</strong></td>
                                         <td><span class="badge badge-${trade.side.toLowerCase()}">${trade.side}</span></td>
-                                        <td>${trade.quantity.toFixed(4)}</td>
-                                        <td>$${trade.price.toFixed(2)}</td>
-                                        <td>$${trade.totalCost.toFixed(2)}</td>
+                                        <td>${parseFloat(trade.quantity).toFixed(4)}</td>
+                                        <td>$${parseFloat(trade.price).toFixed(2)}</td>
+                                        <td>$${parseFloat(trade.totalCost || trade.total_cost).toFixed(2)}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>

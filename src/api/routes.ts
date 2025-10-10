@@ -161,19 +161,29 @@ router.get('/price/:symbol', async (req: Request, res: Response) => {
 
 /**
  * GET /api/trades - Get trade history with pagination
+ * Returns trades + total count in one response for efficiency
  */
 router.get('/trades', async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
     
-    const result = await query(`
-      SELECT * FROM trades 
-      ORDER BY executed_at DESC 
-      LIMIT $1 OFFSET $2
-    `, [limit, offset]);
+    // Execute both queries in parallel
+    const [tradesResult, countResult] = await Promise.all([
+      query(`
+        SELECT * FROM trades 
+        ORDER BY executed_at DESC 
+        LIMIT $1 OFFSET $2
+      `, [limit, offset]),
+      query('SELECT COUNT(*) as count FROM trades')
+    ]);
     
-    res.json(result.rows);
+    res.json({
+      trades: tradesResult.rows,
+      total: parseInt(countResult.rows[0].count),
+      page: Math.floor(offset / limit) + 1,
+      perPage: limit
+    });
   } catch (error) {
     logger.error('Failed to get trade history', { error });
     res.status(500).json({ error: 'Failed to retrieve trade history' });
@@ -181,7 +191,7 @@ router.get('/trades', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/trades/count - Get total number of trades
+ * GET /api/trades/count - Get total number of trades (legacy endpoint)
  */
 router.get('/trades/count', async (_req: Request, res: Response) => {
   try {
