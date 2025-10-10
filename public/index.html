@@ -1221,8 +1221,8 @@
                         <span class="metric-label">Win Rate</span>
                         <span class="metric-value">${(data.winRate * 100).toFixed(1)}%</span>
                     </div>
-                    <div class="metric">
-                        <span class="metric-label">Total Trades</span>
+                    <div class="metric" title="Number of completed sell transactions (buy-sell cycles)">
+                        <span class="metric-label">Closed Positions</span>
                         <span class="metric-value">${data.totalTrades}</span>
                     </div>
                 `;
@@ -1498,13 +1498,14 @@
             loadPortfolioChart(); 
             applySettings();
 
-            // Refresh every 60 seconds
+            // Refresh every 30 seconds (captures position monitor auto-trades)
             setInterval(() => {
                 loadPortfolio();
+                loadTrades();
                 loadPerformance();
                 loadRisk();
                 loadPortfolioChart();
-            }, 60000);
+            }, 30000);
         });
 
         // Modal control functions
