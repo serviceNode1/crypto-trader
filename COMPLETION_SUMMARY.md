@@ -130,21 +130,6 @@ A complete, production-ready **AI-powered cryptocurrency paper trading system** 
 9. **Reports** performance metrics
 10. **Learns** from outcomes (partial - can be extended)
 
-### Supported Cryptocurrencies
-- BTC (Bitcoin)
-- ETH (Ethereum)
-- BNB (Binance Coin)
-- ADA (Cardano)
-- SOL (Solana)
-- DOT (Polkadot)
-- MATIC (Polygon)
-- AVAX (Avalanche)
-- LINK (Chainlink)
-- UNI (Uniswap)
-
-*Easily extendable to more coins*
-
----
 
 ## 🗂️ File Structure (60+ Files Created)
 

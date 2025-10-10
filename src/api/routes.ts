@@ -587,17 +587,18 @@ router.post('/settings/reset', async (_req: Request, res: Response) => {
 
 /**
  * GET /api/discover - Discover trading opportunities
- * Query params: ?universe=top10|top25|top50&forceRefresh=true
+ * Query params: ?universe=top10|top25|top50|top100&strategy=conservative|moderate|aggressive&forceRefresh=true
  */
 router.get('/discover', async (req: Request, res: Response) => {
   try {
-    const universe = (req.query.universe as 'top10' | 'top25' | 'top50') || 'top25';
+    const universe = (req.query.universe as 'top10' | 'top25' | 'top50' | 'top100') || 'top25';
+    const strategy = (req.query.strategy as 'conservative' | 'moderate' | 'aggressive') || 'moderate';
     const forceRefresh = req.query.forceRefresh === 'true';
     
-    logger.info('Starting coin discovery', { universe, forceRefresh });
+    logger.info('Starting coin discovery', { universe, strategy, forceRefresh });
     
     const startTime = Date.now();
-    const result = await discoverCoins(universe, undefined, forceRefresh);
+    const result = await discoverCoins(universe, strategy, forceRefresh);
     const executionTime = Date.now() - startTime;
     
     res.json({

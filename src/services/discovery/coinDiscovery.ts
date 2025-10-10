@@ -51,6 +51,8 @@ export interface DiscoveryResult {
   };
 }
 
+export type DiscoveryStrategy = 'conservative' | 'moderate' | 'aggressive';
+
 export interface DiscoveryFilters {
   minMarketCap?: number;
   maxMarketCap?: number;
@@ -60,30 +62,92 @@ export interface DiscoveryFilters {
   maxPriceChange7d?: number;
 }
 
-const DEFAULT_FILTERS: DiscoveryFilters = {
-  minMarketCap: 10_000_000,      // $10M minimum (filter out micro-caps with low liquidity)
-  maxMarketCap: undefined,       // No maximum (let coin universe setting control this)
-  minVolume24h: 1_000_000,        // $1M minimum daily volume
-  minVolumeChange: 1.5,            // 50% volume increase minimum
-  minPriceChange7d: -20,           // Not dumping too hard
-  maxPriceChange7d: 200,           // Not pumped too hard (likely dump)
+interface ScoreWeights {
+  volume: number;
+  momentum: number;
+  sentiment: number;
+}
+
+interface StrategyConfig {
+  filters: DiscoveryFilters;
+  weights: ScoreWeights;
+  threshold: number;
+  description: string;
+}
+
+const STRATEGY_CONFIGS: Record<DiscoveryStrategy, StrategyConfig> = {
+  conservative: {
+    filters: {
+      minMarketCap: 100_000_000,    // $100M - established projects only
+      maxMarketCap: undefined,
+      minVolume24h: 10_000_000,     // $10M - high liquidity
+      minVolumeChange: 1.1,         // 10% volume increase
+      minPriceChange7d: -15,        // Avoid severe crashes
+      maxPriceChange7d: 100,        // Max 2x in a week
+    },
+    weights: {
+      volume: 0.25,
+      momentum: 0.35,
+      sentiment: 0.40,              // Trust sentiment more
+    },
+    threshold: 70,
+    description: 'Safe & Steady - Established coins with high liquidity'
+  },
+  moderate: {
+    filters: {
+      minMarketCap: 50_000_000,     // $50M - include mid-caps
+      maxMarketCap: undefined,
+      minVolume24h: 2_000_000,      // $2M - decent liquidity
+      minVolumeChange: 1.3,         // 30% volume increase
+      minPriceChange7d: -25,        // Tolerates pullbacks
+      maxPriceChange7d: 200,        // Max 3x in a week
+    },
+    weights: {
+      volume: 0.30,
+      momentum: 0.40,
+      sentiment: 0.30,              // Balanced
+    },
+    threshold: 65,
+    description: 'Balanced Growth - Mix of established and emerging'
+  },
+  aggressive: {
+    filters: {
+      minMarketCap: 10_000_000,     // $10M - small-caps OK
+      maxMarketCap: undefined,
+      minVolume24h: 500_000,        // $500K - can still trade it
+      minVolumeChange: 1.5,         // 50% volume increase
+      minPriceChange7d: -30,        // High volatility OK
+      maxPriceChange7d: 500,        // Max 6x in a week
+    },
+    weights: {
+      volume: 0.35,
+      momentum: 0.45,               // Trust momentum most
+      sentiment: 0.20,
+    },
+    threshold: 60,
+    description: 'High Risk/Reward - Emerging trends and momentum plays'
+  }
 };
 
 /**
  * Discover trading opportunities based on user's coin universe setting
  */
 export async function discoverCoins(
-  universe: 'top10' | 'top25' | 'top50' = 'top25',
-  customFilters?: DiscoveryFilters,
+  universe: 'top10' | 'top25' | 'top50' | 'top100' = 'top25',
+  strategy: DiscoveryStrategy = 'moderate',
   forceRefresh: boolean = false
 ): Promise<DiscoveryResult> {
   try {
-    logger.info('Starting coin discovery', { universe, forceRefresh });
+    logger.info('Starting coin discovery', { universe, strategy, forceRefresh });
 
-    const filters = { ...DEFAULT_FILTERS, ...customFilters };
+    const config = STRATEGY_CONFIGS[strategy];
+    const filters = config.filters;
 
     // Determine market cap range based on universe
-    const limit = universe === 'top10' ? 10 : universe === 'top25' ? 25 : 50;
+    const limit = universe === 'top10' ? 10 
+                : universe === 'top25' ? 25 
+                : universe === 'top50' ? 50 
+                : 100;
 
     // Fetch coin list from CoinGecko
     const coins = await fetchCoinsByMarketCap(limit, forceRefresh);
@@ -155,13 +219,14 @@ export async function discoverCoins(
         const compositeScore = calculateCompositeScore(
           volumeScore,
           momentumScore,
-          sentimentScore
+          sentimentScore,
+          config.weights
         );
 
         logEntry.compositeScore = compositeScore;
 
-        // Only include coins with decent composite score
-        if (compositeScore >= 60) {
+        // Only include coins meeting strategy threshold
+        if (compositeScore >= config.threshold) {
           logEntry.passed = true;
           logEntry.reason = `✅ Passed screening (score: ${compositeScore.toFixed(0)})`;
           
@@ -324,20 +389,14 @@ function calculateMomentumScore(coin: any): number {
 }
 
 /**
- * Calculate composite score from all factors
+ * Calculate composite score from all factors with strategy-specific weights
  */
 function calculateCompositeScore(
   volumeScore: number,
   momentumScore: number,
-  sentimentScore: number
+  sentimentScore: number,
+  weights: ScoreWeights
 ): number {
-  // Weighted average
-  const weights = {
-    volume: 0.4,      // Volume is most important (shows interest)
-    momentum: 0.35,   // Price momentum is next
-    sentiment: 0.25,  // Sentiment can be manipulated, lower weight
-  };
-
   const composite =
     volumeScore * weights.volume +
     momentumScore * weights.momentum +
