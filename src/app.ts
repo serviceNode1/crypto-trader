@@ -11,6 +11,7 @@ import routes from './api/routes';
 import { logger } from './utils/logger';
 import { initializeJobSystem } from './jobs/scheduler';
 import { closeQueues } from './jobs';
+import { initializeCoinList } from './services/dataCollection/coinListService';
 
 // Load environment variables
 dotenv.config();
@@ -146,6 +147,11 @@ async function initializeApp(): Promise<void> {
     logger.info('Initializing Redis...');
     await initRedis();
     logger.info('✓ Redis initialized');
+
+    // Initialize coin list (loads ~14,000 coins from CoinGecko)
+    logger.info('Initializing coin list...');
+    await initializeCoinList();
+    logger.info('✓ Coin list initialized');
 
     // Initialize job system
     if (process.env.ENABLE_JOB_SCHEDULER !== 'false') {
