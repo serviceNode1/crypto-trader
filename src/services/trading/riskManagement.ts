@@ -45,15 +45,24 @@ export async function validateTrade(
     const totalCost = quantity * price;
     const positionSizePercent = totalCost / portfolio.totalValue;
 
-    // 1. Check maximum position size (relaxed for manual trades)
-    const maxPositionSize = isManualTrade ? 0.20 : RISK_LIMITS.MAX_POSITION_SIZE; // 20% for manual, 5% for auto
-    if (positionSizePercent > maxPositionSize) {
-      return {
-        allowed: false,
-        reason: `Position size ${(positionSizePercent * 100).toFixed(1)}% exceeds maximum ${(maxPositionSize * 100).toFixed(1)}%`,
-        currentRisk: positionSizePercent,
-        maxRisk: maxPositionSize,
-      };
+    // 1. Check maximum position size
+    if (positionSizePercent > RISK_LIMITS.MAX_POSITION_SIZE) {
+      if (!isManualTrade) {
+        // Hard block for automated trades
+        return {
+          allowed: false,
+          reason: `Position size ${(positionSizePercent * 100).toFixed(1)}% exceeds maximum ${(RISK_LIMITS.MAX_POSITION_SIZE * 100).toFixed(1)}%`,
+          currentRisk: positionSizePercent,
+          maxRisk: RISK_LIMITS.MAX_POSITION_SIZE,
+        };
+      } else {
+        // Warning for manual trades - user has full control
+        if (positionSizePercent > 0.50) {
+          warnings.push(`⚠️ LARGE POSITION: ${(positionSizePercent * 100).toFixed(1)}% of portfolio. This is a highly concentrated bet.`);
+        } else if (positionSizePercent > 0.20) {
+          warnings.push(`Position size is ${(positionSizePercent * 100).toFixed(1)}% of portfolio. Recommended maximum for automated trades is ${(RISK_LIMITS.MAX_POSITION_SIZE * 100).toFixed(1)}%.`);
+        }
+      }
     }
 
     // 2. Check if stop loss is provided (optional for manual trades, warning if missing)
