@@ -1237,6 +1237,80 @@
             }
         }
 
+        // Portfolio Chart
+        let portfolioChart = null;
+
+        async function loadPortfolioChart() {
+            try {
+                const response = await fetch(`${API_BASE}/portfolio/history`);
+                const data = await response.json();
+
+                const ctx = document.getElementById('portfolioChart');
+                if (!ctx) return;
+
+                // Destroy existing chart if it exists
+                if (portfolioChart) {
+                    portfolioChart.destroy();
+                }
+
+                // Prepare data
+                const labels = data.map(d => new Date(d.timestamp).toLocaleDateString());
+                const values = data.map(d => d.totalValue);
+
+                // Create chart
+                portfolioChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Portfolio Value',
+                            data: values,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Value: $' + context.parsed.y.toFixed(2);
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value.toLocaleString();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to load portfolio chart:', error);
+                const canvas = document.getElementById('portfolioChart');
+                if (canvas && canvas.parentElement) {
+                    canvas.parentElement.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 40px;">No historical data available yet. Start trading to see your portfolio value over time!</p>';
+                }
+            }
+        }
+
         // Load trades
         async function loadTrades() {
             try {
@@ -1346,14 +1420,17 @@
             loadTrades();
             loadRecommendations();
             loadMarketContext();
-            loadTopDiscoveries();  // Load previously discovered coins
-            loadDiscoverySettings();  // Load discovery dropdown settings
+            loadPerformance();  
+            loadRisk();          
+            loadPortfolioChart(); 
+            applySettings();
 
             // Refresh every 60 seconds
             setInterval(() => {
                 loadPortfolio();
                 loadPerformance();
                 loadRisk();
+                loadPortfolioChart();
             }, 60000);
         });
 

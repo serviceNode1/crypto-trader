@@ -89,6 +89,61 @@ router.get('/portfolio/risk', async (_req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/portfolio/history - Get portfolio value history
+ */
+router.get('/portfolio/history', async (_req: Request, res: Response) => {
+  try {
+    const result = await query(`
+      SELECT 
+        DATE(executed_at) as date,
+        MAX(executed_at) as timestamp,
+        (SELECT SUM(
+          CASE 
+            WHEN t2.side = 'BUY' THEN -t2.total_cost
+            WHEN t2.side = 'SELL' THEN t2.total_cost - t2.fee
+          END
+        ) FROM trades t2 WHERE t2.executed_at <= MAX(t1.executed_at)
+        ) as cash_flow
+      FROM trades t1
+      GROUP BY DATE(executed_at)
+      ORDER BY date ASC
+    `);
+
+    // Calculate portfolio value at each point
+    const portfolio = await getPortfolio();
+    const startingCapital = 10000;
+    let runningCash = startingCapital;
+
+    const history = result.rows.map((row: any) => {
+      runningCash = startingCapital + parseFloat(row.cash_flow || 0);
+      return {
+        timestamp: row.timestamp,
+        totalValue: runningCash
+      };
+    });
+
+    // If no trades yet, return starting point
+    if (history.length === 0) {
+      history.push({
+        timestamp: new Date().toISOString(),
+        totalValue: portfolio.totalValue
+      });
+    } else {
+      // Add current value as latest point
+      history.push({
+        timestamp: new Date().toISOString(),
+        totalValue: portfolio.totalValue
+      });
+    }
+
+    res.json(history);
+  } catch (error) {
+    logger.error('Failed to get portfolio history', { error });
+    res.status(500).json({ error: 'Failed to retrieve portfolio history' });
+  }
+});
+
+/**
  * GET /api/price/:symbol - Get current price for a symbol
  */
 router.get('/price/:symbol', async (req: Request, res: Response) => {
