@@ -1086,95 +1086,32 @@
             }
         }
 
-        // Collapse/Expand card functionality
-        function toggleCardCollapse(cardId) {
-            const content = document.getElementById(cardId);
-            if (!content) return;
-            
-            // Find the collapse button in the header
-            const h2 = content.previousElementSibling;
-            const button = h2?.querySelector('.collapse-btn');
-            if (!button) return;
-            
-            const isCollapsed = content.classList.contains('collapsed');
-            
-            if (isCollapsed) {
-                // Expand
-                content.classList.remove('collapsed');
-                content.style.maxHeight = content.scrollHeight + 'px';
-                button.classList.remove('collapsed');
-                button.textContent = '▼';
-                localStorage.setItem(`card-${cardId}-collapsed`, 'false');
-            } else {
-                // Collapse
-                content.classList.add('collapsed');
-                content.style.maxHeight = '0';
-                button.classList.add('collapsed');
-                button.textContent = '▼';
-                localStorage.setItem(`card-${cardId}-collapsed`, 'true');
-            }
-        }
-        
-        // Initialize card collapse states from localStorage
-        function initializeCardStates() {
-            document.querySelectorAll('.card-content').forEach(content => {
-                const cardId = content.id;
-                const isCollapsed = localStorage.getItem(`card-${cardId}-collapsed`) === 'true';
-                
-                if (isCollapsed) {
-                    content.classList.add('collapsed');
-                    content.style.maxHeight = '0';
-                    const button = content.previousElementSibling?.querySelector('.collapse-btn');
-                    if (button) {
-                        button.classList.add('collapsed');
-                    }
-                } else {
-                    // Set max-height to content height for smooth transitions
-                    content.style.maxHeight = content.scrollHeight + 'px';
-                }
-            });
-        }
+        // Collapse/Expand card functionality - NOW IN cards.js (exposed via main.js window.toggleCardCollapse)
+        // function toggleCardCollapse(cardId) { ... }
+        // function initializeCardStates() { ... }
 
         // Load all data on page load
+        // NOTE: Portfolio, Trades, Recommendations, Performance, Risk, Chart are now handled by main.js modules
         window.addEventListener('DOMContentLoaded', () => {
-            loadPortfolio();
-            loadTrades();
-            loadRecommendations();
+            // Still in inline script - not yet migrated:
             loadMarketContext();
-            loadPerformance();  
-            loadRisk();          
-            loadPortfolioChart(); 
             loadDiscoverySettings();
             loadCachedDiscoveries(); // Load cached discoveries on page load
-            applySettings();
             
-            // Initialize card collapse states
-            setTimeout(() => initializeCardStates(), 100);
-
-            // Refresh every 2 minutes (reduces API load, still captures position monitor auto-trades)
+            // Update "time ago" displays every minute (discovery not migrated yet)
             setInterval(() => {
-                loadPortfolio();
-                loadTrades();
-                loadPerformance();
-                loadRisk();
-                loadPortfolioChart();
-            }, 120000); // 2 minutes instead of 30 seconds
-
-            // Update "time ago" displays every minute
-            setInterval(() => {
-                refreshAnalysisTimeDisplay();
                 refreshDiscoveryTimeDisplay();
             }, 60000);
         });
 
-        // Modal control functions
-        function openInfoModal() {
-            document.getElementById('infoModal').classList.add('active');
-        }
+        // Modal control functions - NOW IN modals.js (exposed via main.js window.openInfoModal)
+        // function openInfoModal() {
+        //     document.getElementById('infoModal').classList.add('active');
+        // }
 
-        function closeInfoModal() {
-            document.getElementById('infoModal').classList.remove('active');
-        }
+        // function closeInfoModal() {
+        //     document.getElementById('infoModal').classList.remove('active');
+        // }
 
         // Crypto Selector Functions
         function selectCrypto(symbol) {
@@ -4187,5 +4124,7 @@
         </div>
     </div>
 
+    <!-- Load Modular JavaScript -->
+    <script type="module" src="/js/main.js"></script>
 </body>
 </html>
