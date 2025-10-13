@@ -1,56 +1,19 @@
 import { Job } from 'bull';
-import { getCurrentPrice } from '../../services/dataCollection/coinGeckoService';
-import { getCandlesticks } from '../../services/dataCollection/coinbaseService';
-import { getCryptoNews } from '../../services/dataCollection/cryptoPanicService';
-import { getCryptoMentions } from '../../services/dataCollection/redditService';
-import { calculateAllIndicators } from '../../services/analysis/technicalAnalysis';
-import { aggregateSentiment } from '../../services/analysis/sentimentAnalysis';
-import { getMarketContext } from '../../services/analysis/marketContext';
-import { getAIRecommendation } from '../../services/ai/aiService';
+import { generateActionableRecommendations } from '../../services/discovery/opportunityFinder';
 import { query } from '../../config/database';
-import { SUPPORTED_SYMBOLS } from '../../config/constants';
 import { logger } from '../../utils/logger';
 
 interface RecommendationJobData {
   symbol?: string;
+  maxBuy?: number;
+  maxSell?: number;
 }
 
 /**
- * Generate AI recommendation for a symbol
+ * Store recommendation in database
  */
-async function generateRecommendation(symbol: string): Promise<void> {
-  logger.info(`Generating recommendation for ${symbol}...`);
-  
+async function storeRecommendation(recommendation: any): Promise<void> {
   try {
-    // Fetch all required data
-    const [currentPrice, candlesticks, news, redditPosts, marketContext] =
-      await Promise.all([
-        getCurrentPrice(symbol),
-        getCandlesticks(symbol, '1h', 100),
-        getCryptoNews(symbol, 20),
-        getCryptoMentions(symbol, 50),
-        getMarketContext(),
-      ]);
-
-    // Calculate technical indicators
-    const technicalIndicators = calculateAllIndicators(candlesticks);
-    
-    // Calculate sentiment
-    const sentiment = await aggregateSentiment(redditPosts, news);
-
-    // Get AI recommendation
-    const recommendation = await getAIRecommendation({
-      symbol,
-      currentPrice,
-      technicalIndicators,
-      sentiment,
-      news,
-      marketContext,
-    });
-
-    logger.info(`${symbol} recommendation: ${recommendation.action} (${recommendation.confidence}% confidence)`);
-
-    // Store recommendation in database
     await query(
       `INSERT INTO recommendations (
         symbol, action, confidence, entry_price, stop_loss,
@@ -58,52 +21,62 @@ async function generateRecommendation(symbol: string): Promise<void> {
         reasoning, sources, expires_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW() + INTERVAL '24 hours')`,
       [
-        symbol,
+        recommendation.symbol,
         recommendation.action,
         recommendation.confidence,
         recommendation.entryPrice,
         recommendation.stopLoss,
-        recommendation.takeProfitLevels[0] || null,
-        recommendation.takeProfitLevels[1] || null,
+        recommendation.takeProfitLevels?.[0] || null,
+        recommendation.takeProfitLevels?.[1] || null,
         recommendation.positionSize,
         recommendation.riskLevel,
-        JSON.stringify(recommendation.reasoning),
-        recommendation.sources,
+        JSON.stringify(recommendation.reasoning || recommendation.keyFactors),
+        JSON.stringify(recommendation.sources || []),
       ]
     );
-
-    logger.info(`${symbol} recommendation stored in database`);
+    
+    logger.info(`Stored ${recommendation.action} recommendation for ${recommendation.symbol}`);
   } catch (error) {
-    logger.error(`Failed to generate recommendation for ${symbol}`, { error });
+    logger.error(`Failed to store recommendation for ${recommendation.symbol}`, { error });
     throw error;
   }
 }
 
 /**
  * Process recommendation generation jobs
+ * New workflow: Discovery → Filter → Opportunities → AI Analysis → Actionable Recommendations
  */
 export async function processRecommendation(job: Job<RecommendationJobData>): Promise<void> {
-  const { symbol } = job.data;
+  const { maxBuy = 3, maxSell = 3 } = job.data;
   
-  logger.info('Processing recommendation job', { symbol });
+  logger.info('🚀 Processing recommendation job with new opportunity-based workflow');
   
   try {
-    if (symbol) {
-      // Generate recommendation for specific symbol
-      await generateRecommendation(symbol);
-    } else {
-      // Generate recommendations for all supported symbols
-      for (const sym of SUPPORTED_SYMBOLS) {
-        await generateRecommendation(sym);
-        
-        // Add delay to respect rate limits and AI API quotas
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-      }
+    // Use the new intelligent opportunity finder
+    // This will:
+    // 1. Run discovery (or use cached results)
+    // 2. Filter for buy opportunities (not in portfolio)
+    // 3. Filter for sell opportunities (in portfolio)
+    // 4. Send only top candidates to AI
+    // 5. Only return BUY/SELL recommendations (no HOLD)
+    
+    const result = await generateActionableRecommendations(maxBuy, maxSell);
+    
+    // Store buy recommendations
+    for (const rec of result.buyRecommendations) {
+      await storeRecommendation(rec);
     }
     
-    logger.info('Recommendation job completed', { symbol });
+    // Store sell recommendations
+    for (const rec of result.sellRecommendations) {
+      await storeRecommendation(rec);
+    }
+    
+    logger.info(`✅ Recommendation job completed: ${result.buyRecommendations.length} BUY, ${result.sellRecommendations.length} SELL`);
+    logger.info(`⏭️  Skipped ${result.skipped.buy} lower-priority buy opportunities, ${result.skipped.sell} sell opportunities`);
+    
   } catch (error) {
-    logger.error('Recommendation job failed', { error, symbol });
+    logger.error('❌ Recommendation job failed', { error });
     throw error;
   }
 }

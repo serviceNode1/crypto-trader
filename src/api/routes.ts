@@ -15,6 +15,7 @@ import { getMarketContext, analyzeRegime } from '../services/analysis/marketCont
 import { getAIRecommendation, getLocalRecommendation } from '../services/ai/aiService';
 import { getUserSettings, updateUserSettings, resetUserSettings } from '../services/settings/settingsService';
 import { discoverCoins, getTopDiscoveries } from '../services/discovery/coinDiscovery';
+import { findOpportunities, generateActionableRecommendations } from '../services/discovery/opportunityFinder';
 import { getAutoExecutionStats } from '../services/trading/autoExecutor';
 import { getMonitoringStats } from '../services/trading/positionMonitor';
 import { query } from '../config/database';
@@ -307,7 +308,7 @@ router.post('/trade', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/recommendations - Get current trade recommendations
+ * GET /api/recommendations - Get current trade recommendations (BUY/SELL only, no HOLD)
  */
 router.get('/recommendations', async (req: Request, res: Response) => {
   try {
@@ -318,7 +319,8 @@ router.get('/recommendations', async (req: Request, res: Response) => {
               take_profit_1, take_profit_2, position_size, risk_level,
               reasoning, sources, created_at, expires_at
        FROM recommendations
-       WHERE expires_at > NOW() OR expires_at IS NULL
+       WHERE (expires_at > NOW() OR expires_at IS NULL)
+         AND action IN ('BUY', 'SELL')
        ORDER BY created_at DESC
        LIMIT $1`,
       [limit]
@@ -347,6 +349,49 @@ router.get('/recommendations', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Failed to get recommendations', { error });
     res.status(500).json({ error: 'Failed to retrieve recommendations' });
+  }
+});
+
+/**
+ * GET /api/opportunities - Find buy and sell opportunities
+ */
+router.get('/opportunities', async (req: Request, res: Response) => {
+  try {
+    const forceRefresh = req.query.forceRefresh === 'true';
+    
+    logger.info('Finding opportunities', { forceRefresh });
+    const result = await findOpportunities(forceRefresh);
+    
+    res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    logger.error('Failed to find opportunities', { error });
+    res.status(500).json({ error: 'Failed to find opportunities' });
+  }
+});
+
+/**
+ * POST /api/recommendations/generate - Generate AI recommendations for top opportunities
+ */
+router.post('/recommendations/generate', async (req: Request, res: Response) => {
+  try {
+    const maxBuy = parseInt(req.body.maxBuy as string) || 3;
+    const maxSell = parseInt(req.body.maxSell as string) || 3;
+    
+    logger.info('Generating actionable AI recommendations', { maxBuy, maxSell });
+    
+    const result = await generateActionableRecommendations(maxBuy, maxSell);
+    
+    res.json({
+      success: true,
+      message: `Generated ${result.buyRecommendations.length} BUY and ${result.sellRecommendations.length} SELL recommendations`,
+      ...result,
+    });
+  } catch (error) {
+    logger.error('Failed to generate actionable recommendations', { error });
+    res.status(500).json({ error: 'Failed to generate recommendations' });
   }
 });
 
@@ -655,9 +700,29 @@ router.post('/analyze/:symbol', async (req: Request, res: Response) => {
         symbol,
         currentPrice,
         technicalIndicators,
-        sentiment: { overall: { score: 0 } },
+        sentiment: { 
+          overall: { score: 0, magnitude: 0, classification: 'neutral' },
+          reddit: { score: 0, magnitude: 0, classification: 'neutral' },
+          news: { score: 0, magnitude: 0, classification: 'neutral' },
+          mentionVolume: 0,
+          velocity: 0,
+          credibilityWeighted: 0,
+          sources: { reddit: 0, news: 0 }
+        },
         news: [],
-        marketContext: {},
+        marketContext: {
+          btcDominance: 0,
+          totalMarketCap: 0,
+          marketRegime: 'sideways',
+          riskSentiment: 'neutral',
+          volatilityIndex: 0,
+          traditionalMarkets: {
+            sp500: 0,
+            sp500Change: 0,
+            gold: 0,
+            vix: 20
+          }
+        },
       });
 
       res.json(recommendation);

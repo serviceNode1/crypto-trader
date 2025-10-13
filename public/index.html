@@ -899,7 +899,10 @@
 
         <!-- AI Recommendations -->
         <div class="card">
-            <h2>🤖 AI Recommendations</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="margin: 0;">🤖 AI Recommendations</h2>
+                <span id="last-analysis-time" style="color: #666; font-size: 13px;"></span>
+            </div>
             <div id="recommendations-list" class="loading">Loading...</div>
         </div>
 
@@ -1434,6 +1437,17 @@
                 const data = await response.json();
 
                 if (data.length > 0) {
+                    // Find most recent recommendation
+                    const mostRecent = data.reduce((latest, rec) => {
+                        const recTime = new Date(rec.createdAt);
+                        return !latest || recTime > new Date(latest.createdAt) ? rec : latest;
+                    }, null);
+
+                    // Update time display
+                    if (mostRecent) {
+                        updateLastAnalysisTime(new Date(mostRecent.createdAt));
+                    }
+
                     const recsHTML = data.map(rec => `
                         <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -1451,10 +1465,33 @@
                     document.getElementById('recommendations-list').innerHTML = recsHTML;
                 } else {
                     document.getElementById('recommendations-list').innerHTML = '<p>No active recommendations</p>';
+                    document.getElementById('last-analysis-time').textContent = '';
                 }
             } catch (error) {
                 console.error('Failed to load recommendations:', error);
             }
+        }
+
+        // Update last analysis time display
+        function updateLastAnalysisTime(timestamp) {
+            const now = new Date();
+            const diff = now - timestamp;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            let timeText = '';
+            if (days > 0) {
+                timeText = `${days}d ago`;
+            } else if (hours > 0) {
+                timeText = `${hours}h ago`;
+            } else if (minutes > 0) {
+                timeText = `${minutes}m ago`;
+            } else {
+                timeText = 'Just now';
+            }
+
+            document.getElementById('last-analysis-time').textContent = `Last analysis: ${timeText}`;
         }
 
         // Load market context
