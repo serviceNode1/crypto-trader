@@ -403,6 +403,16 @@
         async function loadPortfolio() {
             try {
                 const response = await fetch(`${API_BASE}/portfolio`);
+                
+                // Check for rate limiting or other errors
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        console.warn('Rate limited - portfolio will refresh on next interval');
+                        return; // Skip update this time
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
 
                 const metricsHTML = `
@@ -503,6 +513,16 @@
         async function loadPerformance() {
             try {
                 const response = await fetch(`${API_BASE}/portfolio/performance`);
+                
+                // Check for rate limiting or other errors
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        console.warn('Rate limited - performance will refresh on next interval');
+                        return; // Skip update this time
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
 
                 const metricsHTML = `
@@ -534,6 +554,16 @@
         async function loadRisk() {
             try {
                 const response = await fetch(`${API_BASE}/portfolio/risk`);
+                
+                // Check for rate limiting or other errors
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        console.warn('Rate limited - risk metrics will refresh on next interval');
+                        return; // Skip update this time
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
 
                 const metricsHTML = `
@@ -563,6 +593,16 @@
         async function loadPortfolioChart() {
             try {
                 const response = await fetch(`${API_BASE}/portfolio/history`);
+                
+                // Check for rate limiting or other errors
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        console.warn('Rate limited - portfolio chart will refresh on next interval');
+                        return; // Skip update this time
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
 
                 const ctx = document.getElementById('portfolioChart');
@@ -643,6 +683,16 @@
                 
                 // Single API call now returns both trades and count
                 const response = await fetch(`${API_BASE}/trades?limit=${tradesPerPage}&offset=${offset}`);
+                
+                // Check for rate limiting or other errors
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        console.warn('Rate limited - trades will refresh on next interval');
+                        return; // Skip update this time
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const result = await response.json();
                 
                 const data = result.trades || result; // Support both old and new format
@@ -727,6 +777,16 @@
         async function loadRecommendations() {
             try {
                 const response = await fetch(`${API_BASE}/recommendations?limit=5`);
+                
+                // Check for rate limiting or other errors
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        console.warn('Rate limited - recommendations will refresh on next interval');
+                        return; // Skip update this time
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
 
                 if (data.length > 0) {
@@ -1091,14 +1151,14 @@
             // Initialize card collapse states
             setTimeout(() => initializeCardStates(), 100);
 
-            // Refresh every 30 seconds (captures position monitor auto-trades)
+            // Refresh every 2 minutes (reduces API load, still captures position monitor auto-trades)
             setInterval(() => {
                 loadPortfolio();
                 loadTrades();
                 loadPerformance();
                 loadRisk();
                 loadPortfolioChart();
-            }, 30000);
+            }, 120000); // 2 minutes instead of 30 seconds
 
             // Update "time ago" displays every minute
             setInterval(() => {
@@ -2853,7 +2913,6 @@
                     }
                 } else {
                     // No cached discoveries - auto-run first discovery
-                    console.log('No cached discoveries found, running initial discovery...');
                     setTimeout(() => {
                         runDiscovery();
                     }, 2000); // Wait 2 seconds after page load to let other data load
