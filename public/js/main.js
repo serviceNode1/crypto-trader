@@ -21,6 +21,17 @@ import {
     updateMaxPositionValue,
     changeTheme
 } from './ui/settings.js';
+import { analyzeCrypto, selectCrypto, closeAnalysis } from './ui/analysis.js';
+import { 
+    runDiscovery, 
+    loadCachedDiscoveries, 
+    loadDiscoverySettings,
+    saveDiscoverySettings,
+    refreshDiscoveryTimeDisplay,
+    toggleAnalysisLog,
+    analyzeDiscovered 
+} from './ui/discovery.js';
+import { formatPrice, formatNumber, renderSparkline, getScoreColor } from './utils/formatters.js';
 
 /**
  * Theme management
@@ -69,6 +80,16 @@ async function loadAllData() {
 }
 
 /**
+ * Load initial page data (non-refreshing)
+ */
+async function loadInitialData() {
+    await Promise.allSettled([
+        loadCachedDiscoveries(),
+    ]);
+    loadDiscoverySettings();
+}
+
+/**
  * Initialize the application
  */
 async function init() {
@@ -79,6 +100,7 @@ async function init() {
     
     // Load initial data
     await loadAllData();
+    await loadInitialData();
     
     // Initialize card states
     setTimeout(() => initializeCardStates(), 100);
@@ -91,6 +113,7 @@ async function init() {
     
     // Update time displays
     setInterval(refreshAnalysisTimeDisplay, REFRESH_INTERVALS.TIME_DISPLAY);
+    setInterval(refreshDiscoveryTimeDisplay, REFRESH_INTERVALS.TIME_DISPLAY);
     
     console.log('✅ Dashboard initialized!');
 }
@@ -109,6 +132,17 @@ window.changeTheme = changeTheme;
 window.loadTrades = loadTrades;
 window.loadPortfolio = loadPortfolio;
 window.loadRecommendations = loadRecommendations;
+window.analyzeCrypto = analyzeCrypto;
+window.selectCrypto = selectCrypto;
+window.closeAnalysis = closeAnalysis;
+window.runDiscovery = runDiscovery;
+window.toggleAnalysisLog = toggleAnalysisLog;
+window.analyzeDiscovered = analyzeDiscovered;
+window.saveDiscoverySettings = saveDiscoverySettings;
+window.formatPrice = formatPrice;
+window.formatNumber = formatNumber;
+window.renderSparkline = renderSparkline;
+window.getScoreColor = getScoreColor;
 
 // Start the app
 if (document.readyState === 'loading') {

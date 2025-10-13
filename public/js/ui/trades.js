@@ -7,6 +7,8 @@
 /* eslint-disable no-console */
 import { fetchTrades } from '../api/trades.js';
 import { PAGINATION } from '../config.js';
+import { formatNumber } from '../utils/formatters.js';
+import { formatPrice } from '../utils/formatters.js';
 
 let currentTradePage = 1;
 
@@ -39,9 +41,32 @@ export async function loadTrades(page = 1) {
                     </thead>
                     <tbody>
                         ${data.map(trade => {
-                            const tradeType = trade.tradeType || trade.trade_type || 'manual';
-                            const typeLabel = tradeType === 'auto' ? '🤖 Auto' : 
-                                            tradeType === 'discovery' ? '🔍 Discovery' : '👤 Manual';
+                            // Check multiple possible field names for trade type
+                            const tradeType = trade.tradeType || trade.trade_type || trade.type || 'manual';
+                            
+                            // Check if this was a protection execution
+                            const reasoning = trade.reasoning || '';
+                            const isStopLoss = reasoning.includes('Stop loss') || reasoning.includes('stop-loss');
+                            const isTakeProfit = reasoning.includes('Take profit') || reasoning.includes('take-profit');
+                            
+                            // Determine the label
+                            let typeLabel;
+                            if (isStopLoss) {
+                                typeLabel = '🛑 Stop Loss';
+                            } else if (isTakeProfit) {
+                                typeLabel = '🎯 Take Profit';
+                            } else if (tradeType === 'auto' || tradeType === 'automated') {
+                                typeLabel = '🤖 Auto';
+                            } else if (tradeType === 'discovery') {
+                                typeLabel = '🔍 Discovery';
+                            } else if (tradeType === 'recommendation') {
+                                typeLabel = '💡 AI Rec';
+                            } else {
+                                typeLabel = '👤 Manual';
+                            }
+                            
+                            // Calculate total if not provided
+                            const total = trade.total || (Number(trade.quantity) * Number(trade.price));
                             
                             return `
                             <tr>
@@ -53,9 +78,9 @@ export async function loadTrades(page = 1) {
                                     </span>
                                 </td>
                                 <td style="font-size: 12px;">${typeLabel}</td>
-                                <td>${parseFloat(trade.quantity).toFixed(4)}</td>
-                                <td>$${parseFloat(trade.price).toFixed(2)}</td>
-                                <td>$${parseFloat(trade.total).toFixed(2)}</td>
+                                <td>${formatNumber(trade.quantity)}</td>
+                                <td>$${formatPrice(Number(trade.price))}</td>
+                                <td>$${formatPrice(Number(total))}</td>
                             </tr>
                         `;}).join('')}
                     </tbody>

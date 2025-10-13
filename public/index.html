@@ -397,470 +397,7 @@
     </div>
 
     <script>
-        // ===================================================================
-        // MIGRATED TO /js/ MODULES:
-        // - API_BASE → config.js
-        // - loadPortfolio() → ui/portfolio.js
-        // - loadPerformance() → ui/portfolio.js
-        // - loadRisk() → ui/portfolio.js
-        // - loadPortfolioChart() → ui/portfolio.js
-        // - loadTrades() → ui/trades.js
-        // - loadRecommendations() → ui/recommendations.js
-        // - updateLastAnalysisTime() → ui/recommendations.js
-        // - refreshAnalysisTimeDisplay() → ui/recommendations.js
-        // ===================================================================
 
-        // Load portfolio data - MIGRATED to ui/portfolio.js
-        /* async function loadPortfolio() {
-            try {
-                const response = await fetch(`${API_BASE}/portfolio`);
-                
-                // Check for rate limiting or other errors
-                if (!response.ok) {
-                    if (response.status === 429) {
-                        console.warn('Rate limited - portfolio will refresh on next interval');
-                        return; // Skip update this time
-                    }
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-
-                const metricsHTML = `
-                    <div class="metric">
-                        <span class="metric-label">Total Value</span>
-                        <span class="metric-value">$${data.totalValue.toFixed(2)}</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Cash Balance</span>
-                        <span class="metric-value">$${data.cash.toFixed(2)}</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Total Return</span>
-                        <span class="metric-value ${data.totalReturn >= 0 ? 'positive' : 'negative'}">
-                            ${data.totalReturn >= 0 ? '+' : ''}$${data.totalReturn.toFixed(2)}
-                            (${data.totalReturnPercent.toFixed(2)}%)
-                        </span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Open Positions</span>
-                        <span class="metric-value">${data.positions.length}</span>
-                    </div>
-                `;
-
-                document.getElementById('portfolio-metrics').innerHTML = metricsHTML;
-
-                // Display holdings
-                if (data.positions.length > 0) {
-                    const holdingsHTML = `
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Symbol</th>
-                                    <th>Quantity</th>
-                                    <th>Entry Price</th>
-                                    <th>Current Price</th>
-                                    <th>Current Value</th>
-                                    <th>P&L</th>
-                                    <th>Stop Loss</th>
-                                    <th>Take Profit</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.positions.map(pos => {
-                                    const currentPrice = pos.currentValue / pos.quantity;
-                                    const priceChange = ((currentPrice - pos.averagePrice) / pos.averagePrice) * 100;
-                                    return `
-                                    <tr>
-                                        <td><strong>${pos.symbol}</strong></td>
-                                        <td>${pos.quantity.toFixed(4)}</td>
-                                        <td>$${formatPrice(pos.averagePrice)}</td>
-                                        <td style="font-weight: 600; color: ${priceChange >= 0 ? '#10b981' : '#ef4444'};">
-                                            $${formatPrice(currentPrice)}
-                                            <span style="font-size: 11px;">(${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(1)}%)</span>
-                                        </td>
-                                        <td>$${pos.currentValue.toFixed(2)}</td>
-                                        <td class="${pos.unrealizedPnL >= 0 ? 'positive' : 'negative'}">
-                                            ${pos.unrealizedPnL >= 0 ? '+' : ''}$${pos.unrealizedPnL.toFixed(2)}
-                                            (${pos.unrealizedPnLPercent.toFixed(2)}%)
-                                        </td>
-                                        <td style="font-size: 13px; color: ${pos.stopLoss ? '#f59e0b' : '#9ca3af'};">
-                                            ${pos.stopLoss ? '$' + pos.stopLoss.toFixed(2) : '—'}
-                                        </td>
-                                        <td style="font-size: 13px; color: ${pos.takeProfit ? '#10b981' : '#9ca3af'};">
-                                            ${pos.takeProfit ? '$' + pos.takeProfit.toFixed(2) : '—'}
-                                        </td>
-                                        <td>
-                                            <button 
-                                                class="button" 
-                                                onclick="openPositionDetails('${pos.symbol}')"
-                                                style="background: #667eea; padding: 6px 12px; font-size: 12px; white-space: nowrap; margin-right: 5px; min-width: 85px;">
-                                                📋 Details
-                                            </button>
-                                            <button 
-                                                class="button" 
-                                                onclick="sellPosition('${pos.symbol}', ${pos.quantity})"
-                                                style="background: #ef4444; padding: 6px 12px; font-size: 12px; white-space: nowrap; min-width: 85px;">
-                                                📉 Sell
-                                            </button>
-                                        </td>
-                                    </tr>
-                                `;}).join('')}
-                            </tbody>
-                        </table>
-                    `;
-                    document.getElementById('holdings-list').innerHTML = holdingsHTML;
-                } else {
-                    document.getElementById('holdings-list').innerHTML = '<p>No open positions</p>';
-                }
-            } catch (error) {
-                console.error('Failed to load portfolio:', error);
-                document.getElementById('portfolio-metrics').innerHTML = '<p class="negative">Failed to load data</p>';
-            }
-        }
-
-        // Load performance metrics
-        async function loadPerformance() {
-            try {
-                const response = await fetch(`${API_BASE}/portfolio/performance`);
-                
-                // Check for rate limiting or other errors
-                if (!response.ok) {
-                    if (response.status === 429) {
-                        console.warn('Rate limited - performance will refresh on next interval');
-                        return; // Skip update this time
-                    }
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-
-                const metricsHTML = `
-                    <div class="metric">
-                        <span class="metric-label">Sharpe Ratio</span>
-                        <span class="metric-value">${data.sharpeRatio.toFixed(2)}</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Max Drawdown</span>
-                        <span class="metric-value negative">${(data.maxDrawdown * 100).toFixed(2)}%</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Win Rate</span>
-                        <span class="metric-value">${(data.winRate * 100).toFixed(1)}%</span>
-                    </div>
-                    <div class="metric" title="Number of completed sell transactions (buy-sell cycles)">
-                        <span class="metric-label">Closed Positions</span>
-                        <span class="metric-value">${data.totalTrades}</span>
-                    </div>
-                `;
-
-                document.getElementById('performance-metrics').innerHTML = metricsHTML;
-            } catch (error) {
-                console.error('Failed to load performance:', error);
-            }
-        }
-
-        // Load risk metrics
-        async function loadRisk() {
-            try {
-                const response = await fetch(`${API_BASE}/portfolio/risk`);
-                
-                // Check for rate limiting or other errors
-                if (!response.ok) {
-                    if (response.status === 429) {
-                        console.warn('Rate limited - risk metrics will refresh on next interval');
-                        return; // Skip update this time
-                    }
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-
-                const metricsHTML = `
-                    <div class="metric">
-                        <span class="metric-label">Portfolio Risk</span>
-                        <span class="metric-value">${data.portfolioRisk.toFixed(2)}%</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Daily Loss</span>
-                        <span class="metric-value">${data.dailyLoss.toFixed(2)}%</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Capital Utilization</span>
-                        <span class="metric-value">${data.utilizationPercent.toFixed(1)}%</span>
-                    </div>
-                `;
-
-                document.getElementById('risk-metrics').innerHTML = metricsHTML;
-            } catch (error) {
-                console.error('Failed to load risk:', error);
-            }
-        }
-
-        // Portfolio Chart
-        let portfolioChart = null;
-
-        async function loadPortfolioChart() {
-            try {
-                const response = await fetch(`${API_BASE}/portfolio/history`);
-                
-                // Check for rate limiting or other errors
-                if (!response.ok) {
-                    if (response.status === 429) {
-                        console.warn('Rate limited - portfolio chart will refresh on next interval');
-                        return; // Skip update this time
-                    }
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-
-                const ctx = document.getElementById('portfolioChart');
-                if (!ctx) return;
-
-                // Destroy existing chart if it exists
-                if (portfolioChart) {
-                    portfolioChart.destroy();
-                }
-
-                // Prepare data
-                const labels = data.map(d => new Date(d.timestamp).toLocaleDateString());
-                const values = data.map(d => d.totalValue);
-
-                // Create chart
-                portfolioChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Portfolio Value',
-                            data: values,
-                            borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top'
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false,
-                                callbacks: {
-                                    label: function(context) {
-                                        return 'Value: $' + context.parsed.y.toFixed(2);
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: false,
-                                ticks: {
-                                    callback: function(value) {
-                                        return '$' + value.toLocaleString();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error('Failed to load portfolio chart:', error);
-                const canvas = document.getElementById('portfolioChart');
-                if (canvas && canvas.parentElement) {
-                    canvas.parentElement.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 40px;">No historical data available yet. Start trading to see your portfolio value over time!</p>';
-                }
-            }
-        }
-
-        // Trade pagination
-        let currentTradePage = 1;
-        const tradesPerPage = 10;
-
-        // Load trades with pagination
-        async function loadTrades(page = 1) {
-            try {
-                currentTradePage = page;
-                const offset = (page - 1) * tradesPerPage;
-                
-                // Single API call now returns both trades and count
-                const response = await fetch(`${API_BASE}/trades?limit=${tradesPerPage}&offset=${offset}`);
-                
-                // Check for rate limiting or other errors
-                if (!response.ok) {
-                    if (response.status === 429) {
-                        console.warn('Rate limited - trades will refresh on next interval');
-                        return; // Skip update this time
-                    }
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const result = await response.json();
-                
-                const data = result.trades || result; // Support both old and new format
-                const totalTrades = result.total || data.length;
-                const totalPages = Math.ceil(totalTrades / tradesPerPage);
-
-                if (data.length > 0) {
-                    const tradesHTML = `
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Symbol</th>
-                                    <th>Side</th>
-                                    <th>Type</th>
-                                    <th>Quantity</th>
-                                    <th>Price</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.map(trade => {
-                                    const tradeType = trade.tradeType || trade.trade_type || 'manual';
-                                    const typeLabel = {
-                                        'manual': '👤 Manual',
-                                        'automatic': '🤖 AI',
-                                        'stop_loss': '🛡️ Stop Loss',
-                                        'take_profit': '🎯 Take Profit'
-                                    }[tradeType] || '👤 Manual';
-                                    const typeColor = {
-                                        'manual': '#667eea',
-                                        'automatic': '#10b981',
-                                        'stop_loss': '#f59e0b',
-                                        'take_profit': '#10b981'
-                                    }[tradeType] || '#667eea';
-                                    
-                                    return `
-                                    <tr>
-                                        <td>${new Date(trade.executedAt || trade.executed_at).toLocaleString()}</td>
-                                        <td><strong>${trade.symbol}</strong></td>
-                                        <td><span class="badge badge-${trade.side.toLowerCase()}">${trade.side}</span></td>
-                                        <td><span style="font-size: 12px; color: ${typeColor}; font-weight: 500;">${typeLabel}</span></td>
-                                        <td>${parseFloat(trade.quantity).toFixed(4)}</td>
-                                        <td>$${formatPrice(parseFloat(trade.price))}</td>
-                                        <td>$${parseFloat(trade.totalCost || trade.total_cost).toFixed(2)}</td>
-                                    </tr>
-                                `;}).join('')}
-                            </tbody>
-                        </table>
-                        ${totalPages > 1 ? `
-                            <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
-                                <button 
-                                    class="button" 
-                                    onclick="loadTrades(${page - 1})" 
-                                    ${page === 1 ? 'disabled' : ''}
-                                    style="padding: 6px 12px; font-size: 13px; ${page === 1 ? 'opacity: 0.5; cursor: not-allowed;' : ''}">
-                                    ← Previous
-                                </button>
-                                <span style="color: #6b7280; font-size: 13px;">
-                                    Page ${page} of ${totalPages} (${totalTrades} total trades)
-                                </span>
-                                <button 
-                                    class="button" 
-                                    onclick="loadTrades(${page + 1})" 
-                                    ${page === totalPages ? 'disabled' : ''}
-                                    style="padding: 6px 12px; font-size: 13px; ${page === totalPages ? 'opacity: 0.5; cursor: not-allowed;' : ''}">
-                                    Next →
-                                </button>
-                            </div>
-                        ` : ''}
-                    `;
-                    document.getElementById('trades-list').innerHTML = tradesHTML;
-                } else {
-                    document.getElementById('trades-list').innerHTML = '<p>No trades yet</p>';
-                }
-            } catch (error) {
-                console.error('Failed to load trades:', error);
-            }
-        }
-
-        // Load recommendations
-        async function loadRecommendations() {
-            try {
-                const response = await fetch(`${API_BASE}/recommendations?limit=5`);
-                
-                // Check for rate limiting or other errors
-                if (!response.ok) {
-                    if (response.status === 429) {
-                        console.warn('Rate limited - recommendations will refresh on next interval');
-                        return; // Skip update this time
-                    }
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-
-                if (data.length > 0) {
-                    // Find most recent recommendation
-                    const mostRecent = data.reduce((latest, rec) => {
-                        const recTime = new Date(rec.createdAt);
-                        return !latest || recTime > new Date(latest.createdAt) ? rec : latest;
-                    }, null);
-
-                    // Update time display
-                    if (mostRecent) {
-                        updateLastAnalysisTime(new Date(mostRecent.createdAt));
-                    }
-
-                    const recsHTML = data.map(rec => `
-                        <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <strong style="font-size: 16px;">${rec.symbol}</strong>
-                                <span class="badge badge-${rec.action.toLowerCase()}">${rec.action}</span>
-                            </div>
-                            <div style="color: #666; font-size: 14px;">
-                                Confidence: <strong>${rec.confidence}%</strong> | 
-                                Risk: <strong>${rec.riskLevel}</strong>
-                            </div>
-                            ${rec.entryPrice ? `<div style="color: #666; font-size: 14px;">Entry: $${rec.entryPrice.toFixed(2)}</div>` : ''}
-                            ${rec.stopLoss ? `<div style="color: #666; font-size: 14px;">Stop Loss: $${rec.stopLoss.toFixed(2)}</div>` : ''}
-                        </div>
-                    `).join('');
-                    document.getElementById('recommendations-list').innerHTML = recsHTML;
-                } else {
-                    // Show helpful message with next analysis time and force button
-                    const nextAnalysisTime = new Date(Date.now() + 3600000); // Next hour
-                    document.getElementById('recommendations-list').innerHTML = `
-                        <div style="padding: 20px; background: #fafbfc; border-radius: 6px; border: 1px solid #e5e7eb;">
-                            <div style="text-align: center; margin-bottom: 15px;">
-                                <div style="color: #6b7280; font-size: 14px; margin-bottom: 8px;">No active recommendations yet</div>
-                                <div style="color: #9ca3af; font-size: 13px;">Next scheduled analysis: <strong>${nextAnalysisTime.toLocaleTimeString()}</strong></div>
-                            </div>
-                            
-                            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                                <button 
-                                    onclick="runAIAnalysisNow()" 
-                                    class="button" 
-                                    style="padding: 10px 20px; font-size: 14px;">
-                                    🔍 Run AI Analysis Now
-                                </button>
-                                <button 
-                                    onclick="document.getElementById('cryptoSearch').focus()" 
-                                    class="button" 
-                                    style="background: #6b7280; padding: 10px 20px; font-size: 14px;">
-                                    Analyze Specific Coin
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    document.getElementById('last-analysis-time').textContent = 'No analysis yet';
-                }
-            } catch (error) {
-                console.error('Failed to load recommendations:', error);
-                document.getElementById('recommendations-list').innerHTML = '<p style="color: #ef4444;">Failed to load recommendations</p>';
-                document.getElementById('last-analysis-time').textContent = 'Error loading data';
-            }
-        } */
 
         // Run AI analysis now (force recommendation generation)
         async function runAIAnalysisNow() {
@@ -1075,425 +612,26 @@
         // function initializeCardStates() { ... }
 
         // Load all data on page load
-        // NOTE: Portfolio, Trades, Recommendations, Performance, Risk, Chart are now handled by main.js modules
+        // NOTE: Portfolio, Trades, Recommendations, Performance, Risk, Chart, Discovery are now handled by main.js modules
         window.addEventListener('DOMContentLoaded', () => {
             // Still in inline script - not yet migrated:
             loadMarketContext();
-            loadDiscoverySettings();
-            loadCachedDiscoveries(); // Load cached discoveries on page load
-            
-            // Update "time ago" displays every minute (discovery not migrated yet)
-            setInterval(() => {
-                refreshDiscoveryTimeDisplay();
-            }, 60000);
         });
 
         // Modal control functions - NOW IN modals.js (exposed via main.js window.openInfoModal)
-        // function openInfoModal() {
-        //     document.getElementById('infoModal').classList.add('active');
-        // }
+        // function openInfoModal() { ... }
+        // function closeInfoModal() { ... }
 
-        // function closeInfoModal() {
-        //     document.getElementById('infoModal').classList.remove('active');
-        // }
-
-        // Crypto Selector Functions
-        function selectCrypto(symbol) {
-            document.getElementById('cryptoSearch').value = symbol.toUpperCase();
-            analyzeCrypto();
-        }
-
-        async function analyzeCrypto() {
-            const symbol = document.getElementById('cryptoSearch').value.trim().toUpperCase();
-            const aiModel = document.getElementById('aiModelSelect').value;
-            
-            if (!symbol) {
-                alert('Please enter a cryptocurrency symbol');
-                return;
-            }
-
-            const resultDiv = document.getElementById('analysisResult');
-            const contentDiv = document.getElementById('analysisContent');
-            const titleDiv = document.getElementById('analysisTitle');
-            
-            // Get model display name
-            const modelNames = {
-                'local': 'Local Analysis',
-                'anthropic': 'Anthropic Claude',
-                'openai': 'OpenAI GPT-4',
-                'both': 'AI Consensus'
-            };
-            const modelName = modelNames[aiModel] || aiModel;
-            
-            // Show loading state
-            resultDiv.style.display = 'block';
-            titleDiv.textContent = `Analyzing ${symbol} with ${modelName}...`;
-            contentDiv.innerHTML = `
-                <div class="analysis-loading">
-                    <div class="spinner"></div>
-                    <div>
-                        <strong>Fetching comprehensive analysis...</strong><br>
-                        <span style="font-size: 14px;">Using ${modelName} • This may take ${aiModel === 'both' ? '30-60' : '10-30'} seconds</span>
-                    </div>
-                </div>
-            `;
-            
-            // Scroll to results
-            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-            try {
-                // Call the analysis endpoint with model parameter
-                const response = await fetch(`${API_BASE}/analyze/${symbol}?model=${aiModel}`);
-                
-                if (!response.ok) {
-                    throw new Error(`Analysis failed: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                
-                // Display results
-                titleDiv.textContent = `✅ Analysis Complete: ${symbol}`;
-                contentDiv.innerHTML = formatAnalysisResults(data);
-                
-            } catch (error) {
-                console.error('Analysis error:', error);
-                titleDiv.textContent = `❌ Analysis Failed`;
-                contentDiv.innerHTML = `
-                    <div style="padding: 20px; text-align: center; color: #ef4444;">
-                        <strong>Unable to analyze ${symbol}</strong><br>
-                        <span style="font-size: 14px;">${error.message}</span><br><br>
-                        <p style="font-size: 14px; color: #6b7280;">
-                            Make sure the symbol is correct and try again. Popular symbols: BTC, ETH, SOL, ADA, AVAX, DOT, MATIC, LINK
-                        </p>
-                    </div>
-                `;
-            }
-        }
-
-        function createCandlestickChart(candlesticks, currentPrice) {
-            if (!candlesticks || candlesticks.length === 0) return '<p>No chart data available</p>';
-            
-            // Find min and max prices for scaling
-            const prices = candlesticks.flatMap(c => [c.high, c.low]);
-            const minPrice = Math.min(...prices);
-            const maxPrice = Math.max(...prices);
-            const priceRange = maxPrice - minPrice;
-            const padding = priceRange * 0.1; // 10% padding
-            
-            // Calculate dimensions
-            const chartWidth = 100; // percentage
-            const chartHeight = 220; // pixels
-            const candleWidth = chartWidth / candlesticks.length * 0.7; // 70% of available space
-            const candleGap = chartWidth / candlesticks.length * 0.3; // 30% gap
-            
-            // Generate candlesticks
-            const candles = candlesticks.map((candle, index) => {
-                const isGreen = candle.close >= candle.open;
-                const color = isGreen ? '#10b981' : '#ef4444';
-                
-                // Calculate positions (inverted Y axis for SVG)
-                const high = ((maxPrice + padding - candle.high) / (priceRange + 2 * padding)) * 100;
-                const low = ((maxPrice + padding - candle.low) / (priceRange + 2 * padding)) * 100;
-                const open = ((maxPrice + padding - candle.open) / (priceRange + 2 * padding)) * 100;
-                const close = ((maxPrice + padding - candle.close) / (priceRange + 2 * padding)) * 100;
-                
-                const bodyTop = Math.min(open, close);
-                const bodyBottom = Math.max(open, close);
-                const bodyHeight = Math.abs(close - open);
-                
-                const x = (index / candlesticks.length) * 100 + candleGap / 2;
-                
-                return `
-                    <g>
-                        <!-- Wick -->
-                        <line x1="${x + candleWidth/2}%" y1="${high}%" 
-                              x2="${x + candleWidth/2}%" y2="${low}%" 
-                              stroke="${color}" stroke-width="1"/>
-                        <!-- Body -->
-                        <rect x="${x}%" y="${bodyTop}%" 
-                              width="${candleWidth}%" height="${bodyHeight || 0.5}%" 
-                              fill="${color}" stroke="${color}"/>
-                    </g>
-                `;
-            }).join('');
-            
-            // Current price line
-            const currentPriceY = ((maxPrice + padding - currentPrice) / (priceRange + 2 * padding)) * 100;
-            
-            return `
-                <svg width="100%" height="${chartHeight}px" style="display: block;">
-                    ${candles}
-                    <!-- Current Price Line -->
-                    <line x1="0%" y1="${currentPriceY}%" x2="100%" y2="${currentPriceY}%" 
-                          stroke="#667eea" stroke-width="2" stroke-dasharray="5,5" opacity="0.7"/>
-                    <text x="2" y="${currentPriceY - 2}%" fill="#667eea" font-size="10" font-weight="bold">
-                        Current: $${currentPrice.toLocaleString()}
-                    </text>
-                    
-                    <!-- Price labels -->
-                    <text x="2" y="8" fill="#6b7280" font-size="10">
-                        $${maxPrice.toLocaleString()}
-                    </text>
-                    <text x="2" y="${chartHeight - 2}" fill="#6b7280" font-size="10">
-                        $${minPrice.toLocaleString()}
-                    </text>
-                </svg>
-            `;
-        }
-
-        function formatAnalysisResults(data) {
-            const recommendation = data.recommendation || {};
-            const technical = data.technical || {};
-            const sentiment = data.sentiment || {};
-            
-            // Check if we have multi-model analysis
-            const hasMultiModel = recommendation.multiModel && recommendation.multiModel.openai && recommendation.multiModel.anthropic;
-            
-            let recommendationHTML = '';
-            
-            if (hasMultiModel) {
-                // Show both model analyses side-by-side
-                const openai = recommendation.multiModel.openai;
-                const anthropic = recommendation.multiModel.anthropic;
-                
-                recommendationHTML = `
-                    <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border: 2px solid #3b82f6; margin-bottom: 20px;">
-                        <h4 style="margin: 0 0 15px 0; color: #1e40af; text-align: center;">🔬 Multi-Model Analysis (Consensus)</h4>
-                        <div style="display: grid; gap: 15px; margin-bottom: 15px;">
-                            <div style="padding: 15px; background: white; border-radius: 6px; border-left: 4px solid ${
-                                recommendation.action === 'BUY' ? '#10b981' : 
-                                recommendation.action === 'SELL' ? '#ef4444' : '#6b7280'
-                            };">
-                                <div style="font-weight: 600; color: #374151; margin-bottom: 8px;">Final Consensus:</div>
-                                <div style="display: flex; align-items: center; gap: 15px;">
-                                    <span style="padding: 8px 16px; background: ${
-                                        recommendation.action === 'BUY' ? '#10b981' : 
-                                        recommendation.action === 'SELL' ? '#ef4444' : '#6b7280'
-                                    }; color: white; border-radius: 6px; font-weight: 600; font-size: 16px;">
-                                        ${recommendation.action}
-                                    </span>
-                                    <span style="color: #6b7280; font-size: 14px;">
-                                        Confidence: <strong>${recommendation.confidence}%</strong>
-                                    </span>
-                                </div>
-                                <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 14px;">
-                                    ${recommendation.reasoning?.conclusion}
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <!-- OpenAI Analysis -->
-                            <div style="padding: 15px; background: white; border-radius: 6px; border-left: 4px solid #10a37f;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                    <strong style="color: #10a37f;">🤖 OpenAI GPT-4o-mini</strong>
-                                </div>
-                                <div style="margin-bottom: 10px;">
-                                    <span style="padding: 6px 12px; background: ${
-                                        openai.action === 'BUY' ? '#10b981' : 
-                                        openai.action === 'SELL' ? '#ef4444' : '#6b7280'
-                                    }; color: white; border-radius: 4px; font-weight: 600; font-size: 14px;">
-                                        ${openai.action}
-                                    </span>
-                                    <span style="color: #6b7280; font-size: 13px; margin-left: 8px;">
-                                        ${openai.confidence}% confidence
-                                    </span>
-                                </div>
-                                <p style="color: #6b7280; margin: 0; font-size: 13px; line-height: 1.5;">
-                                    ${openai.reasoning?.conclusion || 'No conclusion provided'}
-                                </p>
-                            </div>
-                            
-                            <!-- Anthropic Analysis -->
-                            <div style="padding: 15px; background: white; border-radius: 6px; border-left: 4px solid #d4732f;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                    <strong style="color: #d4732f;">🧠 Anthropic Claude Haiku</strong>
-                                </div>
-                                <div style="margin-bottom: 10px;">
-                                    <span style="padding: 6px 12px; background: ${
-                                        anthropic.action === 'BUY' ? '#10b981' : 
-                                        anthropic.action === 'SELL' ? '#ef4444' : '#6b7280'
-                                    }; color: white; border-radius: 4px; font-weight: 600; font-size: 14px;">
-                                        ${anthropic.action}
-                                    </span>
-                                    <span style="color: #6b7280; font-size: 13px; margin-left: 8px;">
-                                        ${anthropic.confidence}% confidence
-                                    </span>
-                                </div>
-                                <p style="color: #6b7280; margin: 0; font-size: 13px; line-height: 1.5;">
-                                    ${anthropic.reasoning?.conclusion || 'No conclusion provided'}
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-top: 15px; padding: 10px; background: white; border-radius: 4px; font-size: 12px; color: #6b7280; text-align: center;">
-                            ${openai.action === anthropic.action ? 
-                                `✅ <strong>Models Agree</strong> - Both models recommend ${openai.action}` : 
-                                `⚠️ <strong>Models Disagree</strong> - OpenAI: ${openai.action} vs Claude: ${anthropic.action}`
-                            }
-                        </div>
-                    </div>
-                `;
-            } else {
-                // Single model display (existing)
-                recommendationHTML = `
-                    <div style="padding: 20px; background: white; border-radius: 8px; border-left: 4px solid ${
-                        recommendation.action === 'BUY' ? '#10b981' : 
-                        recommendation.action === 'SELL' ? '#ef4444' : '#6b7280'
-                    };">
-                        <h4 style="margin: 0 0 10px 0; color: #1f2937;">AI Recommendation</h4>
-                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                            <span style="padding: 8px 16px; background: ${
-                                recommendation.action === 'BUY' ? '#10b981' : 
-                                recommendation.action === 'SELL' ? '#ef4444' : '#6b7280'
-                            }; color: white; border-radius: 6px; font-weight: 600; font-size: 18px;">
-                                ${recommendation.action || 'HOLD'}
-                            </span>
-                            <span style="font-size: 16px; color: #6b7280;">
-                                Confidence: <strong style="color: #1f2937;">${recommendation.confidence || 0}%</strong>
-                            </span>
-                        </div>
-                        <p style="color: #6b7280; margin: 0; line-height: 1.6;">
-                            ${recommendation.reasoning?.conclusion || 'Analysis in progress...'}
-                        </p>
-                    </div>
-                `;
-            }
-            
-            return `
-                <div style="display: grid; gap: 20px;">
-                    ${recommendationHTML}
-
-                    <!-- Price Chart -->
-                    ${data.candlesticks && data.candlesticks.length > 0 ? `
-                    <div style="background: white; border-radius: 8px; padding: 20px;">
-                        <h4 style="margin: 0 0 15px 0; color: #1f2937;">📈 Price Chart (Last 30 Periods)</h4>
-                        <div style="position: relative; height: 250px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px;">
-                            ${createCandlestickChart(data.candlesticks, data.currentPrice)}
-                        </div>
-                        <p style="margin: 10px 0 0 0; font-size: 12px; color: #6b7280; text-align: center;">
-                            Each bar represents ${data.candlesticks.length > 0 ? '~4 hours' : 'N/A'} • 
-                            Source: ${data.symbol} OHLC data
-                        </p>
-                    </div>
-                    ` : ''}
-
-                    <!-- Price & Technical -->
-                    <div style="background: white; border-radius: 8px; padding: 20px;">
-                        <h4 style="margin: 0 0 15px 0; color: #1f2937;">📊 Technical Analysis</h4>
-                        <div style="display: grid; gap: 10px;">
-                            <div class="analysis-stat">
-                                <span class="analysis-stat-label">Current Price</span>
-                                <span class="analysis-stat-value">$${data.currentPrice ? formatPrice(data.currentPrice) : 'N/A'}</span>
-                            </div>
-                            <div class="analysis-stat">
-                                <span class="analysis-stat-label">Trend</span>
-                                <span class="analysis-stat-value">${technical.trend?.trend?.toUpperCase() || 'N/A'}</span>
-                            </div>
-                            <div class="analysis-stat">
-                                <span class="analysis-stat-label">RSI (14)</span>
-                                <span class="analysis-stat-value" style="color: ${
-                                    technical.indicators?.rsi > 70 ? '#ef4444' : 
-                                    technical.indicators?.rsi < 30 ? '#10b981' : '#1f2937'
-                                }">${technical.indicators?.rsi?.toFixed(2) || 'N/A'}</span>
-                            </div>
-                            <div class="analysis-stat">
-                                <span class="analysis-stat-label">MACD Signal</span>
-                                <span class="analysis-stat-value">${
-                                    technical.indicators?.macd?.histogram > 0 ? '📈 Bullish' : '📉 Bearish'
-                                }</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Sentiment -->
-                    <div style="background: white; border-radius: 8px; padding: 20px;">
-                        <h4 style="margin: 0 0 15px 0; color: #1f2937;">💭 Market Sentiment</h4>
-                        <div style="display: grid; gap: 10px;">
-                            <div class="analysis-stat">
-                                <span class="analysis-stat-label">Overall</span>
-                                <span class="analysis-stat-value" style="color: ${
-                                    sentiment.overall?.classification === 'bullish' ? '#10b981' : 
-                                    sentiment.overall?.classification === 'bearish' ? '#ef4444' : '#6b7280'
-                                }">
-                                    ${sentiment.overall?.classification?.toUpperCase() || 'NEUTRAL'}
-                                </span>
-                            </div>
-                            <div class="analysis-stat">
-                                <span class="analysis-stat-label">Sentiment Score</span>
-                                <span class="analysis-stat-value">${sentiment.overall?.score?.toFixed(3) || '0.000'}</span>
-                            </div>
-                            <div class="analysis-stat">
-                                <span class="analysis-stat-label">Mention Volume</span>
-                                <span class="analysis-stat-value">${sentiment.mentionVolume || 0} posts</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Trade Setup -->
-                    ${recommendation.entryPrice ? `
-                    <div style="background: #f0fdf4; border-radius: 8px; padding: 20px; border: 2px solid #10b981;">
-                        <h4 style="margin: 0 0 15px 0; color: #1f2937;">🎯 Trade Setup</h4>
-                        <div style="display: grid; gap: 10px;">
-                            <div class="analysis-stat">
-                                <span class="analysis-stat-label">Entry Price</span>
-                                <span class="analysis-stat-value">$${recommendation.entryPrice?.toLocaleString()}</span>
-                            </div>
-                            <div class="analysis-stat">
-                                <span class="analysis-stat-label">Stop Loss</span>
-                                <span class="analysis-stat-value" style="color: #ef4444;">$${recommendation.stopLoss?.toLocaleString()}</span>
-                            </div>
-                            <div class="analysis-stat">
-                                <span class="analysis-stat-label">Take Profit Levels</span>
-                                <span class="analysis-stat-value" style="color: #10b981;">
-                                    ${recommendation.takeProfitLevels?.map(tp => '$' + tp.toLocaleString()).join(', ') || 'N/A'}
-                                </span>
-                            </div>
-                            <div class="analysis-stat">
-                                <span class="analysis-stat-label">Position Size</span>
-                                <span class="analysis-stat-value">${recommendation.positionSize}% of portfolio</span>
-                            </div>
-                            <div class="analysis-stat">
-                                <span class="analysis-stat-label">Risk Level</span>
-                                <span class="analysis-stat-value" style="color: ${
-                                    recommendation.riskLevel === 'HIGH' ? '#ef4444' : 
-                                    recommendation.riskLevel === 'MEDIUM' ? '#f59e0b' : '#10b981'
-                                }">${recommendation.riskLevel}</span>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}
-
-                    <!-- Key Factors -->
-                    ${recommendation.keyFactors?.length ? `
-                    <div style="background: white; border-radius: 8px; padding: 20px;">
-                        <h4 style="margin: 0 0 15px 0; color: #1f2937;">🔑 Key Factors</h4>
-                        <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-                            ${recommendation.keyFactors.map(factor => `<li>${factor}</li>`).join('')}
-                        </ul>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        function closeAnalysis() {
-            document.getElementById('analysisResult').style.display = 'none';
-        }
-
-        function switchTab(tabName) {
-            // Hide all tab contents
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            // Remove active from all buttons
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            // Show selected tab
-            document.getElementById(tabName).classList.add('active');
-            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
-        }
+        // ===================================================================
+        // MIGRATED TO ui/analysis.js:
+        // - selectCrypto() → ui/analysis.js
+        // - analyzeCrypto() → ui/analysis.js
+        // - createCandlestickChart() → ui/analysis.js
+        // - formatAnalysisResults() → ui/analysis.js
+        // - closeAnalysis() → ui/analysis.js
+        // - switchTab() → ui/modals.js
+        // (Code removed - see ui/analysis.js for implementation)
+        // ===================================================================
 
         // Close modal when clicking outside
         document.addEventListener('click', function(event) {
@@ -2635,165 +1773,7 @@
     </div>
 
     <script>
-        // ===================================================================
-        // MIGRATED TO /js/ MODULES:
-        // - DEFAULT_SETTINGS → config.js
-        // - loadSettings() → utils/storage.js
-        // - saveSettings() → ui/settings.js
-        // - applySettings() → ui/settings.js
-        // - openSettingsModal() → ui/settings.js
-        // - closeSettingsModal() → ui/settings.js
-        // - updateConfidenceValue() → ui/settings.js
-        // - updateMaxPositionValue() → ui/settings.js
-        // - changeTheme() → ui/settings.js (exposed via main.js)
-        // - applyTheme() → main.js
-        // - initializeTheme() → main.js
-        // ===================================================================
-        
-        /* const DEFAULT_SETTINGS = {
-            autoExecute: false,
-            confidenceThreshold: 75,
-            humanApproval: true,
-            positionSizingStrategy: 'equal',
-            maxPositionSize: 5,
-            takeProfitStrategy: 'partial',
-            autoStopLoss: true,
-            coinUniverse: 'top25',
-            discoveryStrategy: 'moderate',
-            analysisFrequency: 4
-        };
-
-        // Load settings from localStorage
-        function loadSettings() {
-            const saved = localStorage.getItem('tradingSettings');
-            return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
-        }
-
-        // Save settings to localStorage
-        function saveSettings() {
-            const settings = {
-                autoExecute: document.getElementById('autoExecuteToggle').checked,
-                confidenceThreshold: parseInt(document.getElementById('confidenceThreshold').value),
-                humanApproval: document.getElementById('humanApprovalToggle').checked,
-                positionSizingStrategy: document.getElementById('positionSizingStrategy').value,
-                maxPositionSize: parseInt(document.getElementById('maxPositionSize').value),
-                takeProfitStrategy: document.getElementById('takeProfitStrategy').value,
-                autoStopLoss: document.getElementById('autoStopLossToggle').checked,
-                coinUniverse: document.getElementById('coinUniverse').value,
-                discoveryStrategy: document.getElementById('discoveryStrategy').value,
-                analysisFrequency: parseInt(document.getElementById('analysisFrequency').value)
-            };
-            
-            localStorage.setItem('tradingSettings', JSON.stringify(settings));
-            console.log('Settings saved:', settings);
-            
-            // Sync with discovery dropdowns
-            const universeSelectEl = document.getElementById('discoveryUniverseSelect');
-            const strategySelectEl = document.getElementById('discoveryStrategySelect');
-            if (universeSelectEl) universeSelectEl.value = settings.coinUniverse;
-            if (strategySelectEl) strategySelectEl.value = settings.discoveryStrategy;
-        }
-
-        // Apply saved settings to UI
-        function applySettings() {
-            const settings = loadSettings();
-            
-            document.getElementById('autoExecuteToggle').checked = settings.autoExecute;
-            document.getElementById('confidenceThreshold').value = settings.confidenceThreshold;
-            document.getElementById('confidenceValue').textContent = settings.confidenceThreshold;
-            document.getElementById('humanApprovalToggle').checked = settings.humanApproval;
-            document.getElementById('positionSizingStrategy').value = settings.positionSizingStrategy;
-            document.getElementById('maxPositionSize').value = settings.maxPositionSize;
-            document.getElementById('maxPositionValue').textContent = settings.maxPositionSize;
-            document.getElementById('takeProfitStrategy').value = settings.takeProfitStrategy;
-            document.getElementById('autoStopLossToggle').checked = settings.autoStopLoss;
-            document.getElementById('coinUniverse').value = settings.coinUniverse;
-            document.getElementById('discoveryStrategy').value = settings.discoveryStrategy;
-            document.getElementById('analysisFrequency').value = settings.analysisFrequency;
-        }
-
-        // Update confidence value display
-        function updateConfidenceValue(value) {
-            document.getElementById('confidenceValue').textContent = value;
-        }
-
-        // Update max position value display
-        function updateMaxPositionValue(value) {
-            document.getElementById('maxPositionValue').textContent = value;
-        }
-
-        // Settings modal functions
-        function openSettingsModal() {
-            applySettings(); // Load current settings
-            document.getElementById('settingsModal').classList.add('active');
-        }
-
-        function closeSettingsModal() {
-            document.getElementById('settingsModal').classList.remove('active');
-        }
-
-        function saveAndCloseSettings() {
-            saveSettings();
-            closeSettingsModal();
-            
-            // Show success message
-            alert('✅ Settings saved successfully!');
-        }
-
-        // Initialize settings on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            applySettings();
-            loadDiscoverySettings();  // Load user's discovery preferences into dropdowns
-        });
-
-        // Get current settings (for use in other functions)
-        function getSettings() {
-            return loadSettings();
-        }
-
-        // Theme management functions
-        function changeTheme(theme) {
-            localStorage.setItem('theme', theme);
-            applyTheme(theme);
-        }
-
-        function applyTheme(theme) {
-            const html = document.documentElement;
-            
-            if (theme === 'auto') {
-                // Use system preference
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                html.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-            } else {
-                html.setAttribute('data-theme', theme);
-            }
-            
-            // Update the selector in settings modal
-            const themeSelect = document.getElementById('themeSelect');
-            if (themeSelect) {
-                themeSelect.value = theme;
-            }
-        }
-
-        function initializeTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'auto';
-            applyTheme(savedTheme);
-            
-            // Listen for system theme changes when auto is selected
-            if (savedTheme === 'auto') {
-                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-                    if (localStorage.getItem('theme') === 'auto') {
-                        applyTheme('auto');
-                    }
-                });
-            }
-        }
-
-        // Initialize theme on page load
-        initializeTheme(); */
-
-        // Bridge constants and functions for unmigrated code (discovery, trading, analysis)
-        // These will be removed when those modules are migrated
+     
         const API_BASE = window.location.origin + '/api';
         
         function loadSettings() {
@@ -2817,485 +1797,10 @@
             return loadSettings();
         }
 
-        // Save discovery settings from dropdowns (sync with main settings)
-        function saveDiscoverySettings() {
-            const settings = loadSettings();
-            settings.coinUniverse = document.getElementById('discoveryUniverseSelect').value;
-            settings.discoveryStrategy = document.getElementById('discoveryStrategySelect').value;
-            localStorage.setItem('tradingSettings', JSON.stringify(settings));
-            
-            // Also update settings modal if it exists
-            const coinUniverseEl = document.getElementById('coinUniverse');
-            const discoveryStrategyEl = document.getElementById('discoveryStrategy');
-            if (coinUniverseEl) coinUniverseEl.value = settings.coinUniverse;
-            if (discoveryStrategyEl) discoveryStrategyEl.value = settings.discoveryStrategy;
-        }
-
-        // Load discovery settings into dropdowns
-        function loadDiscoverySettings() {
-            const settings = loadSettings();
-            document.getElementById('discoveryUniverseSelect').value = settings.coinUniverse || 'top25';
-            document.getElementById('discoveryStrategySelect').value = settings.discoveryStrategy || 'moderate';
-        }
-
-        // Store last discovery timestamp globally
-        let lastDiscoveryTimestamp = null;
-
-        // Load cached discoveries on page load
-        async function loadCachedDiscoveries() {
-            try {
-                const response = await fetch(`${API_BASE}/discover/top?limit=10`);
-                if (!response.ok) {
-                    throw new Error('Failed to load cached discoveries');
-                }
-                
-                const discoveries = await response.json();
-                
-                if (discoveries && discoveries.length > 0) {
-                    // Display cached discoveries
-                    document.getElementById('discoveries-list').innerHTML = formatDiscoveries(discoveries);
-                    
-                    // Find most recent discovery timestamp
-                    const mostRecent = discoveries.reduce((latest, disc) => {
-                        const discTime = new Date(disc.discoveredAt);
-                        return !latest || discTime > new Date(latest.discoveredAt) ? disc : latest;
-                    }, null);
-                    
-                    if (mostRecent && mostRecent.discoveredAt) {
-                        lastDiscoveryTimestamp = new Date(mostRecent.discoveredAt);
-                        refreshDiscoveryTimeDisplay();
-                        
-                        // Show discovery info
-                        const discoveryInfo = document.getElementById('discovery-info');
-                        discoveryInfo.style.display = 'block';
-                        document.getElementById('discovery-execution-time').textContent = 'N/A (cached)';
-                        document.getElementById('discovery-cache-status').textContent = '✅ Yes (From database)';
-                    }
-                } else {
-                    // No cached discoveries - auto-run first discovery
-                    setTimeout(() => {
-                        runDiscovery();
-                    }, 2000); // Wait 2 seconds after page load to let other data load
-                }
-            } catch (error) {
-                console.error('Failed to load cached discoveries:', error);
-                // Show prompt to run discovery
-                document.getElementById('discoveries-list').innerHTML = `
-                    <p style="color: #6b7280; text-align: center; padding: 20px;">
-                        No discoveries found. Click "Run Discovery" to find trading opportunities.
-                    </p>
-                `;
-            }
-        }
-
-        // Refresh discovery time display (called periodically)
-        function refreshDiscoveryTimeDisplay() {
-            if (!lastDiscoveryTimestamp) return;
-
-            const now = new Date();
-            const diff = now - lastDiscoveryTimestamp;
-            const minutes = Math.floor(diff / 60000);
-            const hours = Math.floor(minutes / 60);
-            const days = Math.floor(hours / 24);
-
-            let timeText = '';
-            if (days > 0) {
-                timeText = `${days}d ago`;
-            } else if (hours > 0) {
-                timeText = `${hours}h ago`;
-            } else if (minutes > 0) {
-                timeText = `${minutes}m ago`;
-            } else {
-                timeText = 'Just now';
-            }
-
-            document.getElementById('discovery-timestamp').textContent = timeText;
-        }
-
-        // Discovery Functions
-        async function runDiscovery() {
-            const btn = document.getElementById('discoveryBtn');
-            const status = document.getElementById('discovery-status');
-            const message = document.getElementById('discovery-message');
-            const listDiv = document.getElementById('discoveries-list');
-            const logContainer = document.getElementById('analysis-log-container');
-            const logContent = document.getElementById('analysis-log-content');
-            const logSummary = document.getElementById('log-summary');
-            const forceRefresh = document.getElementById('forceRefreshCheckbox').checked;
-            const discoveryInfo = document.getElementById('discovery-info');
-            
-            try {
-                // Get coin universe from settings
-                const settings = getSettings();
-                const universe = settings.coinUniverse || 'top25';
-                const strategy = settings.discoveryStrategy || 'moderate';
-                
-                // Show loading
-                btn.disabled = true;
-                btn.textContent = '⏳ Scanning...';
-                status.style.display = 'block';
-                const refreshText = forceRefresh ? ' (bypassing cache)' : '';
-                const universeText = universe === 'top10' ? 'top 10' : universe === 'top25' ? 'top 25' : universe === 'top50' ? 'top 50' : 'top 100';
-                const strategyText = strategy === 'conservative' ? '(Conservative)' : strategy === 'aggressive' ? '(Aggressive)' : '(Moderate)';
-                message.textContent = `Scanning ${universeText} coins ${strategyText}${refreshText}...`;
-                
-                // Clear previous log
-                logContent.innerHTML = '';
-                logContainer.style.display = 'none';
-                
-                // Run discovery
-                const url = `${API_BASE}/discover?universe=${universe}&strategy=${strategy}${forceRefresh ? '&forceRefresh=true' : ''}`;
-                const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error('Discovery failed');
-                }
-                
-                const data = await response.json();
-                
-                // Hide loading, show results
-                status.style.display = 'none';
-                btn.disabled = false;
-                btn.textContent = '🚀 Run Discovery';
-                
-                // Update discovery info
-                if (data.timestamp) {
-                    discoveryInfo.style.display = 'block';
-                    lastDiscoveryTimestamp = new Date(data.timestamp);
-                    refreshDiscoveryTimeDisplay();
-                    document.getElementById('discovery-execution-time').textContent = `${(data.executionTime / 1000).toFixed(2)}s`;
-                    document.getElementById('discovery-cache-status').textContent = data.forceRefresh ? '❌ No (Fresh data)' : '✅ Yes (Cached)';
-                }
-                
-                // Show analysis log
-                if (data.analysisLog && data.analysisLog.length > 0) {
-                    logContainer.style.display = 'block';
-                    logSummary.textContent = `${data.summary.totalAnalyzed} analyzed · ${data.summary.passed} passed · ${data.summary.rejected} rejected`;
-                    displayAnalysisLog(data.analysisLog, data.summary);
-                }
-                
-                // Display results
-                if (data.candidates && data.candidates.length > 0) {
-                    listDiv.innerHTML = formatDiscoveries(data.candidates);
-                } else {
-                    listDiv.innerHTML = formatNoOpportunities(data.summary, data.analysisLog);
-                }
-                
-            } catch (error) {
-                console.error('Discovery error:', error);
-                status.style.display = 'none';
-                btn.disabled = false;
-                btn.textContent = '🚀 Run Discovery';
-                listDiv.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 20px;">❌ Discovery failed. Please try again.</p>';
-            }
-        }
-
-        function formatNoOpportunities(summary, analysisLog) {
-            return `
-                <div style="padding: 30px; text-align: center;">
-                    <div style="font-size: 48px; margin-bottom: 15px;">😔</div>
-                    <h3 style="color: #374151; margin-bottom: 10px;">No Opportunities Found</h3>
-                    <p style="color: #6b7280; margin-bottom: 20px;">
-                        Analyzed ${summary.totalAnalyzed} coins, but none met the criteria.
-                    </p>
-                    
-                    <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: left;">
-                        <h4 style="color: #374151; margin-bottom: 15px;">📊 Top Rejection Reasons:</h4>
-                        ${summary.topRejectionReasons.map((r, i) => `
-                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: ${i < summary.topRejectionReasons.length - 1 ? '1px solid #e5e7eb' : 'none'};">
-                                <span style="color: #6b7280;">${r.reason}</span>
-                                <span style="font-weight: 600; color: #374151;">${r.count} coins</span>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0; text-align: left;">
-                        <strong style="color: #92400e;">💡 Suggestions:</strong>
-                        <ul style="margin: 10px 0 0 20px; color: #78350f;">
-                            <li>Market conditions may be unfavorable right now</li>
-                            <li>Try expanding to "Top 100" in settings</li>
-                            <li>Check back later when market activity increases</li>
-                            <li>Review the analysis log below for detailed reasons</li>
-                        </ul>
-                    </div>
-                </div>
-            `;
-        }
-
-        function displayAnalysisLog(analysisLog, summary) {
-            const logContent = document.getElementById('analysis-log-content');
-            
-            const html = `
-                <div style="padding: 15px;">
-                    <!-- Summary Stats -->
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
-                        <div style="text-align: center; padding: 15px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
-                            <div style="font-size: 24px; font-weight: 600; color: #3b82f6;">${summary.totalAnalyzed}</div>
-                            <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">Total Analyzed</div>
-                        </div>
-                        <div style="text-align: center; padding: 15px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
-                            <div style="font-size: 24px; font-weight: 600; color: #10b981;">${summary.passed}</div>
-                            <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">Passed</div>
-                        </div>
-                        <div style="text-align: center; padding: 15px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
-                            <div style="font-size: 24px; font-weight: 600; color: #ef4444;">${summary.rejected}</div>
-                            <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">Rejected</div>
-                        </div>
-                    </div>
-
-                    <!-- Log Entries -->
-                    <div style="background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
-                        ${analysisLog.map((entry, index) => `
-                            <div style="padding: 12px; border-bottom: ${index < analysisLog.length - 1 ? '1px solid #f3f4f6' : 'none'}; ${entry.passed ? 'background: #f0fdf4;' : ''}">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 5px;">
-                                    <div>
-                                        <strong style="color: #1f2937; font-size: 15px;">
-                                            ${entry.symbol}
-                                        </strong>
-                                        <span style="color: #6b7280; font-size: 13px; margin-left: 8px;">
-                                            ${entry.name} · Rank #${entry.rank}
-                                        </span>
-                                    </div>
-                                    <span style="font-size: 11px; color: #9ca3af;">
-                                        ${new Date(entry.timestamp).toLocaleTimeString()}
-                                    </span>
-                                </div>
-                                <div style="color: ${entry.passed ? '#059669' : '#6b7280'}; font-size: 13px; margin-bottom: 8px;">
-                                    ${entry.reason}
-                                </div>
-                                ${entry.details && Object.keys(entry.details).length > 0 ? `
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; font-size: 12px; color: #6b7280;">
-                                        ${entry.details.volumeScore !== undefined ? `
-                                            <div>Vol Score: <strong>${entry.details.volumeScore.toFixed(0)}</strong></div>
-                                        ` : ''}
-                                        ${entry.details.momentumScore !== undefined ? `
-                                            <div>Momentum: <strong>${entry.details.momentumScore.toFixed(0)}</strong></div>
-                                        ` : ''}
-                                        ${entry.details.sentimentScore !== undefined ? `
-                                            <div>Sentiment: <strong>${entry.details.sentimentScore.toFixed(0)}</strong></div>
-                                        ` : ''}
-                                        ${entry.compositeScore !== undefined ? `
-                                            <div>Composite: <strong style="color: ${getScoreColor(entry.compositeScore)};">${entry.compositeScore.toFixed(0)}</strong></div>
-                                        ` : ''}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-            
-            logContent.innerHTML = html;
-        }
-
-        function toggleAnalysisLog() {
-            const content = document.getElementById('analysis-log-content');
-            const toggle = document.getElementById('log-toggle');
-            
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                toggle.textContent = '▲';
-            } else {
-                content.style.display = 'none';
-                toggle.textContent = '▼';
-            }
-        }
-
-        function formatDiscoveries(discoveries) {
-            // Calculate discovery age for freshness badge
-            let freshnessHTML = '';
-            if (discoveries.length > 0 && discoveries[0].discoveredAt) {
-                const discoveredAt = new Date(discoveries[0].discoveredAt);
-                const now = new Date();
-                const ageMinutes = Math.floor((now - discoveredAt) / (1000 * 60));
-                const ageHours = Math.floor(ageMinutes / 60);
-                
-                let badgeColor, badgeText, warningHTML = '';
-                
-                if (ageHours < 2) {
-                    // Fresh (0-2 hours)
-                    badgeColor = '#10b981';
-                    badgeText = `✅ Fresh (${ageMinutes < 60 ? ageMinutes + ' min' : ageHours + 'h'} ago)`;
-                } else if (ageHours < 4) {
-                    // Recent (2-4 hours)
-                    badgeColor = '#f59e0b';
-                    badgeText = `⚠️ Recent (${ageHours}h ago)`;
-                    warningHTML = '<div style="padding: 10px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; margin-bottom: 15px; color: #92400e; font-size: 13px;">⚠️ Discovery data is a few hours old. Consider running a fresh discovery for current opportunities.</div>';
-                } else if (ageHours < 6) {
-                    // Stale (4-6 hours)
-                    badgeColor = '#ef4444';
-                    badgeText = `🕐 Stale (${ageHours}h ago)`;
-                    warningHTML = '<div style="padding: 10px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; margin-bottom: 15px; color: #991b1b; font-size: 13px;">🕐 <strong>Data is stale.</strong> Market conditions may have changed significantly. Run discovery for current opportunities.</div>';
-                } else {
-                    // Very stale (6+ hours)
-                    badgeColor = '#6b7280';
-                    badgeText = `❌ Expired (${ageHours}h ago)`;
-                    warningHTML = '<div style="padding: 10px; background: #f3f4f6; border: 1px solid #6b7280; border-radius: 6px; margin-bottom: 15px; color: #374151; font-size: 13px;">❌ <strong>Data has expired.</strong> These opportunities are outdated. Please run discovery to find current opportunities.</div>';
-                }
-                
-                freshnessHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <span style="padding: 6px 12px; background: ${badgeColor}; color: white; border-radius: 6px; font-size: 13px; font-weight: 600;">
-                            ${badgeText}
-                        </span>
-                    </div>
-                    ${warningHTML}
-                `;
-            }
-            
-            return `
-                ${freshnessHTML}
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
-                            <th style="padding: 12px; text-align: left;">Rank</th>
-                            <th style="padding: 12px; text-align: left;">Symbol</th>
-                            <th style="padding: 12px; text-align: left;">Name</th>
-                            <th style="padding: 12px; text-align: right;">Price</th>
-                            <th style="padding: 12px; text-align: center;">7D Chart</th>
-                            <th style="padding: 12px; text-align: right;">Score</th>
-                            <th style="padding: 12px; text-align: right;">Volume 24h</th>
-                            <th style="padding: 12px; text-align: right;">Market Cap</th>
-                            <th style="padding: 12px; text-align: center;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${discoveries.map((coin, index) => `
-                            <tr style="border-bottom: 1px solid #e5e7eb; ${index % 2 === 0 ? 'background: #fafafa;' : ''}">
-                                <td style="padding: 12px;">
-                                    <span style="font-weight: 600; color: ${index < 3 ? '#667eea' : '#6b7280'};">
-                                        #${index + 1}
-                                    </span>
-                                </td>
-                                <td style="padding: 12px;">
-                                    <strong style="color: #1f2937; font-size: 16px;">${coin.symbol}</strong>
-                                </td>
-                                <td style="padding: 12px; color: #6b7280;">${coin.name}</td>
-                                <td style="padding: 12px; text-align: right;">
-                                    <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                                        <span style="font-weight: 600; color: #1f2937;">$${formatPrice(coin.currentPrice)}</span>
-                                        <span style="font-size: 12px; color: ${coin.priceChange24h >= 0 ? '#10b981' : '#ef4444'};">
-                                            ${coin.priceChange24h >= 0 ? '▲' : '▼'} ${Math.abs(coin.priceChange24h).toFixed(2)}%
-                                        </span>
-                                    </div>
-                                </td>
-                                <td style="padding: 12px; text-align: center;">
-                                    ${renderSparkline(coin.sparkline, coin.priceChange7d)}
-                                </td>
-                                <td style="padding: 12px; text-align: right;">
-                                    <div style="display: flex; align-items: center; justify-content: flex-end;">
-                                        <div style="width: 60px; height: 8px; background: #e5e7eb; border-radius: 4px; margin-right: 8px;">
-                                            <div style="width: ${coin.compositeScore}%; height: 100%; background: ${getScoreColor(coin.compositeScore)}; border-radius: 4px;"></div>
-                                        </div>
-                                        <span style="font-weight: 600; color: ${getScoreColor(coin.compositeScore)};">${Math.round(coin.compositeScore)}</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 12px; text-align: right; color: #6b7280;">
-                                    $${formatNumber(coin.volume24h)}
-                                </td>
-                                <td style="padding: 12px; text-align: right; color: #6b7280;">
-                                    $${formatNumber(coin.marketCap)}
-                                </td>
-                                <td style="padding: 12px; text-align: center;">
-                                    <button class="button" style="padding: 6px 12px; font-size: 13px;" onclick="analyzeDiscovered('${coin.symbol}')">
-                                        Analyze
-                                    </button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-                
-                <div style="margin-top: 15px; padding: 12px; background: #f9fafb; border-radius: 6px; text-align: center; color: #6b7280; font-size: 14px;">
-                    <strong>💡 Tip:</strong> 
-                    Price shows current value + 24h change. Chart shows last 48 hours of price movement.
-                </div>
-            `;
-        }
-
-        function getScoreColor(score) {
-            if (score >= 80) return '#10b981'; // Green
-            if (score >= 60) return '#f59e0b'; // Orange
-            return '#6b7280'; // Gray
-        }
-
-        function formatNumber(num) {
-            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-            if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
-            return num.toFixed(2);
-        }
-
-        function formatPrice(price) {
-            if (price >= 1000) return price.toFixed(0);
-            if (price >= 1) return price.toFixed(2);
-            if (price >= 0.01) return price.toFixed(4);
-            if (price >= 0.0001) return price.toFixed(6);
-            return price.toFixed(8);
-        }
-
-        function renderSparkline(sparkline, priceChange) {
-            if (!sparkline || sparkline.length === 0) {
-                return '<span style="color: #9ca3af; font-size: 12px;">No data</span>';
-            }
-
-            // Take last 48 hours (sparkline has 168 points for 7 days, so last ~48 points for 2 days)
-            const data = sparkline.slice(-48);
-            
-            const width = 80;
-            const height = 30;
-            const padding = 2;
-            
-            const min = Math.min(...data);
-            const max = Math.max(...data);
-            const range = max - min || 1;
-            
-            // Create SVG path
-            const points = data.map((value, index) => {
-                const x = (index / (data.length - 1)) * (width - padding * 2) + padding;
-                const y = height - padding - ((value - min) / range) * (height - padding * 2);
-                return `${x},${y}`;
-            }).join(' ');
-            
-            const color = priceChange >= 0 ? '#10b981' : '#ef4444';
-            
-            return `
-                <svg width="${width}" height="${height}" style="display: inline-block;">
-                    <polyline
-                        points="${points}"
-                        fill="none"
-                        stroke="${color}"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                </svg>
-            `;
-        }
-
-        function analyzeDiscovered(symbol) {
-            // Set the symbol in the search box
-            document.getElementById('cryptoSearch').value = symbol;
-            // Scroll to crypto selector
-            document.querySelector('.crypto-selector').scrollIntoView({ behavior: 'smooth' });
-            // Trigger analysis
-            setTimeout(() => analyzeCrypto(), 500);
-        }
-
-        // Load top discoveries on page load
-        async function loadTopDiscoveries() {
-            try {
-                const response = await fetch(`${API_BASE}/discover/top?limit=10`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.discoveries && data.discoveries.length > 0) {
-                        document.getElementById('discoveries-list').innerHTML = formatDiscoveries(data.discoveries);
-                    }
-                }
-            } catch (error) {
-                console.log('No saved discoveries yet');
-            }
-        }
+        // ===================================================================
+        // MIGRATED TO ui/discovery.js:
+        // All discovery functions have been moved to modular files
+        // ===================================================================
 
         // ============================================
         // MANUAL TRADING FUNCTIONS
@@ -3345,347 +1850,194 @@
                 `;
                 return;
             }
-            
-            if (addStopLoss && (!stopLossPrice || stopLossPrice <= 0)) {
+
+            // Get current portfolio
+            const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
+            if (!portfolioResponse.ok) {
                 previewArea.style.display = 'block';
                 previewArea.innerHTML = `
                     <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
-                        ⚠️ Please enter a valid stop-loss price
+                        ⚠️ Unable to fetch portfolio data
                     </div>
                 `;
                 return;
             }
-            
+
+            const portfolio = await portfolioResponse.json();
+            const totalValue = portfolio.totalValue || 10000; // Fallback
+
+            // Get current price for the symbol
             try {
-                // Show loading state
-                previewArea.style.display = 'block';
-                previewArea.innerHTML = `
-                    <div style="padding: 12px; background: #dbeafe; border: 1px solid #3b82f6; border-radius: 6px; color: #1e40af;">
-                        📊 Calculating trade preview...
-                    </div>
-                `;
-                
-                // Get current price
                 const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
-                if (!priceResponse.ok) {
-                    throw new Error('Could not fetch price for ' + symbol);
-                }
+                if (!priceResponse.ok) throw new Error('Price fetch failed');
+
                 const priceData = await priceResponse.json();
                 const currentPrice = priceData.price;
-                
-                // Get portfolio for percentage calculations
+
+                // Calculate actual quantity based on type
                 let actualQuantity = quantity;
+                let totalCost = 0;
+
                 if (quantityType === 'usd') {
                     actualQuantity = quantity / currentPrice;
+                    totalCost = quantity;
                 } else if (quantityType === 'percent') {
-                    const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
-                    const portfolio = await portfolioResponse.json();
-                    const portfolioValue = portfolio.totalValue;
-                    const usdAmount = (portfolioValue * quantity) / 100;
-                    actualQuantity = usdAmount / currentPrice;
-                }
-                
-                // Calculate costs
-                const subtotal = actualQuantity * currentPrice;
-                const fee = subtotal * 0.001; // 0.1% fee
-                const slippage = subtotal * 0.0005; // 0.05% slippage estimate
-                
-                let total;
-                if (selectedTradeAction === 'BUY') {
-                    total = subtotal + fee + slippage;
+                    totalCost = (quantity / 100) * totalValue;
+                    actualQuantity = totalCost / currentPrice;
                 } else {
-                    total = subtotal - fee - slippage;
+                    // units
+                    totalCost = quantity * currentPrice;
                 }
-                
-                // Calculate stop-loss and take-profit percentages if provided
-                let stopLossPercent = null;
-                let takeProfitPercent = null;
-                if (stopLossPrice && selectedTradeAction === 'BUY') {
-                    stopLossPercent = ((stopLossPrice - currentPrice) / currentPrice) * 100;
+
+                // Validate against portfolio
+                if (totalCost > totalValue) {
+                    previewArea.style.display = 'block';
+                    previewArea.innerHTML = `
+                        <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
+                            ⚠️ Insufficient funds! Trade cost: $${totalCost.toFixed(2)}, Portfolio value: $${totalValue.toFixed(2)}
+                        </div>
+                    `;
+                    return;
                 }
-                if (takeProfitPrice && selectedTradeAction === 'BUY') {
-                    takeProfitPercent = ((takeProfitPrice - currentPrice) / currentPrice) * 100;
+
+                // Calculate potential P&L with stop loss/take profit
+                let stopLossInfo = '';
+                let takeProfitInfo = '';
+
+                if (addStopLoss && stopLossPrice) {
+                    const stopLossAmount = (stopLossPrice - currentPrice) * actualQuantity;
+                    const stopLossPercent = ((stopLossPrice - currentPrice) / currentPrice) * 100;
+                    stopLossInfo = `
+                        <div style="padding: 10px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px;">
+                            <strong>Stop Loss:</strong> $${stopLossPrice.toFixed(2)}<br>
+                            <span style="font-size: 13px; color: #991b1b;">
+                                Loss if triggered: $${Math.abs(stopLossAmount).toFixed(2)} (${stopLossPercent.toFixed(2)}%)
+                            </span>
+                        </div>
+                    `;
                 }
-                
-                // Show preview with execute button
+
+                if (addStopLoss && takeProfitPrice) {
+                    const takeProfitAmount = (takeProfitPrice - currentPrice) * actualQuantity;
+                    const takeProfitPercent = ((takeProfitPrice - currentPrice) / currentPrice) * 100;
+                    takeProfitInfo = `
+                        <div style="padding: 10px; background: #d1fae5; border-left: 3px solid #10b981; border-radius: 4px;">
+                            <strong>Take Profit:</strong> $${takeProfitPrice.toFixed(2)}<br>
+                            <span style="font-size: 13px; color: #065f46;">
+                                Gain if triggered: $${takeProfitAmount.toFixed(2)} (${takeProfitPercent.toFixed(2)}%)
+                            </span>
+                        </div>
+                    `;
+                }
+
+                // Show preview
+                previewArea.style.display = 'block';
                 previewArea.innerHTML = `
-                    <div style="padding: 20px; background: ${selectedTradeAction === 'BUY' ? '#d1fae5' : '#fee2e2'}; border: 2px solid ${selectedTradeAction === 'BUY' ? '#10b981' : '#ef4444'}; border-radius: 8px;">
-                        <div style="text-align: center; margin-bottom: 15px;">
-                            <h3 style="margin: 0 0 5px 0; color: #1f2937;">📊 Trade Preview</h3>
-                            <div style="font-size: 24px; font-weight: 700; color: ${selectedTradeAction === 'BUY' ? '#10b981' : '#ef4444'};">
-                                ${selectedTradeAction} ${symbol}
+                    <div style="padding: 15px; background: #f0f9ff; border: 2px solid #3b82f6; border-radius: 8px;">
+                        <h4 style="margin: 0 0 15px 0; color: #1e40af;">📋 Trade Preview</h4>
+                        <div style="display: grid; gap: 10px; margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Symbol:</span>
+                                <strong>${symbol}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Current Price:</span>
+                                <strong>$${currentPrice.toFixed(2)}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Quantity:</span>
+                                <strong>${actualQuantity.toFixed(6)} ${symbol}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid #bfdbfe;">
+                                <span>Total Cost:</span>
+                                <strong style="color: #1e40af;">$${totalCost.toFixed(2)}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>% of Portfolio:</span>
+                                <strong>${((totalCost / totalValue) * 100).toFixed(2)}%</strong>
                             </div>
                         </div>
-                        
-                        <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
-                            <div style="display: grid; gap: 10px; font-size: 14px;">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #6b7280;">Quantity:</span>
-                                    <strong>${actualQuantity.toFixed(8)} ${symbol}</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #6b7280;">Current Price:</span>
-                                    <strong>$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 8})}</strong>
-                                </div>
-                                <hr style="margin: 5px 0; border: none; border-top: 1px solid #e5e7eb;">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #6b7280;">Subtotal:</span>
-                                    <span>$${subtotal.toFixed(2)}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #6b7280;">Fee (0.1%):</span>
-                                    <span>$${fee.toFixed(2)}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #6b7280;">Est. Slippage:</span>
-                                    <span>$${slippage.toFixed(2)}</span>
-                                </div>
-                                <hr style="margin: 5px 0; border: none; border-top: 1px solid #e5e7eb;">
-                                <div style="display: flex; justify-content: space-between; font-size: 16px;">
-                                    <strong>${selectedTradeAction === 'BUY' ? 'Total Cost:' : 'Total Proceeds:'}</strong>
-                                    <strong style="color: ${selectedTradeAction === 'BUY' ? '#ef4444' : '#10b981'};">$${total.toFixed(2)}</strong>
-                                </div>
-                                ${stopLossPrice ? `
-                                <hr style="margin: 5px 0; border: none; border-top: 1px solid #e5e7eb;">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #6b7280;">🛑 Stop-Loss:</span>
-                                    <strong style="color: #ef4444;">$${stopLossPrice.toFixed(2)} (${stopLossPercent?.toFixed(1)}%)</strong>
-                                </div>
-                                ` : ''}
-                                ${takeProfitPrice ? `
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #6b7280;">🎯 Take-Profit:</span>
-                                    <strong style="color: #10b981;">$${takeProfitPrice.toFixed(2)} (${takeProfitPercent?.toFixed(1)}%)</strong>
-                                </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                        
-                        <button 
-                            class="button" 
-                            onclick="executeManualTrade()"
-                            style="width: 100%; background: ${selectedTradeAction === 'BUY' ? '#10b981' : '#ef4444'}; font-size: 16px; padding: 14px; font-weight: 600;">
-                            ⚡ Execute ${selectedTradeAction} Order
+                        ${stopLossInfo}
+                        ${takeProfitInfo}
+                        <button onclick="executeTrade()" class="button" style="width: 100%; margin-top: 15px;">
+                            ✅ Confirm Trade
                         </button>
                     </div>
                 `;
-                
+
             } catch (error) {
+                console.error('Preview error:', error);
+                previewArea.style.display = 'block';
                 previewArea.innerHTML = `
                     <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
-                        ❌ Preview failed: ${error.message}
+                        ⚠️ Unable to fetch price for ${symbol}. Please check the symbol and try again.
                     </div>
                 `;
             }
         }
 
-        async function executeManualTrade(confirmWarnings = false) {
+        async function executeTrade() {
             const symbol = document.getElementById('manualTradeSymbol').value.toUpperCase().trim();
             const quantity = parseFloat(document.getElementById('manualTradeQuantity').value);
             const quantityType = document.getElementById('quantityType').value;
             const addStopLoss = document.getElementById('addStopLoss').checked;
             const stopLossPrice = addStopLoss ? parseFloat(document.getElementById('stopLossPrice').value) : null;
             const takeProfitPrice = addStopLoss ? parseFloat(document.getElementById('takeProfitPrice').value) : null;
-            
-            const previewArea = document.getElementById('tradePreviewArea');
-            
-            // Initial confirmation (only if not already confirming warnings)
-            if (!confirmWarnings) {
-                const confirmed = await showConfirm(
-                    'Execute Trade',
-                    `Execute ${selectedTradeAction} order for <strong>${symbol}</strong>?<br><br>This will ${selectedTradeAction === 'BUY' ? 'deduct funds from' : 'add funds to'} your portfolio.`,
-                    { confirmText: `Execute ${selectedTradeAction}`, confirmColor: selectedTradeAction === 'BUY' ? '#10b981' : '#ef4444' }
-                );
-                if (!confirmed) return;
-            }
-            
+
             try {
-                // Show executing state
-                previewArea.innerHTML = `
-                    <div style="padding: 20px; background: #dbeafe; border: 2px solid #3b82f6; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 18px; font-weight: 600; color: #1e40af; margin-bottom: 10px;">
-                            ⏳ Executing Trade...
-                        </div>
-                        <div style="color: #6b7280; font-size: 14px;">
-                            Processing your ${selectedTradeAction} order for ${symbol}
-                        </div>
-                    </div>
-                `;
-                
-                // Get current price and calculate actual quantity
                 const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
-                if (!priceResponse.ok) {
-                    throw new Error('Could not fetch price for ' + symbol);
-                }
+                if (!priceResponse.ok) throw new Error('Price fetch failed');
                 const priceData = await priceResponse.json();
                 const currentPrice = priceData.price;
-                
+
+                // Get portfolio value for percent calculation
+                const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
+                const portfolio = await portfolioResponse.json();
+                const totalValue = portfolio.totalValue || 10000;
+
                 let actualQuantity = quantity;
                 if (quantityType === 'usd') {
                     actualQuantity = quantity / currentPrice;
                 } else if (quantityType === 'percent') {
-                    const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
-                    const portfolio = await portfolioResponse.json();
-                    const portfolioValue = portfolio.totalValue;
-                    const usdAmount = (portfolioValue * quantity) / 100;
-                    actualQuantity = usdAmount / currentPrice;
+                    const costAmount = (quantity / 100) * totalValue;
+                    actualQuantity = costAmount / currentPrice;
                 }
-                
-                // Prepare trade payload
-                const tradePayload = {
-                    symbol,
-                    side: selectedTradeAction,
-                    quantity: actualQuantity,
-                    reasoning: 'Manual trade - User decision',
-                    confirmWarnings
-                };
-                
-                // Add stop-loss and take-profit if provided
-                if (stopLossPrice) {
-                    tradePayload.stopLoss = stopLossPrice;
-                }
-                if (takeProfitPrice) {
-                    tradePayload.takeProfit = takeProfitPrice;
-                }
-                
-                // Execute trade via API
+
+                // Execute trade
                 const response = await fetch(`${API_BASE}/trade`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(tradePayload)
+                    body: JSON.stringify({
+                        symbol,
+                        quantity: actualQuantity,
+                        side: 'BUY',
+                        tradeType: 'manual',
+                        stopLoss: stopLossPrice,
+                        takeProfit: takeProfitPrice
+                    })
                 });
-                
+
                 const result = await response.json();
-                
-                // Check if warnings need confirmation
-                if (result.requiresConfirmation && result.warnings) {
-                    const confirmed = await showWarning(
-                        'Risk Warnings',
-                        result.warnings,
-                        { 
-                            confirmText: 'Proceed Anyway',
-                            cancelText: 'Cancel Trade'
-                        }
-                    );
-                    
-                    if (confirmed) {
-                        // Re-execute with confirmation
-                        return executeManualTrade(true);
-                    } else {
-                        previewArea.innerHTML = `
-                            <div style="padding: 20px; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; text-align: center;">
-                                <div style="font-size: 18px; font-weight: 600; color: #92400e; margin-bottom: 10px;">
-                                    Trade Cancelled
-                                </div>
-                                <div style="color: #6b7280; font-size: 14px;">
-                                    You chose not to proceed with the trade due to risk warnings.
-                                </div>
-                                <button 
-                                    class="button" 
-                                    onclick="previewTrade()"
-                                    style="margin-top: 15px; background: #667eea;">
-                                    ← Back to Preview
-                                </button>
-                            </div>
-                        `;
-                        return;
-                    }
-                }
-                
+
                 if (!response.ok) {
-                    const errorMessage = result.message || result.error || 'Trade execution failed';
-                    throw new Error(errorMessage);
+                    throw new Error(result.message || 'Trade failed');
                 }
-                
-                const trade = result;
-                
-                // Show success message
-                previewArea.innerHTML = `
-                    <div style="padding: 20px; background: #d1fae5; border: 2px solid #10b981; border-radius: 8px;">
-                        <div style="text-align: center; margin-bottom: 15px;">
-                            <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
-                            <h3 style="margin: 0; color: #065f46;">Trade Executed Successfully!</h3>
-                        </div>
-                        
-                        <div style="background: white; padding: 15px; border-radius: 6px; font-size: 14px;">
-                            <div style="display: grid; gap: 10px;">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #6b7280;">Action:</span>
-                                    <strong style="color: ${selectedTradeAction === 'BUY' ? '#10b981' : '#ef4444'};">${selectedTradeAction}</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #6b7280;">Symbol:</span>
-                                    <strong>${symbol}</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #6b7280;">Quantity:</span>
-                                    <strong>${actualQuantity.toFixed(8)} ${symbol}</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #6b7280;">Price:</span>
-                                    <strong>$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 8})}</strong>
-                                </div>
-                                <hr style="margin: 5px 0; border: none; border-top: 1px solid #e5e7eb;">
-                                <div style="display: flex; justify-content: space-between; font-size: 16px;">
-                                    <strong>Total:</strong>
-                                    <strong style="color: #10b981;">$${trade.totalCost?.toFixed(2) || (actualQuantity * currentPrice).toFixed(2)}</strong>
-                                </div>
-                                ${stopLossPrice ? `
-                                <hr style="margin: 5px 0; border: none; border-top: 1px solid #e5e7eb;">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #6b7280;">🛑 Stop-Loss Active:</span>
-                                    <strong style="color: #ef4444;">$${stopLossPrice.toFixed(2)}</strong>
-                                </div>
-                                ` : ''}
-                                ${takeProfitPrice ? `
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #6b7280;">🎯 Take-Profit Active:</span>
-                                    <strong style="color: #10b981;">$${takeProfitPrice.toFixed(2)}</strong>
-                                </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                        
-                        <div style="margin-top: 15px; padding: 12px; background: #fef3c7; border-radius: 6px; font-size: 13px; color: #92400e; text-align: center;">
-                            <strong>📊 Portfolio Updated!</strong> Your holdings and balance have been updated.
-                        </div>
-                    </div>
-                `;
-                
-                // Refresh portfolio and trade history
-                setTimeout(() => {
-                    loadPortfolio();
-                    loadTrades();
-                }, 1000);
-                
-                // Clear form after 3 seconds
-                setTimeout(() => {
-                    document.getElementById('manualTradeSymbol').value = '';
-                    document.getElementById('manualTradeQuantity').value = '';
-                    document.getElementById('addStopLoss').checked = false;
-                    document.getElementById('stopLossPrice').value = '';
-                    document.getElementById('takeProfitPrice').value = '';
-                    toggleAdvancedOptions();
-                    previewArea.style.display = 'none';
-                }, 4000);
-                
+
+                await showSuccess(
+                    'Trade Executed!',
+                    `Successfully bought ${actualQuantity.toFixed(6)} ${symbol} at $${currentPrice.toFixed(2)}`
+                );
+
+                // Clear form and refresh
+                document.getElementById('manualTradeSymbol').value = '';
+                document.getElementById('manualTradeQuantity').value = '';
+                document.getElementById('tradePreviewArea').style.display = 'none';
+                loadPortfolio();
+                loadTrades();
+
             } catch (error) {
-                console.error('Trade execution error:', error);
-                previewArea.innerHTML = `
-                    <div style="padding: 20px; background: #fee2e2; border: 2px solid #ef4444; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 48px; margin-bottom: 10px;">❌</div>
-                        <h3 style="margin: 0 0 10px 0; color: #991b1b;">Trade Execution Failed</h3>
-                        <div style="background: white; padding: 12px; border-radius: 6px; color: #6b7280; font-size: 14px;">
-                            ${error.message}
-                        </div>
-                        <button 
-                            class="button" 
-                            onclick="previewTrade()"
-                            style="margin-top: 15px; background: #667eea;">
-                            ← Back to Preview
-                        </button>
-                    </div>
-                `;
+                console.error('Trade error:', error);
+                await showError('Trade Failed', error.message);
             }
         }
 
@@ -3713,56 +2065,41 @@
             try {
                 // Get current price
                 const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
-                if (!priceResponse.ok) {
-                    throw new Error('Could not fetch price for ' + symbol);
-                }
+                if (!priceResponse.ok) throw new Error('Failed to get price');
+
                 const priceData = await priceResponse.json();
                 const currentPrice = priceData.price;
 
-                // Calculate expected proceeds
-                const subtotal = quantity * currentPrice;
-                const fee = subtotal * 0.001;
-                const proceeds = subtotal - fee;
-
-                // Execute sell trade
+                // Execute the sell
                 const response = await fetch(`${API_BASE}/trade`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         symbol,
+                        quantity,
                         side: 'SELL',
-                        quantity: quantity,
-                        reasoning: 'Manual sell - User closed position',
-                        confirmWarnings: true  // SELL operations don't need warnings
+                        tradeType: 'manual'
                     })
                 });
 
                 const result = await response.json();
-                
+
                 if (!response.ok) {
-                    const errorMessage = result.message || result.error || 'Failed to sell position';
-                    throw new Error(errorMessage);
+                    throw new Error(result.message || 'Sale failed');
                 }
 
-                const trade = result;
-
-                // Show success message
                 await showSuccess(
-                    'Position Sold Successfully!',
-                    `<div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin: 12px 0;">` +
-                    `<div style="margin: 8px 0;"><strong>Sold:</strong> ${quantity.toFixed(8)} ${symbol}</div>` +
-                    `<div style="margin: 8px 0;"><strong>Price:</strong> $${formatPrice(currentPrice)}</div>` +
-                    `<div style="margin: 8px 0;"><strong>Proceeds:</strong> $${proceeds.toFixed(2)}</div>` +
-                    `</div>`
+                    'Position Sold!',
+                    `Successfully sold ${quantity.toFixed(6)} ${symbol} at $${currentPrice.toFixed(2)}`
                 );
 
-                // Refresh portfolio
+                // Refresh displays
                 loadPortfolio();
                 loadTrades();
 
             } catch (error) {
-                console.error('Sell execution error:', error);
-                await showError('Sell Failed', error.message);
+                console.error('Sell error:', error);
+                await showError('Sale Failed', error.message);
             }
         }
 
@@ -3774,16 +2111,12 @@
         window.onclick = function(event) {
             const settingsModal = document.getElementById('settingsModal');
             const infoModal = document.getElementById('infoModal');
-            const customModal = document.getElementById('customModal');
             
             if (event.target === settingsModal) {
                 closeSettingsModal();
             }
             if (event.target === infoModal) {
                 closeInfoModal();
-            }
-            if (event.target === customModal) {
-                closeCustomModal();
             }
         }
 
@@ -3793,128 +2126,81 @@
 
         let modalResolveCallback = null;
 
-        function showModal(options) {
+        function showConfirm(title, message, options = {}) {
             return new Promise((resolve) => {
-                modalResolveCallback = resolve;
+                const modal = document.getElementById('confirmModal');
+                const titleEl = document.getElementById('confirmTitle');
+                const messageEl = document.getElementById('confirmMessage');
+                const confirmBtn = document.getElementById('confirmButton');
+                const cancelBtn = document.getElementById('cancelButton');
+
+                titleEl.textContent = title;
+                messageEl.innerHTML = message;
                 
-                const modal = document.getElementById('customModal');
-                const header = document.getElementById('modalHeader');
-                const body = document.getElementById('modalBody');
-                const footer = document.getElementById('modalFooter');
+                // Apply custom button text/colors if provided
+                if (options.confirmText) confirmBtn.textContent = options.confirmText;
+                else confirmBtn.textContent = 'Confirm';
                 
-                // Set icon and title
-                header.innerHTML = `<h3>${options.icon || ''} ${options.title || 'Notification'}</h3>`;
-                
-                // Set body content
-                body.innerHTML = options.message || '';
-                
-                // Clear and set footer buttons
-                footer.innerHTML = '';
-                
-                if (options.type === 'confirm') {
-                    // Confirm dialog with Yes/No
-                    footer.innerHTML = `
-                        <button class="button" onclick="modalResponse(false)" style="background: #6b7280;">
-                            ${options.cancelText || 'Cancel'}
-                        </button>
-                        <button class="button" onclick="modalResponse(true)" style="background: ${options.confirmColor || '#667eea'};">
-                            ${options.confirmText || 'Confirm'}
-                        </button>
-                    `;
-                } else {
-                    // Alert dialog with OK only
-                    footer.innerHTML = `
-                        <button class="button" onclick="modalResponse(true)" style="background: ${options.confirmColor || '#667eea'};">
-                            ${options.confirmText || 'OK'}
-                        </button>
-                    `;
-                }
-                
-                // Show modal
+                if (options.confirmColor) confirmBtn.style.background = options.confirmColor;
+                else confirmBtn.style.background = '#667eea';
+
                 modal.classList.add('active');
+                modalResolveCallback = resolve;
             });
         }
 
-        function modalResponse(result) {
-            closeCustomModal();
+        function handleConfirmClick(result) {
+            const modal = document.getElementById('confirmModal');
+            modal.classList.remove('active');
             if (modalResolveCallback) {
                 modalResolveCallback(result);
                 modalResolveCallback = null;
             }
         }
 
-        function closeCustomModal() {
-            const modal = document.getElementById('customModal');
-            modal.classList.remove('active');
-        }
+        function showSuccess(title, message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('statusModal');
+                const icon = document.getElementById('statusIcon');
+                const titleEl = document.getElementById('statusTitle');
+                const messageEl = document.getElementById('statusMessage');
+                const okBtn = document.getElementById('statusOkButton');
 
-        // Convenience functions
-        async function showAlert(title, message, options = {}) {
-            return await showModal({
-                type: 'alert',
-                icon: options.icon || '💡',
-                title,
-                message,
-                confirmText: options.confirmText || 'OK',
-                confirmColor: options.confirmColor
+                icon.textContent = '✅';
+                icon.style.color = '#10b981';
+                titleEl.textContent = title;
+                titleEl.style.color = '#10b981';
+                messageEl.innerHTML = message;
+
+                modal.classList.add('active');
+
+                okBtn.onclick = () => {
+                    modal.classList.remove('active');
+                    resolve();
+                };
             });
         }
 
-        async function showConfirm(title, message, options = {}) {
-            return await showModal({
-                type: 'confirm',
-                icon: options.icon || '❓',
-                title,
-                message,
-                confirmText: options.confirmText || 'Confirm',
-                cancelText: options.cancelText || 'Cancel',
-                confirmColor: options.confirmColor
-            });
-        }
+        function showError(title, message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('statusModal');
+                const icon = document.getElementById('statusIcon');
+                const titleEl = document.getElementById('statusTitle');
+                const messageEl = document.getElementById('statusMessage');
+                const okBtn = document.getElementById('statusOkButton');
 
-        async function showWarning(title, warnings, options = {}) {
-            const warningList = warnings.map((w, i) => `<li>${w}</li>`).join('');
-            const message = `
-                <div class="modal-warning-list">
-                    <ol style="margin: 0; padding-left: 20px;">
-                        ${warningList}
-                    </ol>
-                </div>
-                <p style="margin-top: 16px; color: #6b7280;">
-                    ${options.description || 'These conditions exceed automated trading guidelines.'}
-                </p>
-            `;
-            
-            return await showModal({
-                type: 'confirm',
-                icon: '⚠️',
-                title,
-                message,
-                confirmText: options.confirmText || 'Proceed Anyway',
-                cancelText: options.cancelText || 'Cancel',
-                confirmColor: '#f59e0b'
-            });
-        }
+                icon.textContent = '❌';
+                icon.style.color = '#ef4444';
+                titleEl.textContent = title;
+                titleEl.style.color = '#ef4444';
+                messageEl.innerHTML = message;
 
-        async function showSuccess(title, message, options = {}) {
-            return await showModal({
-                type: 'alert',
-                icon: '✅',
-                title,
-                message,
-                confirmText: options.confirmText || 'OK',
-                confirmColor: '#10b981'
-            });
-        }
+                modal.classList.add('active');
 
-        async function showError(title, message, options = {}) {
-            return await showModal({
-                type: 'alert',
-                icon: '❌',
-                title,
-                message,
-                confirmText: options.confirmText || 'OK',
-                confirmColor: '#ef4444'
+                okBtn.onclick = () => {
+                    modal.classList.remove('active');
+                    resolve();
+                };
             });
         }
 
@@ -3956,152 +2242,152 @@
                                 <div style="font-weight: 600;">${position.quantity.toFixed(8)} ${symbol}</div>
                             </div>
                             <div>
-                                <div style="color: #6b7280; font-size: 13px;">Entry Price</div>
+                                <div style="color: #6b7280; font-size: 13px;">Current Value</div>
+                                <div style="font-weight: 600;">$${(position.quantity * currentPrice).toFixed(2)}</div>
+                            </div>
+                            <div>
+                                <div style="color: #6b7280; font-size: 13px;">Avg Buy Price</div>
                                 <div style="font-weight: 600;">$${formatPrice(position.averagePrice)}</div>
                             </div>
                             <div>
                                 <div style="color: #6b7280; font-size: 13px;">Current Price</div>
-                                <div style="font-weight: 600; color: ${priceChange >= 0 ? '#10b981' : '#ef4444'};">
-                                    $${formatPrice(currentPrice)}
-                                    <span style="font-size: 12px;">(${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%)</span>
+                                <div style="font-weight: 600;">$${formatPrice(currentPrice)}</div>
+                            </div>
+                            <div>
+                                <div style="color: #6b7280; font-size: 13px;">Total P&L</div>
+                                <div style="font-weight: 600; color: ${position.unrealizedPnL >= 0 ? '#10b981' : '#ef4444'};">
+                                    ${position.unrealizedPnL >= 0 ? '+' : ''}$${position.unrealizedPnL.toFixed(2)} (${priceChange.toFixed(2)}%)
                                 </div>
                             </div>
                             <div>
-                                <div style="color: #6b7280; font-size: 13px;">Current Value</div>
-                                <div style="font-weight: 600;">$${position.currentValue.toFixed(2)}</div>
+                                <div style="color: #6b7280; font-size: 13px;">Portfolio %</div>
+                                <div style="font-weight: 600;">${((position.quantity * currentPrice) / portfolio.totalValue * 100).toFixed(1)}%</div>
                             </div>
                         </div>
                     </div>
 
-                    <h4 style="margin: 20px 0 12px 0; color: #1f2937;">🛡️ Position Protection</h4>
-
-                    <div style="background: #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
-                        <div style="font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                            <span>Stop Loss</span>
-                            ${position.stopLoss ? 
-                                `<button onclick="editProtection('${symbol}', 'stopLoss', ${position.stopLoss})" class="button" style="padding: 4px 8px; font-size: 11px; background: #667eea;">Edit</button>` :
-                                `<button onclick="editProtection('${symbol}', 'stopLoss', null)" class="button" style="padding: 4px 8px; font-size: 11px; background: #10b981;">+ Add</button>`
-                            }
+                    ${position.stopLoss || position.takeProfit ? `
+                    <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #10b981;">
+                        <div style="font-weight: 600; margin-bottom: 10px; color: #065f46;">🛡️ Active Protections</div>
+                        <div style="display: grid; gap: 10px;">
+                            ${position.stopLoss ? `
+                                <div style="padding: 10px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                                    <div style="color: #92400e; font-weight: 600; margin-bottom: 4px;">🛑 Stop Loss</div>
+                                    <div style="font-size: 14px; color: #6b7280;">
+                                        Price: <strong>$${formatPrice(position.stopLoss)}</strong> (-${stopLossPercent}%)
+                                    </div>
+                                </div>
+                            ` : ''}
+                            ${position.takeProfit ? `
+                                <div style="padding: 10px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                                    <div style="color: #065f46; font-weight: 600; margin-bottom: 4px;">🎯 Take Profit</div>
+                                    <div style="font-size: 14px; color: #6b7280;">
+                                        Price: <strong>$${formatPrice(position.takeProfit)}</strong> (+${takeProfitPercent}%)
+                                    </div>
+                                </div>
+                            ` : ''}
                         </div>
-                        ${position.stopLoss ? `
-                            <div style="color: #92400e;">
-                                Price: <strong>$${formatPrice(position.stopLoss)}</strong> (-${stopLossPercent}% from current)
-                            </div>
-                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
-                                Will auto-sell if price drops to this level
-                            </div>
-                        ` : `
-                            <div style="color: #6b7280; font-size: 13px;">
-                                No stop loss set. Position is not protected from losses.
-                            </div>
-                        `}
                     </div>
+                    ` : ''}
 
-                    <div style="background: #d1fae5; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
-                        <div style="font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                            <span>Take Profit</span>
-                            ${position.takeProfit ? 
-                                `<button onclick="editProtection('${symbol}', 'takeProfit', ${position.takeProfit})" class="button" style="padding: 4px 8px; font-size: 11px; background: #667eea;">Edit</button>` :
-                                `<button onclick="editProtection('${symbol}', 'takeProfit', null)" class="button" style="padding: 4px 8px; font-size: 11px; background: #10b981;">+ Add</button>`
-                            }
-                        </div>
-                        ${position.takeProfit ? `
-                            <div style="color: #065f46;">
-                                Price: <strong>$${formatPrice(position.takeProfit)}</strong> (+${takeProfitPercent}% from current)
-                            </div>
-                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
-                                Will auto-sell if price rises to this level
-                            </div>
-                        ` : `
-                            <div style="color: #6b7280; font-size: 13px;">
-                                No take profit set. Position will not auto-sell on gains.
-                            </div>
-                        `}
-                    </div>
-
-                    <div style="background: #f3f4f6; padding: 12px; border-radius: 6px; font-size: 12px; color: #6b7280;">
-                        💡 <strong>Tip:</strong> The position monitor checks prices every 5 minutes and will automatically execute sells when protection levels are reached.
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="sellPosition('${symbol}', ${position.quantity})" class="button" style="flex: 1; background: #ef4444;">
+                            💰 Sell Position
+                        </button>
+                        <button onclick="openProtectionManager('${symbol}')" class="button" style="flex: 1; background: #667eea;">
+                            🛡️ Manage Protections
+                        </button>
                     </div>
                 `;
 
-                await showModal({
-                    type: 'alert',
-                    icon: '📋',
-                    title: `${symbol} Position Details`,
-                    message,
-                    confirmText: 'Close',
-                    confirmColor: '#667eea'
+                await showConfirm(`Position: ${symbol}`, message, { 
+                    confirmText: 'Close', 
+                    confirmColor: '#6b7280' 
                 });
 
             } catch (error) {
                 console.error('Failed to load position details:', error);
-                await showError('Load Failed', 'Could not load position details. Please try again.');
+                await showError('Error', 'Failed to load position details');
             }
         }
 
-        async function editProtection(symbol, type, currentValue) {
-            const isStopLoss = type === 'stopLoss';
-            const title = isStopLoss ? '🛡️ Set Stop Loss' : '🎯 Set Take Profit';
-            const label = isStopLoss ? 'Stop Loss Price' : 'Take Profit Price';
-            const hint = isStopLoss ? 
-                'Price level to automatically sell and limit losses' : 
-                'Price level to automatically sell and lock in profits';
-
-            // Get current price for validation
-            const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
-            const priceData = await priceResponse.json();
-            const currentPrice = priceData.price;
-
-            const message = `
-                <div style="margin-bottom: 16px;">
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
-                        <strong>Current Price:</strong> $${formatPrice(currentPrice)}
-                    </div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">${label}</label>
-                    <input 
-                        type="number" 
-                        id="protectionPriceInput" 
-                        value="${currentValue || ''}"
-                        placeholder="Enter price (e.g., ${isStopLoss ? (currentPrice * 0.9).toFixed(2) : (currentPrice * 1.1).toFixed(2)})"
-                        step="0.01"
-                        min="0.01"
-                        style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
-                    />
-                    <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">
-                        ${hint}
-                    </div>
-                </div>
-            `;
-
-            const confirmed = await showModal({
-                type: 'confirm',
-                icon: isStopLoss ? '🛡️' : '🎯',
-                title,
-                message,
-                confirmText: currentValue ? 'Update' : 'Set',
-                cancelText: currentValue ? 'Remove' : 'Cancel',
-                confirmColor: '#667eea'
-            });
-
-            const priceInput = document.getElementById('protectionPriceInput');
-            const newPrice = priceInput ? parseFloat(priceInput.value) : null;
-
-            if (confirmed && newPrice) {
-                // User wants to set/update
-                await saveProtection(symbol, type, newPrice);
-            } else if (!confirmed && currentValue) {
-                // User clicked "Remove"
-                await saveProtection(symbol, type, null);
-            }
-        }
-
-        async function saveProtection(symbol, type, price) {
+        async function openProtectionManager(symbol) {
             try {
-                // Only send the value being updated, don't send undefined for the other
-                const payload = {};
-                payload[type] = price;
+                const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
+                const portfolio = await portfolioResponse.json();
+                const position = portfolio.positions.find(p => p.symbol === symbol);
 
-                const response = await fetch(`${API_BASE}/holdings/${symbol}/protection`, {
+                if (!position) {
+                    await showError('Position Not Found', `Could not find position for ${symbol}`);
+                    return;
+                }
+
+                const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+                const priceData = await priceResponse.json();
+                const currentPrice = priceData.price;
+
+                const message = `
+                    <div style="margin-bottom: 20px;">
+                        <div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+                            <div style="color: #6b7280; font-size: 13px;">Current Price</div>
+                            <div style="font-size: 20px; font-weight: 600;">$${formatPrice(currentPrice)}</div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">🛑 Stop Loss Price</label>
+                            <input type="number" id="stopLossInput" value="${position.stopLoss || ''}" 
+                                placeholder="Enter stop loss price" 
+                                style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                                Auto-sell if price drops to this level
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">🎯 Take Profit Price</label>
+                            <input type="number" id="takeProfitInput" value="${position.takeProfit || ''}" 
+                                placeholder="Enter take profit price" 
+                                style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                                Auto-sell if price rises to this level
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="saveProtection('${symbol}', 'stopLoss')" class="button" style="flex: 1; background: #ef4444;">
+                            Save Stop Loss
+                        </button>
+                        <button onclick="saveProtection('${symbol}', 'takeProfit')" class="button" style="flex: 1; background: #10b981;">
+                            Save Take Profit
+                        </button>
+                    </div>
+                `;
+
+                await showConfirm(`Manage Protections: ${symbol}`, message, {
+                    confirmText: 'Done',
+                    confirmColor: '#6b7280'
+                });
+
+            } catch (error) {
+                console.error('Failed to open protection manager:', error);
+                await showError('Error', 'Failed to open protection manager');
+            }
+        }
+
+        async function saveProtection(symbol, type) {
+            try {
+                const input = document.getElementById(type === 'stopLoss' ? 'stopLossInput' : 'takeProfitInput');
+                const price = parseFloat(input.value);
+
+                const payload = {};
+                if (price && price > 0) {
+                    payload[type] = price;
+                } else {
+                    payload[type] = null; // Remove protection
+                }
+
+                const response = await fetch(`${API_BASE}/portfolio/${symbol}/protection`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -4133,16 +2419,44 @@
     </script>
 
     <!-- Custom Modal -->
-    <div id="customModal" class="modal-overlay">
-        <div class="modal-content">
-            <div id="modalHeader" class="modal-header">
-                <h3>Notification</h3>
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 id="confirmTitle">Confirm Action</h2>
             </div>
-            <div id="modalBody" class="modal-body">
-                Modal content goes here
+            <div class="modal-body">
+                <div id="confirmMessage" style="line-height: 1.6;"></div>
             </div>
-            <div id="modalFooter" class="modal-footer">
-                <button class="button">OK</button>
+            <div class="modal-footer">
+                <button onclick="handleConfirmClick(false)" id="cancelButton" class="button" style="background: #6b7280;">Cancel</button>
+                <button onclick="handleConfirmClick(true)" id="confirmButton" class="button">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+        <!-- Custom Modal -->
+        <div id="customModal" class="modal-overlay">
+            <div class="modal-content">
+                <div id="modalHeader" class="modal-header">
+                    <h3>Notification</h3>
+                </div>
+                <div id="modalBody" class="modal-body">
+                    Modal content goes here
+                </div>
+                <div id="modalFooter" class="modal-footer">
+                    <button class="button">OK</button>
+                </div>
+            </div>
+        </div>
+
+    <!-- Status Modal (for success/error messages) -->
+    <div id="statusModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-body" style="text-align: center; padding: 30px;">
+                <div id="statusIcon" style="font-size: 48px; margin-bottom: 15px;">✅</div>
+                <h3 id="statusTitle" style="margin-bottom: 10px;">Success!</h3>
+                <div id="statusMessage" style="color: #6b7280; line-height: 1.6;"></div>
+                <button id="statusOkButton" class="button" style="margin-top: 20px; width: 100%;">OK</button>
             </div>
         </div>
     </div>
