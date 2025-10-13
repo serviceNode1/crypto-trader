@@ -66,6 +66,7 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
         }
 
         .card h2 {
@@ -74,6 +75,40 @@
             color: #333;
             border-bottom: 2px solid #667eea;
             padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .collapse-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 4px 8px;
+            transition: transform 0.3s, color 0.2s;
+            user-select: none;
+        }
+
+        .collapse-btn:hover {
+            color: #667eea;
+        }
+
+        .collapse-btn.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .card-content {
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            overflow: hidden;
+        }
+
+        .card-content.collapsed {
+            max-height: 0 !important;
+            opacity: 0;
+            margin: 0;
+            padding: 0;
         }
 
         .metric {
@@ -899,17 +934,26 @@
 
         <!-- AI Recommendations -->
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h2 style="margin: 0;">🤖 AI Recommendations</h2>
-                <span id="last-analysis-time" style="color: #666; font-size: 13px;"></span>
+            <h2>
+                <span>🤖 AI Recommendations</span>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span id="last-analysis-time" style="color: #666; font-size: 13px;"></span>
+                    <button class="collapse-btn" onclick="toggleCardCollapse('recommendations-content')" title="Collapse/Expand">▼</button>
+                </div>
+            </h2>
+            <div id="recommendations-content" class="card-content">
+                <div id="recommendations-list" class="loading">Loading...</div>
             </div>
-            <div id="recommendations-list" class="loading">Loading...</div>
         </div>
 
         <!-- Discovery Dashboard -->
         <div class="card" style="margin-bottom: 30px;">
+            <h2>
+                <span>🔍 Discovered Opportunities</span>
+                <button class="collapse-btn" onclick="toggleCardCollapse('discovery-content')" title="Collapse/Expand">▼</button>
+            </h2>
+            <div id="discovery-content" class="card-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                <h2 style="margin: 0;">🔍 Discovered Opportunities</h2>
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                     <select id="discoveryUniverseSelect" style="padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;" onchange="saveDiscoverySettings()">
                         <option value="top10">Top 10</option>
@@ -965,11 +1009,16 @@
                     Click "Run Discovery" to find trading opportunities based on your coin universe setting.
                 </p>
             </div>
+            </div>
         </div>
 
         <!-- Manual Trading Widget -->
         <div class="card" style="margin-bottom: 30px;">
-            <h2>💰 Buy Cryptocurrency</h2>
+            <h2>
+                <span>💰 Buy Cryptocurrency</span>
+                <button class="collapse-btn" onclick="toggleCardCollapse('manual-trading-content')" title="Collapse/Expand">▼</button>
+            </h2>
+            <div id="manual-trading-content" class="card-content">
             <p style="color: #6b7280; margin-bottom: 20px; font-size: 13px;">
                 Purchase any cryptocurrency manually. Use "Current Holdings" below to sell existing positions.
             </p>
@@ -1056,44 +1105,81 @@
                 <!-- Trade Preview & Execute Area -->
                 <div id="tradePreviewArea" style="display: none;"></div>
             </div>
+            </div>
         </div>
 
         <!-- Portfolio Overview -->
         <div class="grid">
             <div class="card">
-                <h2>Portfolio Overview <button class="button refresh-btn" onclick="loadPortfolio()">↻ Refresh</button></h2>
-                <div id="portfolio-metrics" class="loading">Loading...</div>
+                <h2>
+                    <span>Portfolio Overview</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button class="button refresh-btn" onclick="loadPortfolio()">↻ Refresh</button>
+                        <button class="collapse-btn" onclick="toggleCardCollapse('portfolio-content')" title="Collapse/Expand">▼</button>
+                    </div>
+                </h2>
+                <div id="portfolio-content" class="card-content">
+                    <div id="portfolio-metrics" class="loading">Loading...</div>
+                </div>
             </div>
 
             <div class="card">
-                <h2>Performance Metrics</h2>
-                <div id="performance-metrics" class="loading">Loading...</div>
+                <h2>
+                    <span>Performance Metrics</span>
+                    <button class="collapse-btn" onclick="toggleCardCollapse('performance-content')" title="Collapse/Expand">▼</button>
+                </h2>
+                <div id="performance-content" class="card-content">
+                    <div id="performance-metrics" class="loading">Loading...</div>
+                </div>
             </div>
 
             <div class="card">
-                <h2>Risk Exposure</h2>
-                <div id="risk-metrics" class="loading">Loading...</div>
+                <h2>
+                    <span>Risk Exposure</span>
+                    <button class="collapse-btn" onclick="toggleCardCollapse('risk-content')" title="Collapse/Expand">▼</button>
+                </h2>
+                <div id="risk-content" class="card-content">
+                    <div id="risk-metrics" class="loading">Loading...</div>
+                </div>
             </div>
         </div>
 
         <!-- Current Holdings (Full Width) -->
         <div class="card">
-            <h2>💼 Current Holdings</h2>
-            <div id="holdings-list" class="loading">Loading...</div>
+            <h2>
+                <span>💼 Current Holdings</span>
+                <button class="collapse-btn" onclick="toggleCardCollapse('holdings-content')" title="Collapse/Expand">▼</button>
+            </h2>
+            <div id="holdings-content" class="card-content">
+                <div id="holdings-list" class="loading">Loading...</div>
+            </div>
         </div>
 
         <!-- Portfolio Value Chart -->
         <div class="card">
-            <h2>📈 Portfolio Value Over Time</h2>
-            <div class="chart-container">
-                <canvas id="portfolioChart"></canvas>
+            <h2>
+                <span>📈 Portfolio Value Over Time</span>
+                <button class="collapse-btn" onclick="toggleCardCollapse('chart-content')" title="Collapse/Expand">▼</button>
+            </h2>
+            <div id="chart-content" class="card-content">
+                <div class="chart-container">
+                    <canvas id="portfolioChart"></canvas>
+                </div>
             </div>
         </div>
 
         <!-- Trade History -->
         <div class="card">
-            <h2>Recent Trades <button class="button refresh-btn" onclick="loadTrades()">↻ Refresh</button></h2>
-            <div id="trades-list" class="loading">Loading...</div>
+            <h2>
+                <span>Recent Trades</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button class="button refresh-btn" onclick="loadTrades()">↻ Refresh</button>
+                    <button class="collapse-btn" onclick="toggleCardCollapse('trades-content')" title="Collapse/Expand">▼</button>
+                </div>
+            </h2>
+            <div id="trades-content" class="card-content">
+                <div id="trades-list" class="loading">Loading...</div>
+            </div>
         </div>
 
     </div>
@@ -1728,6 +1814,52 @@
             }
         }
 
+        // Collapse/Expand card functionality
+        function toggleCardCollapse(cardId) {
+            const content = document.getElementById(cardId);
+            const button = event.target;
+            
+            if (!content) return;
+            
+            const isCollapsed = content.classList.contains('collapsed');
+            
+            if (isCollapsed) {
+                // Expand
+                content.classList.remove('collapsed');
+                content.style.maxHeight = content.scrollHeight + 'px';
+                button.classList.remove('collapsed');
+                button.textContent = '▼';
+                localStorage.setItem(`card-${cardId}-collapsed`, 'false');
+            } else {
+                // Collapse
+                content.classList.add('collapsed');
+                content.style.maxHeight = '0';
+                button.classList.add('collapsed');
+                button.textContent = '▼';
+                localStorage.setItem(`card-${cardId}-collapsed`, 'true');
+            }
+        }
+        
+        // Initialize card collapse states from localStorage
+        function initializeCardStates() {
+            document.querySelectorAll('.card-content').forEach(content => {
+                const cardId = content.id;
+                const isCollapsed = localStorage.getItem(`card-${cardId}-collapsed`) === 'true';
+                
+                if (isCollapsed) {
+                    content.classList.add('collapsed');
+                    content.style.maxHeight = '0';
+                    const button = content.previousElementSibling?.querySelector('.collapse-btn');
+                    if (button) {
+                        button.classList.add('collapsed');
+                    }
+                } else {
+                    // Set max-height to content height for smooth transitions
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                }
+            });
+        }
+
         // Load all data on page load
         window.addEventListener('DOMContentLoaded', () => {
             loadPortfolio();
@@ -1740,6 +1872,9 @@
             loadDiscoverySettings();
             loadCachedDiscoveries(); // Load cached discoveries on page load
             applySettings();
+            
+            // Initialize card collapse states
+            setTimeout(() => initializeCardStates(), 100);
 
             // Refresh every 30 seconds (captures position monitor auto-trades)
             setInterval(() => {
