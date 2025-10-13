@@ -1459,18 +1459,148 @@
                     `).join('');
                     document.getElementById('recommendations-list').innerHTML = recsHTML;
                 } else {
-                    document.getElementById('recommendations-list').innerHTML = '<p>No active recommendations</p>';
-                    document.getElementById('last-analysis-time').textContent = '';
+                    // Show helpful message with next analysis time and force button
+                    const nextAnalysisTime = new Date(Date.now() + 3600000); // Next hour
+                    document.getElementById('recommendations-list').innerHTML = `
+                        <div style="padding: 20px; background: #fafbfc; border-radius: 6px; border: 1px solid #e5e7eb;">
+                            <div style="text-align: center; margin-bottom: 15px;">
+                                <div style="color: #6b7280; font-size: 14px; margin-bottom: 8px;">No active recommendations yet</div>
+                                <div style="color: #9ca3af; font-size: 13px;">Next scheduled analysis: <strong>${nextAnalysisTime.toLocaleTimeString()}</strong></div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                                <button 
+                                    onclick="runAIAnalysisNow()" 
+                                    class="button" 
+                                    style="padding: 10px 20px; font-size: 14px;">
+                                    🔍 Run AI Analysis Now
+                                </button>
+                                <button 
+                                    onclick="document.getElementById('cryptoSearch').focus()" 
+                                    class="button" 
+                                    style="background: #6b7280; padding: 10px 20px; font-size: 14px;">
+                                    Analyze Specific Coin
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('last-analysis-time').textContent = 'No analysis yet';
                 }
             } catch (error) {
                 console.error('Failed to load recommendations:', error);
+                document.getElementById('recommendations-list').innerHTML = '<p style="color: #ef4444;">Failed to load recommendations</p>';
+                document.getElementById('last-analysis-time').textContent = 'Error loading data';
             }
         }
 
+        // Run AI analysis now (force recommendation generation)
+        async function runAIAnalysisNow() {
+            const button = event.target;
+            const originalText = button.textContent;
+            
+            try {
+                // Disable button and show loading
+                button.disabled = true;
+                button.textContent = '⏳ Running Analysis...';
+                button.style.opacity = '0.6';
+                
+                // Trigger recommendation job via API
+                const response = await fetch(`${API_BASE}/recommendations/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ maxBuy: 5, maxSell: 5 })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to trigger AI analysis');
+                }
+                
+                const result = await response.json();
+                
+                // Check if recommendations were generated
+                const hasRecommendations = result.recommendations && result.recommendations.length > 0;
+                
+                if (hasRecommendations) {
+                    // Show success message with results coming
+                    document.getElementById('recommendations-list').innerHTML = `
+                        <div style="padding: 20px; text-align: center; background: #d1fae5; border-radius: 6px; border: 1px solid #10b981;">
+                            <div style="color: #065f46; font-weight: 600; margin-bottom: 8px;">✅ Analysis Complete!</div>
+                            <p style="color: #047857; margin-bottom: 10px; font-size: 14px;">
+                                ${result.message || 'Generated recommendations'}
+                            </p>
+                            <p style="color: #6b7280; font-size: 13px;">
+                                Refreshing to show results...
+                            </p>
+                        </div>
+                    `;
+                    
+                    // Reload recommendations immediately
+                    setTimeout(() => {
+                        loadRecommendations();
+                    }, 2000); // 2 seconds
+                } else {
+                    // No recommendations generated
+                    document.getElementById('recommendations-list').innerHTML = `
+                        <div style="padding: 20px; text-align: center; background: #fef3c7; border-radius: 6px; border: 1px solid #f59e0b;">
+                            <div style="color: #92400e; font-weight: 600; margin-bottom: 8px;">⚠️ Analysis Complete</div>
+                            <p style="color: #78350f; margin-bottom: 10px; font-size: 14px;">
+                                ${result.message || 'No trading opportunities found at this time'}
+                            </p>
+                            <p style="color: #6b7280; font-size: 13px; margin-bottom: 15px;">
+                                Current market conditions don't meet the AI's criteria for safe trades.
+                            </p>
+                            <button 
+                                onclick="loadRecommendations()" 
+                                class="button" 
+                                style="padding: 8px 16px; font-size: 13px;">
+                                ← Back
+                            </button>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Failed to trigger AI analysis:', error);
+                
+                // Show error
+                document.getElementById('recommendations-list').innerHTML = `
+                    <div style="padding: 30px; text-align: center; background: #fee2e2; border-radius: 8px; border: 2px solid #ef4444;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
+                        <h3 style="color: #991b1b; margin-bottom: 10px;">Analysis Failed</h3>
+                        <p style="color: #7f1d1d; margin-bottom: 20px;">
+                            ${error.message}
+                        </p>
+                        <button 
+                            onclick="loadRecommendations()" 
+                            class="button" 
+                            style="background: #667eea;">
+                            ← Back
+                        </button>
+                    </div>
+                `;
+            } finally {
+                // Re-enable button
+                button.disabled = false;
+                button.textContent = originalText;
+                button.style.opacity = '1';
+            }
+        }
+
+        // Store last analysis timestamp globally
+        let lastAnalysisTimestamp = null;
+
         // Update last analysis time display
         function updateLastAnalysisTime(timestamp) {
+            lastAnalysisTimestamp = timestamp; // Store for periodic updates
+            refreshAnalysisTimeDisplay();
+        }
+
+        // Refresh the time display (called periodically)
+        function refreshAnalysisTimeDisplay() {
+            if (!lastAnalysisTimestamp) return;
+
             const now = new Date();
-            const diff = now - timestamp;
+            const diff = now - lastAnalysisTimestamp;
             const minutes = Math.floor(diff / 60000);
             const hours = Math.floor(minutes / 60);
             const days = Math.floor(hours / 24);
@@ -1607,6 +1737,8 @@
             loadPerformance();  
             loadRisk();          
             loadPortfolioChart(); 
+            loadDiscoverySettings();
+            loadCachedDiscoveries(); // Load cached discoveries on page load
             applySettings();
 
             // Refresh every 30 seconds (captures position monitor auto-trades)
@@ -1617,6 +1749,12 @@
                 loadRisk();
                 loadPortfolioChart();
             }, 30000);
+
+            // Update "time ago" displays every minute
+            setInterval(() => {
+                refreshAnalysisTimeDisplay();
+                refreshDiscoveryTimeDisplay();
+            }, 60000);
         });
 
         // Modal control functions
@@ -3004,6 +3142,81 @@
             document.getElementById('discoveryStrategySelect').value = settings.discoveryStrategy || 'moderate';
         }
 
+        // Store last discovery timestamp globally
+        let lastDiscoveryTimestamp = null;
+
+        // Load cached discoveries on page load
+        async function loadCachedDiscoveries() {
+            try {
+                const response = await fetch(`${API_BASE}/discover/top?limit=10`);
+                if (!response.ok) {
+                    throw new Error('Failed to load cached discoveries');
+                }
+                
+                const discoveries = await response.json();
+                
+                if (discoveries && discoveries.length > 0) {
+                    // Display cached discoveries
+                    document.getElementById('discoveries-list').innerHTML = formatDiscoveries(discoveries);
+                    
+                    // Find most recent discovery timestamp
+                    const mostRecent = discoveries.reduce((latest, disc) => {
+                        const discTime = new Date(disc.discoveredAt);
+                        return !latest || discTime > new Date(latest.discoveredAt) ? disc : latest;
+                    }, null);
+                    
+                    if (mostRecent && mostRecent.discoveredAt) {
+                        lastDiscoveryTimestamp = new Date(mostRecent.discoveredAt);
+                        refreshDiscoveryTimeDisplay();
+                        
+                        // Show discovery info
+                        const discoveryInfo = document.getElementById('discovery-info');
+                        discoveryInfo.style.display = 'block';
+                        document.getElementById('discovery-execution-time').textContent = 'N/A (cached)';
+                        document.getElementById('discovery-cache-status').textContent = '✅ Yes (From database)';
+                    }
+                } else {
+                    // No cached discoveries - auto-run first discovery
+                    console.log('No cached discoveries found, running initial discovery...');
+                    setTimeout(() => {
+                        runDiscovery();
+                    }, 2000); // Wait 2 seconds after page load to let other data load
+                }
+            } catch (error) {
+                console.error('Failed to load cached discoveries:', error);
+                // Show prompt to run discovery
+                document.getElementById('discoveries-list').innerHTML = `
+                    <p style="color: #6b7280; text-align: center; padding: 20px;">
+                        No discoveries found. Click "Run Discovery" to find trading opportunities.
+                    </p>
+                `;
+            }
+        }
+
+        // Refresh discovery time display (called periodically)
+        function refreshDiscoveryTimeDisplay() {
+            if (!lastDiscoveryTimestamp) return;
+
+            const now = new Date();
+            const diff = now - lastDiscoveryTimestamp;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            let timeText = '';
+            if (days > 0) {
+                timeText = `${days}d ago`;
+            } else if (hours > 0) {
+                timeText = `${hours}h ago`;
+            } else if (minutes > 0) {
+                timeText = `${minutes}m ago`;
+            } else {
+                timeText = 'Just now';
+            }
+
+            document.getElementById('discovery-timestamp').textContent = timeText;
+        }
+
         // Discovery Functions
         async function runDiscovery() {
             const btn = document.getElementById('discoveryBtn');
@@ -3053,8 +3266,8 @@
                 // Update discovery info
                 if (data.timestamp) {
                     discoveryInfo.style.display = 'block';
-                    const timestamp = new Date(data.timestamp);
-                    document.getElementById('discovery-timestamp').textContent = timestamp.toLocaleString();
+                    lastDiscoveryTimestamp = new Date(data.timestamp);
+                    refreshDiscoveryTimeDisplay();
                     document.getElementById('discovery-execution-time').textContent = `${(data.executionTime / 1000).toFixed(2)}s`;
                     document.getElementById('discovery-cache-status').textContent = data.forceRefresh ? '❌ No (Fresh data)' : '✅ Yes (Cached)';
                 }
