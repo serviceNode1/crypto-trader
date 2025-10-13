@@ -132,12 +132,12 @@ async function init() {
 
 // Expose functions globally for onclick handlers in HTML
 window.applyTheme = applyTheme;
-window.closeSettingsModal = closeSettingsModal;
+window.openInfoModal = openInfoModal;
 window.closeInfoModal = closeInfoModal;
-window.loadPortfolio = loadPortfolio;
-window.switchTab = switchTab;
 window.openSettingsModal = openSettingsModal;
 window.closeSettingsModal = closeSettingsModal;
+window.switchTab = switchTab;
+window.loadPortfolio = loadPortfolio;
 window.saveSettings = saveSettings;
 window.updateConfidenceValue = updateConfidenceValue;
 window.updateMaxPositionValue = updateMaxPositionValue;
