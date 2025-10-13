@@ -34,7 +34,11 @@
 
         <!-- Crypto Selector -->
         <div class="card" style="margin-bottom: 30px;">
-            <h2>🔍 Select Cryptocurrency to Analyze</h2>
+            <h2 onclick="toggleCardCollapse('crypto-selector-content')">
+                <span>🔍 Select Cryptocurrency to Analyze</span>
+                <button class="collapse-btn" title="Collapse/Expand">▼</button>
+            </h2>
+            <div id="crypto-selector-content" class="card-content">
             <div class="crypto-selector">
                 <div class="search-container">
                     <input 
@@ -135,6 +139,7 @@
                     <button onclick="closeAnalysis()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #6b7280;">×</button>
                 </div>
                 <div id="analysisContent" style="margin-top: 15px;"></div>
+            </div>
             </div>
         </div>
 
