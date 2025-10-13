@@ -1161,9 +1161,9 @@
                                     <tr>
                                         <td><strong>${pos.symbol}</strong></td>
                                         <td>${pos.quantity.toFixed(4)}</td>
-                                        <td>$${pos.averagePrice.toFixed(2)}</td>
+                                        <td>$${formatPrice(pos.averagePrice)}</td>
                                         <td style="font-weight: 600; color: ${priceChange >= 0 ? '#10b981' : '#ef4444'};">
-                                            $${currentPrice.toFixed(2)}
+                                            $${formatPrice(currentPrice)}
                                             <span style="font-size: 11px;">(${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(1)}%)</span>
                                         </td>
                                         <td>$${pos.currentValue.toFixed(2)}</td>
@@ -1393,7 +1393,7 @@
                                         <td><span class="badge badge-${trade.side.toLowerCase()}">${trade.side}</span></td>
                                         <td><span style="font-size: 12px; color: ${typeColor}; font-weight: 500;">${typeLabel}</span></td>
                                         <td>${parseFloat(trade.quantity).toFixed(4)}</td>
-                                        <td>$${parseFloat(trade.price).toFixed(2)}</td>
+                                        <td>$${formatPrice(parseFloat(trade.price))}</td>
                                         <td>$${parseFloat(trade.totalCost || trade.total_cost).toFixed(2)}</td>
                                     </tr>
                                 `;}).join('')}
@@ -1748,7 +1748,7 @@
                         <div style="display: grid; gap: 10px;">
                             <div class="analysis-stat">
                                 <span class="analysis-stat-label">Current Price</span>
-                                <span class="analysis-stat-value">$${data.currentPrice?.toLocaleString() || 'N/A'}</span>
+                                <span class="analysis-stat-value">$${data.currentPrice ? formatPrice(data.currentPrice) : 'N/A'}</span>
                             </div>
                             <div class="analysis-stat">
                                 <span class="analysis-stat-label">Trend</span>
@@ -3700,7 +3700,7 @@ UPDATE user_settings SET take_profit_strategy = 'partial' WHERE user_id = 1;</pr
                     'Position Sold Successfully!',
                     `<div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin: 12px 0;">` +
                     `<div style="margin: 8px 0;"><strong>Sold:</strong> ${quantity.toFixed(8)} ${symbol}</div>` +
-                    `<div style="margin: 8px 0;"><strong>Price:</strong> $${currentPrice.toFixed(2)}</div>` +
+                    `<div style="margin: 8px 0;"><strong>Price:</strong> $${formatPrice(currentPrice)}</div>` +
                     `<div style="margin: 8px 0;"><strong>Proceeds:</strong> $${proceeds.toFixed(2)}</div>` +
                     `</div>`
                 );
@@ -3906,12 +3906,12 @@ UPDATE user_settings SET take_profit_strategy = 'partial' WHERE user_id = 1;</pr
                             </div>
                             <div>
                                 <div style="color: #6b7280; font-size: 13px;">Entry Price</div>
-                                <div style="font-weight: 600;">$${position.averagePrice.toFixed(2)}</div>
+                                <div style="font-weight: 600;">$${formatPrice(position.averagePrice)}</div>
                             </div>
                             <div>
                                 <div style="color: #6b7280; font-size: 13px;">Current Price</div>
                                 <div style="font-weight: 600; color: ${priceChange >= 0 ? '#10b981' : '#ef4444'};">
-                                    $${currentPrice.toFixed(2)}
+                                    $${formatPrice(currentPrice)}
                                     <span style="font-size: 12px;">(${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%)</span>
                                 </div>
                             </div>
@@ -4004,7 +4004,7 @@ UPDATE user_settings SET take_profit_strategy = 'partial' WHERE user_id = 1;</pr
             const message = `
                 <div style="margin-bottom: 16px;">
                     <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
-                        <strong>Current Price:</strong> $${currentPrice.toFixed(2)}
+                        <strong>Current Price:</strong> $${formatPrice(currentPrice)}
                     </div>
                     <label style="display: block; font-weight: 600; margin-bottom: 8px;">${label}</label>
                     <input 
