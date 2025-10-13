@@ -33,15 +33,19 @@ export function switchTab(tabName) {
         button.classList.remove('active');
     });
     
-    // Show selected tab content
-    const selectedTab = document.getElementById(`${tabName}-tab`);
+    // Show selected tab content (ID matches tabName directly)
+    const selectedTab = document.getElementById(tabName);
     if (selectedTab) {
         selectedTab.classList.add('active');
+    } else {
+        console.error(`Tab content not found: ${tabName}`);
     }
     
-    // Activate selected tab button
-    const selectedButton = document.querySelector(`[onclick*="${tabName}"]`);
+    // Activate selected tab button (find by onclick attribute containing the tab name)
+    const selectedButton = document.querySelector(`.tab-button[onclick="switchTab('${tabName}')"]`);
     if (selectedButton) {
         selectedButton.classList.add('active');
+    } else {
+        console.error(`Tab button not found for: ${tabName}`);
     }
 }

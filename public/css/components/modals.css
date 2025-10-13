@@ -33,6 +33,11 @@
     animation: fadeIn var(--transition-base) ease;
 }
 
+[data-theme="dark"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+}
+
 .modal-overlay.active {
     display: flex;
     justify-content: center;
@@ -40,7 +45,8 @@
 }
 
 .modal-content {
-    background: white;
+    background: var(--bg-card);
+    color: var(--text-primary);
     border-radius: 12px;
     width: 90%;
     max-width: 900px;
@@ -49,6 +55,12 @@
     animation: slideUp 0.3s;
     display: flex;
     flex-direction: column;
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .modal-content {
+    border-color: var(--border-color-dark);
 }
 
 .modal-header {
@@ -77,12 +89,35 @@
     padding: 30px;
     overflow-y: auto;
     flex: 1;
+    background: var(--bg-card);
+}
+
+.modal-body h1,
+.modal-body h2,
+.modal-body h3,
+.modal-body h4,
+.modal-body h5,
+.modal-body h6 {
+    color: var(--text-primary);
+    margin-top: 1.5em;
+    margin-bottom: 0.75em;
+}
+
+.modal-body h1:first-child,
+.modal-body h2:first-child,
+.modal-body h3:first-child {
+    margin-top: 0;
+}
+
+.modal-body p,
+.modal-body li {
+    color: var(--text-secondary);
 }
 
 .modal-footer {
     padding: 20px 30px;
-    background: #f9fafb;
-    border-top: 1px solid #e5e7eb;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: flex-end;
     gap: 10px;
@@ -90,8 +125,8 @@
 
 .modal-tabs {
     display: flex;
-    background: #f3f4f6;
-    border-bottom: 2px solid #e5e7eb;
+    background: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-color);
 }
 
 .tab-button {
@@ -101,19 +136,20 @@
     border: none;
     cursor: pointer;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--text-muted);
     transition: all 0.3s;
     border-bottom: 3px solid transparent;
 }
 
 .tab-button:hover {
-    background: #e5e7eb;
+    background: var(--bg-hover);
+    color: var(--text-secondary);
 }
 
 .tab-button.active {
     color: #667eea;
     border-bottom-color: #667eea;
-    background: white;
+    background: var(--bg-card);
 }
 
 .tab-content {
