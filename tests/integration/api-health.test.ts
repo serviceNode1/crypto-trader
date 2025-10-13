@@ -3,14 +3,14 @@
  * Tests all external APIs to identify which ones are failing
  */
 
-import { getCurrentPrice } from '../services/dataCollection/coinGeckoService';
-import { getCandlesticks } from '../services/dataCollection/coinbaseService';
-import { getCryptoNews } from '../services/dataCollection/cryptoPanicService';
-import { getCryptoMentions } from '../services/dataCollection/redditService';
-import { getCryptoCompareNews } from '../services/dataCollection/cryptocompareService';
-import { aggregateRSSNews } from '../services/dataCollection/rssFeedService';
-import { getAggregatedNews } from '../services/dataCollection/newsAggregator';
-import { logger } from '../utils/logger';
+import { getCurrentPrice } from '../../src/services/dataCollection/coinGeckoService';
+import { getCandlesticks } from '../../src/services/dataCollection/coinbaseService';
+import { getCryptoNews } from '../../src/services/dataCollection/cryptoPanicService';
+import { getCryptoMentions } from '../../src/services/dataCollection/redditService';
+import { getCryptoCompareNews } from '../../src/services/dataCollection/cryptocompareService';
+import { aggregateRSSNews } from '../../src/services/dataCollection/rssFeedService';
+import { getAggregatedNews } from '../../src/services/dataCollection/newsAggregator';
+import { logger } from '../../src/utils/logger';
 
 interface APITestResult {
   service: string;

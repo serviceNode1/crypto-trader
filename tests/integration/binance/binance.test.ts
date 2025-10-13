@@ -6,8 +6,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { getCandlesticks, get24hrTicker, getOrderBookDepth } from '../services/dataCollection/binanceService';
-import { initRedis } from '../config/redis';
+import { getCandlesticks, get24hrTicker, getOrderBookDepth } from '../../../src/services/dataCollection/binanceService';
+import { initRedis } from '../../../src/config/redis';
 
 async function testBinanceAPI(): Promise<void> {
   // Initialize Redis for caching

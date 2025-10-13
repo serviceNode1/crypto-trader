@@ -6,8 +6,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { getCandlesticks, get24hrTicker, getOrderBookDepth, getProducts } from '../services/dataCollection/coinbaseService';
-import { initRedis } from '../config/redis';
+import { getCandlesticks, get24hrTicker, getOrderBookDepth, getProducts } from '../../../src/services/dataCollection/coinbaseService';
+import { initRedis } from '../../../src/config/redis';
 
 async function testCoinbaseAuth() {
   console.log('\n🔬 Testing Coinbase API with Authentication...\n');
