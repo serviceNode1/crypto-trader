@@ -240,10 +240,10 @@ router.post('/trades', async (req: Request, res: Response) => {
     );
 
     logger.info('Trade executed via API', { symbol, side, quantity });
-    res.status(201).json(trade);
+    return res.status(201).json(trade);
   } catch (error: any) {
     logger.error('Failed to execute trade', { error });
-    res.status(500).json({ error: error.message || 'Failed to execute trade' });
+    return res.status(500).json({ error: error.message || 'Failed to execute trade' });
   }
 });
 
@@ -297,10 +297,10 @@ router.post('/trade', async (req: Request, res: Response) => {
     );
 
     logger.info('Manual trade executed via API', { symbol, side, quantity, stopLoss, takeProfit, hadWarnings: !!riskCheck.warnings });
-    res.status(201).json(trade);
+    return res.status(201).json(trade);
   } catch (error: any) {
     logger.error('Failed to execute trade', { error });
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Trade execution failed',
       message: error.message || 'An unexpected error occurred while executing the trade.',
     });
@@ -1045,7 +1045,7 @@ router.put('/holdings/:symbol/protection', async (req: Request, res: Response) =
       currentPrice
     });
 
-    res.json({
+    return res.json({
       success: true,
       symbol,
       stopLoss,
@@ -1056,10 +1056,35 @@ router.put('/holdings/:symbol/protection', async (req: Request, res: Response) =
     });
   } catch (error: any) {
     logger.error('Failed to update position protection', { error });
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Update failed',
       message: error.message || 'Failed to update position protection'
     });
+  }
+});
+
+/**
+ * DELETE /api/coin-mapping/:symbol - Clear cached coin ID mapping
+ * Useful for fixing incorrect symbol mappings
+ */
+router.delete('/coin-mapping/:symbol', async (req, res) => {
+  try {
+    const symbol = req.params.symbol.toUpperCase();
+    
+    const { clearCachedMapping } = await import('../services/dataCollection/coinListService');
+    await clearCachedMapping(symbol);
+    
+    logger.info('Cleared cached coin mapping', { symbol });
+    res.json({ 
+      success: true, 
+      message: `Mapping for ${symbol} cleared. Next price fetch will discover the correct coin.`
+    });
+  } catch (error) {
+    logger.error('Failed to clear coin mapping', { 
+      symbol: req.params.symbol, 
+      error 
+    });
+    res.status(500).json({ error: 'Failed to clear mapping' });
   }
 });
 

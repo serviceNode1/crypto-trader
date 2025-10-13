@@ -197,12 +197,32 @@ async function searchForCoinId(symbol: string): Promise<string | null> {
 
           const coins: CoinSearchResult[] = response.data.coins || [];
           
-          // Find exact symbol match
-          const exactMatch = coins.find(
+          // Find all exact symbol matches
+          const exactMatches = coins.filter(
             (coin) => coin.symbol.toUpperCase() === symbol.toUpperCase()
           );
 
-          return exactMatch ? exactMatch.id : null;
+          if (exactMatches.length === 0) {
+            return null;
+          }
+
+          // If multiple matches, prefer the one with highest market cap rank (lowest number)
+          // Sort by market_cap_rank ascending (undefined ranks go to the end)
+          const bestMatch = exactMatches.sort((a, b) => {
+            if (a.market_cap_rank === undefined) return 1;
+            if (b.market_cap_rank === undefined) return -1;
+            return a.market_cap_rank - b.market_cap_rank;
+          })[0];
+
+          logger.info('Found exact symbol match', { 
+            symbol, 
+            coinId: bestMatch.id,
+            coinName: bestMatch.name,
+            marketCapRank: bestMatch.market_cap_rank,
+            totalMatches: exactMatches.length
+          });
+
+          return bestMatch.id;
         },
         { shouldRetry: isRetryableError }
       );
@@ -275,6 +295,26 @@ export function getCoinListStats(): {
  */
 export function hasSymbol(symbol: string): boolean {
   return symbolToIdMap.has(symbol.toUpperCase());
+}
+
+/**
+ * Clear cached mapping for a symbol (useful when fixing incorrect mappings)
+ */
+export async function clearCachedMapping(symbol: string): Promise<void> {
+  try {
+    const upperSymbol = symbol.toUpperCase();
+    
+    // Remove from database
+    await query('DELETE FROM coin_id_mappings WHERE symbol = $1', [upperSymbol]);
+    
+    // Remove from memory map
+    symbolToIdMap.delete(upperSymbol);
+    
+    logger.info('Cleared cached mapping', { symbol });
+  } catch (error) {
+    logger.error('Failed to clear cached mapping', { symbol, error });
+    throw error;
+  }
 }
 
 export { CoinListItem };
