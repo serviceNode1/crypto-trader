@@ -2468,6 +2468,25 @@
             </div>
             
             <div class="modal-body">
+                <!-- Appearance Settings -->
+                <div class="info-section">
+                    <h3>🎨 Appearance</h3>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Theme</h4>
+                            <p>Choose between light and dark mode</p>
+                        </div>
+                        <div class="setting-control">
+                            <select id="themeSelect" class="setting-select" onchange="changeTheme(this.value)">
+                                <option value="light">☀️ Light Mode</option>
+                                <option value="dark">🌙 Dark Mode</option>
+                                <option value="auto">💻 Auto (System)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Auto-Trading Settings -->
                 <div class="info-section">
                     <h3>🤖 Auto-Trading</h3>
@@ -2735,6 +2754,47 @@
         function getSettings() {
             return loadSettings();
         }
+
+        // Theme management functions
+        function changeTheme(theme) {
+            localStorage.setItem('theme', theme);
+            applyTheme(theme);
+        }
+
+        function applyTheme(theme) {
+            const html = document.documentElement;
+            
+            if (theme === 'auto') {
+                // Use system preference
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                html.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            } else {
+                html.setAttribute('data-theme', theme);
+            }
+            
+            // Update the selector in settings modal
+            const themeSelect = document.getElementById('themeSelect');
+            if (themeSelect) {
+                themeSelect.value = theme;
+            }
+        }
+
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'auto';
+            applyTheme(savedTheme);
+            
+            // Listen for system theme changes when auto is selected
+            if (savedTheme === 'auto') {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                    if (localStorage.getItem('theme') === 'auto') {
+                        applyTheme('auto');
+                    }
+                });
+            }
+        }
+
+        // Initialize theme on page load
+        initializeTheme();
 
         // Save discovery settings from dropdowns (sync with main settings)
         function saveDiscoverySettings() {
