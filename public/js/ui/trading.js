@@ -1,0 +1,619 @@
+/**
+ * Trading UI Module
+ * Handles manual trading, position management, and trade modals
+ */
+
+/* global document, window, localStorage */
+/* eslint-disable no-console */
+import { API_BASE } from '../config.js';
+import { formatPrice } from '../utils/formatters.js';
+
+// ============================================
+// SETTINGS HELPERS
+// ============================================
+
+export function loadSettings() {
+    const saved = localStorage.getItem('tradingSettings');
+    const defaults = {
+        autoExecute: false,
+        confidenceThreshold: 75,
+        humanApproval: true,
+        positionSizingStrategy: 'equal',
+        maxPositionSize: 5,
+        takeProfitStrategy: 'full',
+        autoStopLoss: true,
+        coinUniverse: 'top25',
+        discoveryStrategy: 'moderate',
+        analysisFrequency: 4
+    };
+    return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+}
+
+export function getSettings() {
+    return loadSettings();
+}
+
+// ============================================
+// MANUAL TRADING FUNCTIONS
+// ============================================
+
+export function toggleAdvancedOptions() {
+    const checkbox = document.getElementById('addStopLoss');
+    const options = document.getElementById('advancedOptions');
+    options.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+export function updateQuantityPlaceholder() {
+    const type = document.getElementById('quantityType').value;
+    const input = document.getElementById('manualTradeQuantity');
+    const helper = document.getElementById('quantityHelper');
+    
+    if (type === 'units') {
+        input.placeholder = 'Enter number of coins';
+        helper.textContent = 'Example: 0.5 BTC';
+    } else if (type === 'usd') {
+        input.placeholder = 'Enter dollar amount';
+        helper.textContent = 'Example: $1000';
+    } else if (type === 'percent') {
+        input.placeholder = 'Enter percentage';
+        helper.textContent = 'Example: 5 (for 5% of portfolio)';
+    }
+}
+
+export async function previewTrade() {
+    const symbol = document.getElementById('manualTradeSymbol').value.toUpperCase().trim();
+    const quantity = parseFloat(document.getElementById('manualTradeQuantity').value);
+    const quantityType = document.getElementById('quantityType').value;
+    const addStopLoss = document.getElementById('addStopLoss').checked;
+    const stopLossPrice = addStopLoss ? parseFloat(document.getElementById('stopLossPrice').value) : null;
+    const takeProfitPrice = addStopLoss ? parseFloat(document.getElementById('takeProfitPrice').value) : null;
+    
+    const previewArea = document.getElementById('tradePreviewArea');
+    
+    if (!symbol || !quantity || quantity <= 0) {
+        previewArea.style.display = 'block';
+        previewArea.innerHTML = `
+            <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
+                ⚠️ Please enter a valid symbol and quantity
+            </div>
+        `;
+        return;
+    }
+
+    // Get current portfolio
+    const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
+    if (!portfolioResponse.ok) {
+        previewArea.style.display = 'block';
+        previewArea.innerHTML = `
+            <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
+                ⚠️ Unable to fetch portfolio data
+            </div>
+        `;
+        return;
+    }
+
+    const portfolio = await portfolioResponse.json();
+    const totalValue = portfolio.totalValue || 10000; // Fallback
+
+    // Get current price for the symbol
+    try {
+        const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+        if (!priceResponse.ok) throw new Error('Price fetch failed');
+
+        const priceData = await priceResponse.json();
+        const currentPrice = priceData.price;
+
+        // Calculate actual quantity based on type
+        let actualQuantity = quantity;
+        let totalCost = 0;
+
+        if (quantityType === 'usd') {
+            actualQuantity = quantity / currentPrice;
+            totalCost = quantity;
+        } else if (quantityType === 'percent') {
+            totalCost = (quantity / 100) * totalValue;
+            actualQuantity = totalCost / currentPrice;
+        } else {
+            // units
+            totalCost = quantity * currentPrice;
+        }
+
+        // Validate against portfolio
+        if (totalCost > totalValue) {
+            previewArea.style.display = 'block';
+            previewArea.innerHTML = `
+                <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
+                    ⚠️ Insufficient funds! Trade cost: $${totalCost.toFixed(2)}, Portfolio value: $${totalValue.toFixed(2)}
+                </div>
+            `;
+            return;
+        }
+
+        // Calculate potential P&L with stop loss/take profit
+        let stopLossInfo = '';
+        let takeProfitInfo = '';
+
+        if (addStopLoss && stopLossPrice) {
+            const stopLossAmount = (stopLossPrice - currentPrice) * actualQuantity;
+            const stopLossPercent = ((stopLossPrice - currentPrice) / currentPrice) * 100;
+            stopLossInfo = `
+                <div style="padding: 10px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px;">
+                    <strong>Stop Loss:</strong> $${stopLossPrice.toFixed(2)}<br>
+                    <span style="font-size: 13px; color: #991b1b;">
+                        Loss if triggered: $${Math.abs(stopLossAmount).toFixed(2)} (${stopLossPercent.toFixed(2)}%)
+                    </span>
+                </div>
+            `;
+        }
+
+        if (addStopLoss && takeProfitPrice) {
+            const takeProfitAmount = (takeProfitPrice - currentPrice) * actualQuantity;
+            const takeProfitPercent = ((takeProfitPrice - currentPrice) / currentPrice) * 100;
+            takeProfitInfo = `
+                <div style="padding: 10px; background: #d1fae5; border-left: 3px solid #10b981; border-radius: 4px;">
+                    <strong>Take Profit:</strong> $${takeProfitPrice.toFixed(2)}<br>
+                    <span style="font-size: 13px; color: #065f46;">
+                        Gain if triggered: $${takeProfitAmount.toFixed(2)} (${takeProfitPercent.toFixed(2)}%)
+                    </span>
+                </div>
+            `;
+        }
+
+        // Show preview
+        previewArea.style.display = 'block';
+        previewArea.innerHTML = `
+            <div style="padding: 15px; background: #f0f9ff; border: 2px solid #3b82f6; border-radius: 8px;">
+                <h4 style="margin: 0 0 15px 0; color: #1e40af;">📋 Trade Preview</h4>
+                <div style="display: grid; gap: 10px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Symbol:</span>
+                        <strong>${symbol}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Current Price:</span>
+                        <strong>$${currentPrice.toFixed(2)}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Quantity:</span>
+                        <strong>${actualQuantity.toFixed(6)} ${symbol}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid #bfdbfe;">
+                        <span>Total Cost:</span>
+                        <strong style="color: #1e40af;">$${totalCost.toFixed(2)}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>% of Portfolio:</span>
+                        <strong>${((totalCost / totalValue) * 100).toFixed(2)}%</strong>
+                    </div>
+                </div>
+                ${stopLossInfo}
+                ${takeProfitInfo}
+                <button onclick="executeTrade()" class="button" style="width: 100%; margin-top: 15px;">
+                    ✅ Confirm Trade
+                </button>
+            </div>
+        `;
+
+    } catch (error) {
+        console.error('Preview error:', error);
+        previewArea.style.display = 'block';
+        previewArea.innerHTML = `
+            <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
+                ⚠️ Unable to fetch price for ${symbol}. Please check the symbol and try again.
+            </div>
+        `;
+    }
+}
+
+export async function executeTrade() {
+    const symbol = document.getElementById('manualTradeSymbol').value.toUpperCase().trim();
+    const quantity = parseFloat(document.getElementById('manualTradeQuantity').value);
+    const quantityType = document.getElementById('quantityType').value;
+    const addStopLoss = document.getElementById('addStopLoss').checked;
+    const stopLossPrice = addStopLoss ? parseFloat(document.getElementById('stopLossPrice').value) : null;
+    const takeProfitPrice = addStopLoss ? parseFloat(document.getElementById('takeProfitPrice').value) : null;
+
+    try {
+        const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+        if (!priceResponse.ok) throw new Error('Price fetch failed');
+        const priceData = await priceResponse.json();
+        const currentPrice = priceData.price;
+
+        // Get portfolio value for percent calculation
+        const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
+        const portfolio = await portfolioResponse.json();
+        const totalValue = portfolio.totalValue || 10000;
+
+        let actualQuantity = quantity;
+        if (quantityType === 'usd') {
+            actualQuantity = quantity / currentPrice;
+        } else if (quantityType === 'percent') {
+            const costAmount = (quantity / 100) * totalValue;
+            actualQuantity = costAmount / currentPrice;
+        }
+
+        // Execute trade
+        const response = await fetch(`${API_BASE}/trade`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                symbol,
+                quantity: actualQuantity,
+                side: 'BUY',
+                tradeType: 'manual',
+                stopLoss: stopLossPrice,
+                takeProfit: takeProfitPrice
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || 'Trade failed');
+        }
+
+        await showSuccess(
+            'Trade Executed!',
+            `Successfully bought ${actualQuantity.toFixed(6)} ${symbol} at $${currentPrice.toFixed(2)}`
+        );
+
+        // Clear form and refresh
+        document.getElementById('manualTradeSymbol').value = '';
+        document.getElementById('manualTradeQuantity').value = '';
+        document.getElementById('tradePreviewArea').style.display = 'none';
+        
+        // Use global functions exposed by main.js
+        if (window.loadPortfolio) window.loadPortfolio();
+        if (window.loadTrades) window.loadTrades();
+
+    } catch (error) {
+        console.error('Trade error:', error);
+        await showError('Trade Failed', error.message);
+    }
+}
+
+// ============================================
+// SELL POSITION FUNCTIONS
+// ============================================
+
+export async function sellPosition(symbol, quantity) {
+    // Confirm sale
+    const confirmed = await showConfirm(
+        'Sell Position',
+        `Sell entire <strong>${symbol}</strong> position?<br><br>` +
+        `<div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin: 12px 0;">` +
+        `<strong>Quantity:</strong> ${quantity.toFixed(8)} ${symbol}` +
+        `</div>` +
+        `This will close your position and convert to cash.`,
+        { confirmText: 'Sell Position', confirmColor: '#ef4444' }
+    );
+    if (!confirmed) return;
+
+    try {
+        // Get current price
+        const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+        if (!priceResponse.ok) throw new Error('Failed to get price');
+
+        const priceData = await priceResponse.json();
+        const currentPrice = priceData.price;
+
+        // Execute the sell
+        const response = await fetch(`${API_BASE}/trade`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                symbol,
+                quantity,
+                side: 'SELL',
+                tradeType: 'manual'
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || 'Sale failed');
+        }
+
+        await showSuccess(
+            'Position Sold!',
+            `Successfully sold ${quantity.toFixed(6)} ${symbol} at $${currentPrice.toFixed(2)}`
+        );
+
+        // Refresh displays
+        if (window.loadPortfolio) window.loadPortfolio();
+        if (window.loadTrades) window.loadTrades();
+
+    } catch (error) {
+        console.error('Sell error:', error);
+        await showError('Sale Failed', error.message);
+    }
+}
+
+// ============================================
+// CUSTOM MODAL SYSTEM
+// ============================================
+
+let modalResolveCallback = null;
+
+export function showConfirm(title, message, options = {}) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const titleEl = document.getElementById('confirmTitle');
+        const messageEl = document.getElementById('confirmMessage');
+        const confirmBtn = document.getElementById('confirmButton');
+
+        titleEl.textContent = title;
+        messageEl.innerHTML = message;
+        
+        // Apply custom button text/colors if provided
+        if (options.confirmText) confirmBtn.textContent = options.confirmText;
+        else confirmBtn.textContent = 'Confirm';
+        
+        if (options.confirmColor) confirmBtn.style.background = options.confirmColor;
+        else confirmBtn.style.background = '#667eea';
+
+        modal.classList.add('active');
+        modalResolveCallback = resolve;
+    });
+}
+
+export function handleConfirmClick(result) {
+    const modal = document.getElementById('confirmModal');
+    modal.classList.remove('active');
+    if (modalResolveCallback) {
+        modalResolveCallback(result);
+        modalResolveCallback = null;
+    }
+}
+
+export function showSuccess(title, message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('statusModal');
+        const icon = document.getElementById('statusIcon');
+        const titleEl = document.getElementById('statusTitle');
+        const messageEl = document.getElementById('statusMessage');
+        const okBtn = document.getElementById('statusOkButton');
+
+        icon.textContent = '✅';
+        icon.style.color = '#10b981';
+        titleEl.textContent = title;
+        titleEl.style.color = '#10b981';
+        messageEl.innerHTML = message;
+
+        modal.classList.add('active');
+
+        okBtn.onclick = () => {
+            modal.classList.remove('active');
+            resolve();
+        };
+    });
+}
+
+export function showError(title, message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('statusModal');
+        const icon = document.getElementById('statusIcon');
+        const titleEl = document.getElementById('statusTitle');
+        const messageEl = document.getElementById('statusMessage');
+        const okBtn = document.getElementById('statusOkButton');
+
+        icon.textContent = '❌';
+        icon.style.color = '#ef4444';
+        titleEl.textContent = title;
+        titleEl.style.color = '#ef4444';
+        messageEl.innerHTML = message;
+
+        modal.classList.add('active');
+
+        okBtn.onclick = () => {
+            modal.classList.remove('active');
+            resolve();
+        };
+    });
+}
+
+// ============================================
+// POSITION DETAILS & PROTECTION MANAGEMENT
+// ============================================
+
+export async function openPositionDetails(symbol) {
+    try {
+        // Fetch current portfolio and position data
+        const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
+        const portfolio = await portfolioResponse.json();
+        const position = portfolio.positions.find(p => p.symbol === symbol);
+
+        if (!position) {
+            await showError('Position Not Found', `Could not find position for ${symbol}`);
+            return;
+        }
+
+        // Get current price
+        const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+        const priceData = await priceResponse.json();
+        const currentPrice = priceData.price;
+
+        // Calculate percentages
+        const priceChange = ((currentPrice - position.averagePrice) / position.averagePrice) * 100;
+        const stopLossPercent = position.stopLoss ? (((currentPrice - position.stopLoss) / currentPrice) * 100).toFixed(1) : null;
+        const takeProfitPercent = position.takeProfit ? (((position.takeProfit - currentPrice) / currentPrice) * 100).toFixed(1) : null;
+
+        const message = `
+            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <div style="color: #6b7280; font-size: 13px;">Quantity</div>
+                        <div style="font-weight: 600;">${position.quantity.toFixed(8)} ${symbol}</div>
+                    </div>
+                    <div>
+                        <div style="color: #6b7280; font-size: 13px;">Current Value</div>
+                        <div style="font-weight: 600;">$${(position.quantity * currentPrice).toFixed(2)}</div>
+                    </div>
+                    <div>
+                        <div style="color: #6b7280; font-size: 13px;">Avg Buy Price</div>
+                        <div style="font-weight: 600;">$${formatPrice(position.averagePrice)}</div>
+                    </div>
+                    <div>
+                        <div style="color: #6b7280; font-size: 13px;">Current Price</div>
+                        <div style="font-weight: 600;">$${formatPrice(currentPrice)}</div>
+                    </div>
+                    <div>
+                        <div style="color: #6b7280; font-size: 13px;">Total P&L</div>
+                        <div style="font-weight: 600; color: ${position.unrealizedPnL >= 0 ? '#10b981' : '#ef4444'};">
+                            ${position.unrealizedPnL >= 0 ? '+' : ''}$${position.unrealizedPnL.toFixed(2)} (${priceChange.toFixed(2)}%)
+                        </div>
+                    </div>
+                    <div>
+                        <div style="color: #6b7280; font-size: 13px;">Portfolio %</div>
+                        <div style="font-weight: 600;">${((position.quantity * currentPrice) / portfolio.totalValue * 100).toFixed(1)}%</div>
+                    </div>
+                </div>
+            </div>
+
+            ${position.stopLoss || position.takeProfit ? `
+            <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #10b981;">
+                <div style="font-weight: 600; margin-bottom: 10px; color: #065f46;">🛡️ Active Protections</div>
+                <div style="display: grid; gap: 10px;">
+                    ${position.stopLoss ? `
+                        <div style="padding: 10px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                            <div style="color: #92400e; font-weight: 600; margin-bottom: 4px;">🛑 Stop Loss</div>
+                            <div style="font-size: 14px; color: #6b7280;">
+                                Price: <strong>$${formatPrice(position.stopLoss)}</strong> (-${stopLossPercent}%)
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${position.takeProfit ? `
+                        <div style="padding: 10px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                            <div style="color: #065f46; font-weight: 600; margin-bottom: 4px;">🎯 Take Profit</div>
+                            <div style="font-size: 14px; color: #6b7280;">
+                                Price: <strong>$${formatPrice(position.takeProfit)}</strong> (+${takeProfitPercent}%)
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+            ` : ''}
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button onclick="sellPosition('${symbol}', ${position.quantity})" class="button" style="flex: 1; background: #ef4444;">
+                    💰 Sell Position
+                </button>
+                <button onclick="openProtectionManager('${symbol}')" class="button" style="flex: 1; background: #667eea;">
+                    🛡️ Manage Protections
+                </button>
+            </div>
+        `;
+
+        await showConfirm(`Position: ${symbol}`, message, { 
+            confirmText: 'Close', 
+            confirmColor: '#6b7280' 
+        });
+
+    } catch (error) {
+        console.error('Failed to load position details:', error);
+        await showError('Error', 'Failed to load position details');
+    }
+}
+
+export async function openProtectionManager(symbol) {
+    try {
+        const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
+        const portfolio = await portfolioResponse.json();
+        const position = portfolio.positions.find(p => p.symbol === symbol);
+
+        if (!position) {
+            await showError('Position Not Found', `Could not find position for ${symbol}`);
+            return;
+        }
+
+        const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+        const priceData = await priceResponse.json();
+        const currentPrice = priceData.price;
+
+        const message = `
+            <div style="margin-bottom: 20px;">
+                <div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+                    <div style="color: #6b7280; font-size: 13px;">Current Price</div>
+                    <div style="font-size: 20px; font-weight: 600;">$${formatPrice(currentPrice)}</div>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">🛑 Stop Loss Price</label>
+                    <input type="number" id="stopLossInput" value="${position.stopLoss || ''}" 
+                        placeholder="Enter stop loss price" 
+                        style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                    <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                        Auto-sell if price drops to this level
+                    </div>
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">🎯 Take Profit Price</label>
+                    <input type="number" id="takeProfitInput" value="${position.takeProfit || ''}" 
+                        placeholder="Enter take profit price" 
+                        style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                    <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                        Auto-sell if price rises to this level
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="saveProtection('${symbol}', 'stopLoss')" class="button" style="flex: 1; background: #ef4444;">
+                    Save Stop Loss
+                </button>
+                <button onclick="saveProtection('${symbol}', 'takeProfit')" class="button" style="flex: 1; background: #10b981;">
+                    Save Take Profit
+                </button>
+            </div>
+        `;
+
+        await showConfirm(`Manage Protections: ${symbol}`, message, {
+            confirmText: 'Done',
+            confirmColor: '#6b7280'
+        });
+
+    } catch (error) {
+        console.error('Failed to open protection manager:', error);
+        await showError('Error', 'Failed to open protection manager');
+    }
+}
+
+export async function saveProtection(symbol, type) {
+    try {
+        const input = document.getElementById(type === 'stopLoss' ? 'stopLossInput' : 'takeProfitInput');
+        const price = parseFloat(input.value);
+
+        const payload = {};
+        if (price && price > 0) {
+            payload[type] = price;
+        } else {
+            payload[type] = null; // Remove protection
+        }
+
+        const response = await fetch(`${API_BASE}/portfolio/${symbol}/protection`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || 'Failed to update protection');
+        }
+
+        await showSuccess(
+            'Protection Updated',
+            `${type === 'stopLoss' ? 'Stop loss' : 'Take profit'} ${price ? 'set to $' + price.toFixed(2) : 'removed'} for ${symbol}`
+        );
+
+        // Refresh portfolio to show updated data
+        if (window.loadPortfolio) window.loadPortfolio();
+
+    } catch (error) {
+        console.error('Failed to save protection:', error);
+        await showError('Update Failed', error.message);
+    }
+}

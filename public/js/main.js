@@ -31,6 +31,19 @@ import {
     toggleAnalysisLog,
     analyzeDiscovered 
 } from './ui/discovery.js';
+import { loadMarketContext, runAIAnalysisNow } from './ui/market-context.js';
+import { 
+    toggleAdvancedOptions,
+    updateQuantityPlaceholder,
+    previewTrade,
+    executeTrade,
+    sellPosition,
+    handleConfirmClick,
+    openPositionDetails,
+    openProtectionManager,
+    saveProtection,
+    getSettings
+} from './ui/trading.js';
 import { formatPrice, formatNumber, renderSparkline, getScoreColor } from './utils/formatters.js';
 
 /**
@@ -85,6 +98,7 @@ async function loadAllData() {
 async function loadInitialData() {
     await Promise.allSettled([
         loadCachedDiscoveries(),
+        loadMarketContext(),
     ]);
     loadDiscoverySettings();
 }
@@ -93,7 +107,6 @@ async function loadInitialData() {
  * Initialize the application
  */
 async function init() {
-    console.log('🚀 Initializing Crypto Trading Dashboard (Modular)...');
     
     // Initialize theme
     initializeTheme();
@@ -115,7 +128,6 @@ async function init() {
     setInterval(refreshAnalysisTimeDisplay, REFRESH_INTERVALS.TIME_DISPLAY);
     setInterval(refreshDiscoveryTimeDisplay, REFRESH_INTERVALS.TIME_DISPLAY);
     
-    console.log('✅ Dashboard initialized!');
 }
 
 // Expose functions globally for onclick handlers in HTML
@@ -139,6 +151,17 @@ window.runDiscovery = runDiscovery;
 window.toggleAnalysisLog = toggleAnalysisLog;
 window.analyzeDiscovered = analyzeDiscovered;
 window.saveDiscoverySettings = saveDiscoverySettings;
+window.runAIAnalysisNow = runAIAnalysisNow;
+window.toggleAdvancedOptions = toggleAdvancedOptions;
+window.updateQuantityPlaceholder = updateQuantityPlaceholder;
+window.previewTrade = previewTrade;
+window.executeTrade = executeTrade;
+window.sellPosition = sellPosition;
+window.handleConfirmClick = handleConfirmClick;
+window.openPositionDetails = openPositionDetails;
+window.openProtectionManager = openProtectionManager;
+window.saveProtection = saveProtection;
+window.getSettings = getSettings;
 window.formatPrice = formatPrice;
 window.formatNumber = formatNumber;
 window.renderSparkline = renderSparkline;
