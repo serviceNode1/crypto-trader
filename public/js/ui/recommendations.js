@@ -44,8 +44,10 @@ export async function loadRecommendations() {
                             </span>
                         </div>
                         <div style="color: #6b7280; font-size: 13px; line-height: 1.5;">
-                            <div><strong>Confidence:</strong> ${rec.confidence}%</div>
-                            <div><strong>Reasoning:</strong> ${rec.reasoning || 'Based on market analysis'}</div>
+                            <div><strong>Confidence:</strong> ${rec.confidence}% | <strong>Risk:</strong> ${rec.riskLevel || 'Medium'}</div>
+                            ${rec.reasoning ? `<div style="margin-top: 4px;"><strong>Reasoning:</strong> ${rec.reasoning}</div>` : ''}
+                            ${rec.entryPrice ? `<div style="margin-top: 4px;">Entry: $${rec.entryPrice.toFixed(2)}</div>` : ''}
+                            ${rec.stopLoss ? `<div style="margin-top: 4px;">Stop Loss: $${rec.stopLoss.toFixed(2)}</div>` : ''}
                             <div style="font-size: 11px; margin-top: 5px; color: #9ca3af;">
                                 ${timeAgo(rec.createdAt)}
                             </div>
@@ -56,11 +58,37 @@ export async function loadRecommendations() {
 
             document.getElementById('recommendations-list').innerHTML = recsHTML;
         } else {
-            document.getElementById('recommendations-list').innerHTML = 
-                '<p style="color: #6b7280; text-align: center; padding: 20px;">No recommendations yet. Run AI analysis to generate recommendations.</p>';
+            // Show helpful message with next analysis time and force button
+            const nextAnalysisTime = new Date(Date.now() + 3600000); // Next hour
+            document.getElementById('recommendations-list').innerHTML = `
+                <div style="padding: 20px; background: #fafbfc; border-radius: 6px; border: 1px solid #e5e7eb;">
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <div style="color: #6b7280; font-size: 14px; margin-bottom: 8px;">No active recommendations yet</div>
+                        <div style="color: #9ca3af; font-size: 13px;">Next scheduled analysis: <strong>${nextAnalysisTime.toLocaleTimeString()}</strong></div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button 
+                            onclick="runAIAnalysisNow()" 
+                            class="button" 
+                            style="padding: 10px 20px; font-size: 14px;">
+                            🔍 Run AI Analysis Now
+                        </button>
+                        <button 
+                            onclick="document.getElementById('cryptoSearch').focus()" 
+                            class="button" 
+                            style="background: #6b7280; padding: 10px 20px; font-size: 14px;">
+                            Analyze Specific Coin
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('last-analysis-time').textContent = 'No analysis yet';
         }
     } catch (error) {
         console.error('Failed to load recommendations:', error);
+        document.getElementById('recommendations-list').innerHTML = '<p style="color: #ef4444;">Failed to load recommendations</p>';
+        document.getElementById('last-analysis-time').textContent = 'Error loading data';
     }
 }
 

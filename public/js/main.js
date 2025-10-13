@@ -107,6 +107,8 @@ window.updateConfidenceValue = updateConfidenceValue;
 window.updateMaxPositionValue = updateMaxPositionValue;
 window.changeTheme = changeTheme;
 window.loadTrades = loadTrades;
+window.loadPortfolio = loadPortfolio;
+window.loadRecommendations = loadRecommendations;
 
 // Start the app
 if (document.readyState === 'loading') {

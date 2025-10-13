@@ -79,6 +79,15 @@
     flex: 1;
 }
 
+.modal-footer {
+    padding: 20px 30px;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
 .modal-tabs {
     display: flex;
     background: #f3f4f6;

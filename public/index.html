@@ -397,10 +397,21 @@
     </div>
 
     <script>
-        const API_BASE = window.location.origin + '/api';
+        // ===================================================================
+        // MIGRATED TO /js/ MODULES:
+        // - API_BASE → config.js
+        // - loadPortfolio() → ui/portfolio.js
+        // - loadPerformance() → ui/portfolio.js
+        // - loadRisk() → ui/portfolio.js
+        // - loadPortfolioChart() → ui/portfolio.js
+        // - loadTrades() → ui/trades.js
+        // - loadRecommendations() → ui/recommendations.js
+        // - updateLastAnalysisTime() → ui/recommendations.js
+        // - refreshAnalysisTimeDisplay() → ui/recommendations.js
+        // ===================================================================
 
-        // Load portfolio data
-        async function loadPortfolio() {
+        // Load portfolio data - MIGRATED to ui/portfolio.js
+        /* async function loadPortfolio() {
             try {
                 const response = await fetch(`${API_BASE}/portfolio`);
                 
@@ -849,7 +860,7 @@
                 document.getElementById('recommendations-list').innerHTML = '<p style="color: #ef4444;">Failed to load recommendations</p>';
                 document.getElementById('last-analysis-time').textContent = 'Error loading data';
             }
-        }
+        } */
 
         // Run AI analysis now (force recommendation generation)
         async function runAIAnalysisNow() {
@@ -945,37 +956,10 @@
         }
 
         // Store last analysis timestamp globally
-        let lastAnalysisTimestamp = null;
-
-        // Update last analysis time display
-        function updateLastAnalysisTime(timestamp) {
-            lastAnalysisTimestamp = timestamp; // Store for periodic updates
-            refreshAnalysisTimeDisplay();
-        }
-
-        // Refresh the time display (called periodically)
-        function refreshAnalysisTimeDisplay() {
-            if (!lastAnalysisTimestamp) return;
-
-            const now = new Date();
-            const diff = now - lastAnalysisTimestamp;
-            const minutes = Math.floor(diff / 60000);
-            const hours = Math.floor(minutes / 60);
-            const days = Math.floor(hours / 24);
-
-            let timeText = '';
-            if (days > 0) {
-                timeText = `${days}d ago`;
-            } else if (hours > 0) {
-                timeText = `${hours}h ago`;
-            } else if (minutes > 0) {
-                timeText = `${minutes}m ago`;
-            } else {
-                timeText = 'Just now';
-            }
-
-            document.getElementById('last-analysis-time').textContent = `Last analysis: ${timeText}`;
-        }
+        // MIGRATED to ui/recommendations.js
+        /* let lastAnalysisTimestamp = null;
+        function updateLastAnalysisTime(timestamp) { ... }
+        function refreshAnalysisTimeDisplay() { ... } */
 
         // Get color for market indicators
         function getMarketRegimeColor(regime) {
@@ -2651,8 +2635,22 @@
     </div>
 
     <script>
-        // Settings Management
-        const DEFAULT_SETTINGS = {
+        // ===================================================================
+        // MIGRATED TO /js/ MODULES:
+        // - DEFAULT_SETTINGS → config.js
+        // - loadSettings() → utils/storage.js
+        // - saveSettings() → ui/settings.js
+        // - applySettings() → ui/settings.js
+        // - openSettingsModal() → ui/settings.js
+        // - closeSettingsModal() → ui/settings.js
+        // - updateConfidenceValue() → ui/settings.js
+        // - updateMaxPositionValue() → ui/settings.js
+        // - changeTheme() → ui/settings.js (exposed via main.js)
+        // - applyTheme() → main.js
+        // - initializeTheme() → main.js
+        // ===================================================================
+        
+        /* const DEFAULT_SETTINGS = {
             autoExecute: false,
             confidenceThreshold: 75,
             humanApproval: true,
@@ -2792,7 +2790,32 @@
         }
 
         // Initialize theme on page load
-        initializeTheme();
+        initializeTheme(); */
+
+        // Bridge constants and functions for unmigrated code (discovery, trading, analysis)
+        // These will be removed when those modules are migrated
+        const API_BASE = window.location.origin + '/api';
+        
+        function loadSettings() {
+            const saved = localStorage.getItem('tradingSettings');
+            const defaults = {
+                autoExecute: false,
+                confidenceThreshold: 75,
+                humanApproval: true,
+                positionSizingStrategy: 'equal',
+                maxPositionSize: 5,
+                takeProfitStrategy: 'full',
+                autoStopLoss: true,
+                coinUniverse: 'top25',
+                discoveryStrategy: 'moderate',
+                analysisFrequency: 4
+            };
+            return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+        }
+        
+        function getSettings() {
+            return loadSettings();
+        }
 
         // Save discovery settings from dropdowns (sync with main settings)
         function saveDiscoverySettings() {
@@ -3962,7 +3985,7 @@
                         </div>
                         ${position.stopLoss ? `
                             <div style="color: #92400e;">
-                                Price: <strong>$${position.stopLoss.toFixed(2)}</strong> (-${stopLossPercent}% from current)
+                                Price: <strong>$${formatPrice(position.stopLoss)}</strong> (-${stopLossPercent}% from current)
                             </div>
                             <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
                                 Will auto-sell if price drops to this level
@@ -3984,7 +4007,7 @@
                         </div>
                         ${position.takeProfit ? `
                             <div style="color: #065f46;">
-                                Price: <strong>$${position.takeProfit.toFixed(2)}</strong> (+${takeProfitPercent}% from current)
+                                Price: <strong>$${formatPrice(position.takeProfit)}</strong> (+${takeProfitPercent}% from current)
                             </div>
                             <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
                                 Will auto-sell if price rises to this level
