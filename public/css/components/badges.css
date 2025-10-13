@@ -1,0 +1,43 @@
+/* ====================================
+   Badge Component Styles
+   ==================================== */
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-sm);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+}
+
+.badge-buy {
+    background: var(--color-success);
+    color: white;
+}
+
+.badge-sell {
+    background: var(--color-danger);
+    color: white;
+}
+
+.badge-hold {
+    background: var(--text-muted);
+    color: white;
+}
+
+/* Status badges */
+.badge-active {
+    background: var(--color-success-light);
+    color: var(--color-success-dark);
+}
+
+.badge-pending {
+    background: var(--color-warning-light);
+    color: var(--color-warning-dark);
+}
+
+.badge-closed {
+    background: var(--text-muted);
+    color: white;
+}

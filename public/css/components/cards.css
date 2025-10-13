@@ -1,0 +1,161 @@
+/* ====================================
+   Card Component Styles
+   ==================================== */
+
+.card {
+    margin: 10px;
+    background: var(--bg-card);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    position: relative;
+    transition: background-color var(--transition-base);
+}
+
+.card h2 {
+    font-size: var(--font-xl);
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.collapse-btn {
+    background: none;
+    border: none;
+    font-size: var(--font-xl);
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    transition: transform var(--transition-slow), color var(--transition-base);
+    user-select: none;
+}
+
+.collapse-btn:hover {
+    color: var(--color-primary);
+}
+
+.collapse-btn.collapsed {
+    transform: rotate(-90deg);
+}
+
+.card-content {
+    transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
+    overflow: hidden;
+}
+
+.card-content.collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* Crypto Selector */
+.crypto-selector {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.search-container {
+    position: relative;
+}
+
+.quick-picks,
+.popular-coins {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.coin-button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.coin-button:hover {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.coin-button:active {
+    transform: translateY(0);
+}
+
+.coin-icon {
+    font-size: 28px;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.coin-name {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 14px;
+}
+
+.coin-symbol {
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Analysis Result */
+#analysisResult {
+    display: none;
+    margin-top: var(--spacing-lg);
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+}
+
+/* Discovery Dashboard */
+#discovery-info {
+    margin-bottom: var(--spacing-md);
+    padding: 10px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+}
+
+#discovery-status {
+    display: none;
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: #eff6ff;
+    border-left: 4px solid var(--color-info);
+    border-radius: var(--radius-sm);
+}
+
+#analysis-log-container {
+    display: none;
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: #fafafa;
+}
+
+#analysis-log-content {
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+}

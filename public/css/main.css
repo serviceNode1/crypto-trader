@@ -1,0 +1,21 @@
+/* ====================================
+   Main CSS Import File
+   Crypto Trading Dashboard
+   ==================================== */
+
+/* 1. CSS Variables & Themes (must be first) */
+@import url('themes/variables.css');
+@import url('themes/dark.css');
+
+/* 2. Base & Layout */
+@import url('base.css');
+@import url('layout.css');
+
+/* 3. Components */
+@import url('components/cards.css');
+@import url('components/buttons.css');
+@import url('components/forms.css');
+@import url('components/modals.css');
+@import url('components/tables.css');
+@import url('components/badges.css');
+@import url('components/charts.css');

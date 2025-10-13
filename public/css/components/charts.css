@@ -1,0 +1,38 @@
+/* ====================================
+   Chart Component Styles
+   ==================================== */
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: 0;
+}
+
+.chart-container canvas {
+    max-height: 300px;
+}
+
+/* Chart legend customization */
+.chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.chart-legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--font-sm);
+}
+
+.chart-legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-sm);
+}
