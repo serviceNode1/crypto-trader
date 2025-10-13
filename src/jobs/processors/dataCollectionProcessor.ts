@@ -124,9 +124,9 @@ async function collectSentiment(): Promise<void> {
           // Truncate long fields to prevent database errors
           // Adjust these limits based on your database schema
           const safeContent = truncate(post.content, 5000);      // TEXT field, limit to 5000 chars
-          const safeUrl = truncate(post.url, 500);               // VARCHAR(500)
-          const safePostId = truncate(postId, 255);              // VARCHAR(255)
-          const safeAuthor = truncate(post.author, 100);         // VARCHAR(100)
+          const safeUrl = truncate(post.url, 255);               // VARCHAR(255) - reduced for safety
+          const safePostId = truncate(postId, 100);              // VARCHAR(100) - reduced for safety
+          const safeAuthor = truncate(post.author, 50);          // VARCHAR(50) - reduced for safety
           
           await query(
             `INSERT INTO sentiment (
