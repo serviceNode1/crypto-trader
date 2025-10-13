@@ -252,10 +252,55 @@ export async function executeTrade() {
             throw new Error(result.message || 'Trade failed');
         }
 
-        await showSuccess(
-            'Trade Executed!',
-            `Successfully bought ${actualQuantity.toFixed(6)} ${symbol} at $${currentPrice.toFixed(2)}`
-        );
+        // Check if trade requires confirmation due to warnings
+        if (result.requiresConfirmation) {
+            const warningsList = result.warnings.map(w => `• ${w}`).join('<br>');
+            const confirmed = await showConfirm(
+                '⚠️ Trade Warnings',
+                `<div style="margin-bottom: 15px;">${result.message}</div>
+                <div style="background: #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 15px; text-align: left;">
+                    ${warningsList}
+                </div>
+                <div>Do you want to proceed with this trade anyway?</div>`,
+                { confirmText: 'Proceed Anyway', confirmColor: '#f59e0b' }
+            );
+
+            if (!confirmed) {
+                return; // User canceled
+            }
+
+            // Re-submit with confirmWarnings flag
+            const confirmedResponse = await fetch(`${API_BASE}/trade`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    symbol,
+                    quantity: actualQuantity,
+                    side: 'BUY',
+                    tradeType: 'manual',
+                    stopLoss: stopLossPrice,
+                    takeProfit: takeProfitPrice,
+                    confirmWarnings: true
+                })
+            });
+
+            const confirmedResult = await confirmedResponse.json();
+            
+            if (!confirmedResponse.ok) {
+                throw new Error(confirmedResult.message || 'Trade failed');
+            }
+
+            await showSuccess(
+                'Trade Executed!',
+                `Successfully bought ${actualQuantity.toFixed(6)} ${symbol} at $${currentPrice.toFixed(2)}`
+            );
+        } else {
+            // No warnings, trade executed successfully
+            await showSuccess(
+                'Trade Executed!',
+                `Successfully bought ${actualQuantity.toFixed(6)} ${symbol} at $${currentPrice.toFixed(2)}`
+            );
+        }
 
         // Clear form and refresh
         document.getElementById('manualTradeSymbol').value = '';
