@@ -96,6 +96,8 @@ export function saveAndCloseSettings() {
  */
 export function changeTheme(theme) {
     saveTheme(theme);
-    // Apply theme is in main.js
-    window.location.reload(); // Reload to apply theme
+    // Apply theme without reloading (keeps settings modal open)
+    if (window.applyTheme) {
+        window.applyTheme(theme);
+    }
 }

@@ -131,9 +131,10 @@ async function init() {
 }
 
 // Expose functions globally for onclick handlers in HTML
-window.toggleCardCollapse = toggleCardCollapse;
-window.openInfoModal = openInfoModal;
+window.applyTheme = applyTheme;
+window.closeSettingsModal = closeSettingsModal;
 window.closeInfoModal = closeInfoModal;
+window.loadPortfolio = loadPortfolio;
 window.switchTab = switchTab;
 window.openSettingsModal = openSettingsModal;
 window.closeSettingsModal = closeSettingsModal;

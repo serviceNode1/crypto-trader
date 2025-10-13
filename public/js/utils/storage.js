@@ -23,7 +23,6 @@ export function loadSettings() {
  */
 export function saveSettings(settings) {
     localStorage.setItem('tradingSettings', JSON.stringify(settings));
-    console.log('Settings saved:', settings);
 }
 
 /**
