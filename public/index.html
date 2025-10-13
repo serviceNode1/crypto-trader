@@ -2009,13 +2009,15 @@
                                 <strong>📚 Details:</strong> See <code>EXIT_STRATEGIES.md</code> for full comparison and examples.
                             </p>
                             
-                            <div style="margin-top: 12px; padding: 10px; background: #fee2e2; border-radius: 4px; font-size: 13px;">
-                                <strong>⚙️ How to Set Your Strategy:</strong> Currently requires database update. UI settings coming soon!
-                                <pre style="margin: 8px 0; padding: 8px; background: #000; color: #0f0; border-radius: 3px; font-size: 12px; overflow-x: auto;">-- Full Exit (default)
-UPDATE user_settings SET take_profit_strategy = 'full' WHERE user_id = 1;
-
--- Ladder Exit
-UPDATE user_settings SET take_profit_strategy = 'partial' WHERE user_id = 1;</pre>
+                            <div style="margin-top: 12px; padding: 10px; background: #d1fae5; border-radius: 4px; font-size: 13px; border: 1px solid #10b981;">
+                                <strong style="color: #065f46;">✅ How to Set Your Strategy:</strong>
+                                <ol style="margin: 8px 0 0 20px; color: #065f46;">
+                                    <li>Click the <strong>⚙️ Settings</strong> button (top-right)</li>
+                                    <li>Find <strong>"Take Profit Strategy"</strong> setting</li>
+                                    <li>Choose <strong>Full Exit</strong> or <strong>Ladder Exit</strong></li>
+                                    <li>Click <strong>Save Settings</strong></li>
+                                </ol>
+                                <p style="margin: 8px 0 0 0; color: #065f46;">💡 Changes apply immediately to all future take profit executions!</p>
                             </div>
                         </div>
 
@@ -2139,18 +2141,6 @@ UPDATE user_settings SET take_profit_strategy = 'partial' WHERE user_id = 1;</pr
                             <li>✅ <strong>RSS News Feeds:</strong> Unlimited news from 5 sources</li>
                             <li>✅ <strong>Optimized Caching:</strong> 97% reduction in API calls</li>
                             <li>✅ <strong>Free Tier Only:</strong> All APIs use free tiers ($0 cost!)</li>
-                        </ul>
-                    </div>
-
-                    <div class="info-section">
-                        <h3>📚 Documentation</h3>
-                        
-                        <p>Detailed plans available in project files:</p>
-                        <ul style="margin-left: 20px;">
-                            <li><code>MANUAL_TRADING_WORKFLOW.md</code> - Manual trading guide</li>
-                            <li><code>DISCOVERY_STRATEGY_PLAN.md</code> - Full strategy documentation</li>
-                            <li><code>INTEGRATION_COMPLETE.md</code> - API integration details</li>
-                            <li><code>QUICKSTART.md</code> - Getting started guide</li>
                         </ul>
                     </div>
                 </div>
