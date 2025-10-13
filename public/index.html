@@ -1096,11 +1096,6 @@
             <div id="trades-list" class="loading">Loading...</div>
         </div>
 
-        <!-- Market Context -->
-        <div class="card">
-            <h2>Market Context</h2>
-            <div id="market-context" class="loading">Loading...</div>
-        </div>
     </div>
 
     <script>
@@ -1161,9 +1156,9 @@
                                     <tr>
                                         <td><strong>${pos.symbol}</strong></td>
                                         <td>${pos.quantity.toFixed(4)}</td>
-                                        <td>$${pos.averagePrice.toFixed(2)}</td>
+                                        <td>$${formatPrice(pos.averagePrice)}</td>
                                         <td style="font-weight: 600; color: ${priceChange >= 0 ? '#10b981' : '#ef4444'};">
-                                            $${currentPrice.toFixed(2)}
+                                            $${formatPrice(currentPrice)}
                                             <span style="font-size: 11px;">(${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(1)}%)</span>
                                         </td>
                                         <td>$${pos.currentValue.toFixed(2)}</td>
@@ -1393,7 +1388,7 @@
                                         <td><span class="badge badge-${trade.side.toLowerCase()}">${trade.side}</span></td>
                                         <td><span style="font-size: 12px; color: ${typeColor}; font-weight: 500;">${typeLabel}</span></td>
                                         <td>${parseFloat(trade.quantity).toFixed(4)}</td>
-                                        <td>$${parseFloat(trade.price).toFixed(2)}</td>
+                                        <td>$${formatPrice(parseFloat(trade.price))}</td>
                                         <td>$${parseFloat(trade.totalCost || trade.total_cost).toFixed(2)}</td>
                                     </tr>
                                 `;}).join('')}
@@ -1494,32 +1489,110 @@
             document.getElementById('last-analysis-time').textContent = `Last analysis: ${timeText}`;
         }
 
+        // Get color for market indicators
+        function getMarketRegimeColor(regime) {
+            const colors = {
+                'bull': '#10b981',
+                'bear': '#ef4444',
+                'sideways': '#6b7280',
+                'high_volatility': '#f59e0b'
+            };
+            return colors[regime.toLowerCase()] || '#6b7280';
+        }
+
+        function getRiskSentimentColor(sentiment) {
+            const colors = {
+                'risk-on': '#10b981',
+                'risk-off': '#ef4444',
+                'neutral': '#6b7280'
+            };
+            return colors[sentiment.toLowerCase()] || '#6b7280';
+        }
+
+        function getVIXColor(vix) {
+            if (vix < 15) return '#10b981'; // Low fear
+            if (vix < 20) return '#6b7280'; // Normal
+            if (vix < 30) return '#f59e0b'; // Elevated
+            return '#ef4444'; // High panic
+        }
+
         // Load market context
         async function loadMarketContext() {
             try {
                 const response = await fetch(`${API_BASE}/market-context`);
                 const data = await response.json();
 
-                const contextHTML = `
-                    <div class="metric">
-                        <span class="metric-label">BTC Dominance</span>
-                        <span class="metric-value">${data.context.btcDominance.toFixed(2)}%</span>
+                const regimeColor = getMarketRegimeColor(data.context.marketRegime);
+                const sentimentColor = getRiskSentimentColor(data.context.riskSentiment);
+                const vixColor = getVIXColor(data.context.traditionalMarkets.vix);
+
+                // Detailed view for modal
+                const modalHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid ${regimeColor};">
+                            <div style="color: #6b7280; font-size: 13px; margin-bottom: 5px;">Market Regime</div>
+                            <div style="font-size: 20px; font-weight: 700; color: ${regimeColor};">
+                                ${data.context.marketRegime.toUpperCase()}
+                            </div>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid ${sentimentColor};">
+                            <div style="color: #6b7280; font-size: 13px; margin-bottom: 5px;">Risk Sentiment</div>
+                            <div style="font-size: 20px; font-weight: 700; color: ${sentimentColor};">
+                                ${data.context.riskSentiment.toUpperCase()}
+                            </div>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #3b82f6;">
+                            <div style="color: #6b7280; font-size: 13px; margin-bottom: 5px;">BTC Dominance</div>
+                            <div style="font-size: 20px; font-weight: 700; color: #1f2937;">
+                                ${data.context.btcDominance.toFixed(2)}%
+                            </div>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid ${vixColor};">
+                            <div style="color: #6b7280; font-size: 13px; margin-bottom: 5px;">VIX (Fear Index)</div>
+                            <div style="font-size: 20px; font-weight: 700; color: ${vixColor};">
+                                ${data.context.traditionalMarkets.vix.toFixed(2)}
+                            </div>
+                        </div>
                     </div>
-                    <div class="metric">
-                        <span class="metric-label">Market Regime</span>
-                        <span class="metric-value">${data.context.marketRegime.toUpperCase()}</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Risk Sentiment</span>
-                        <span class="metric-value">${data.context.riskSentiment.toUpperCase()}</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">VIX</span>
-                        <span class="metric-value">${data.context.traditionalMarkets.vix.toFixed(2)}</span>
+                    <div style="margin-top: 15px; padding: 12px; background: white; border-radius: 6px; font-size: 13px; color: #6b7280;">
+                        <strong>💡 Interpretation:</strong> 
+                        ${data.context.marketRegime === 'bull' ? '📈 Bull market - favorable for long positions.' : ''}
+                        ${data.context.marketRegime === 'bear' ? '📉 Bear market - consider defensive strategies.' : ''}
+                        ${data.context.marketRegime === 'sideways' ? '↔️ Sideways - range trading or wait for breakout.' : ''}
+                        ${data.context.riskSentiment === 'risk-on' ? ' Investors are buying risky assets (good for crypto).' : ''}
+                        ${data.context.riskSentiment === 'risk-off' ? ' Investors are seeking safety (caution in crypto).' : ''}
                     </div>
                 `;
 
-                document.getElementById('market-context').innerHTML = contextHTML;
+                // Load into modal
+                const modalDiv = document.getElementById('live-market-context');
+                if (modalDiv) {
+                    modalDiv.innerHTML = modalHTML;
+                }
+
+                // Also load into old div if it exists (backwards compatibility)
+                const oldDiv = document.getElementById('market-context');
+                if (oldDiv) {
+                    const contextHTML = `
+                        <div class="metric">
+                            <span class="metric-label">BTC Dominance</span>
+                            <span class="metric-value">${data.context.btcDominance.toFixed(2)}%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Market Regime</span>
+                            <span class="metric-value" style="color: ${regimeColor};">${data.context.marketRegime.toUpperCase()}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Risk Sentiment</span>
+                            <span class="metric-value" style="color: ${sentimentColor};">${data.context.riskSentiment.toUpperCase()}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">VIX</span>
+                            <span class="metric-value" style="color: ${vixColor};">${data.context.traditionalMarkets.vix.toFixed(2)}</span>
+                        </div>
+                    `;
+                    oldDiv.innerHTML = contextHTML;
+                }
             } catch (error) {
                 console.error('Failed to load market context:', error);
             }
@@ -1748,7 +1821,7 @@
                         <div style="display: grid; gap: 10px;">
                             <div class="analysis-stat">
                                 <span class="analysis-stat-label">Current Price</span>
-                                <span class="analysis-stat-value">$${data.currentPrice?.toLocaleString() || 'N/A'}</span>
+                                <span class="analysis-stat-value">$${data.currentPrice ? formatPrice(data.currentPrice) : 'N/A'}</span>
                             </div>
                             <div class="analysis-stat">
                                 <span class="analysis-stat-label">Trend</span>
@@ -2084,6 +2157,12 @@ UPDATE user_settings SET take_profit_strategy = 'partial' WHERE user_id = 1;</pr
 
                 <!-- Market Indicators Tab -->
                 <div id="indicators" class="tab-content">
+                    <!-- Live Market Context -->
+                    <div class="info-section" style="background: #f0f9ff; padding: 20px; border-radius: 8px; border: 2px solid #3b82f6; margin-bottom: 30px;">
+                        <h3 style="margin: 0 0 15px 0; color: #1e40af;">🌍 Live Market Context</h3>
+                        <div id="live-market-context" class="loading">Loading current market data...</div>
+                    </div>
+
                     <div class="info-section">
                         <h3>📈 BTC Dominance</h3>
                         <p><strong>Source:</strong> CoinGecko API - Global Market Data</p>
@@ -3700,7 +3779,7 @@ UPDATE user_settings SET take_profit_strategy = 'partial' WHERE user_id = 1;</pr
                     'Position Sold Successfully!',
                     `<div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin: 12px 0;">` +
                     `<div style="margin: 8px 0;"><strong>Sold:</strong> ${quantity.toFixed(8)} ${symbol}</div>` +
-                    `<div style="margin: 8px 0;"><strong>Price:</strong> $${currentPrice.toFixed(2)}</div>` +
+                    `<div style="margin: 8px 0;"><strong>Price:</strong> $${formatPrice(currentPrice)}</div>` +
                     `<div style="margin: 8px 0;"><strong>Proceeds:</strong> $${proceeds.toFixed(2)}</div>` +
                     `</div>`
                 );
@@ -3906,12 +3985,12 @@ UPDATE user_settings SET take_profit_strategy = 'partial' WHERE user_id = 1;</pr
                             </div>
                             <div>
                                 <div style="color: #6b7280; font-size: 13px;">Entry Price</div>
-                                <div style="font-weight: 600;">$${position.averagePrice.toFixed(2)}</div>
+                                <div style="font-weight: 600;">$${formatPrice(position.averagePrice)}</div>
                             </div>
                             <div>
                                 <div style="color: #6b7280; font-size: 13px;">Current Price</div>
                                 <div style="font-weight: 600; color: ${priceChange >= 0 ? '#10b981' : '#ef4444'};">
-                                    $${currentPrice.toFixed(2)}
+                                    $${formatPrice(currentPrice)}
                                     <span style="font-size: 12px;">(${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%)</span>
                                 </div>
                             </div>
@@ -4004,7 +4083,7 @@ UPDATE user_settings SET take_profit_strategy = 'partial' WHERE user_id = 1;</pr
             const message = `
                 <div style="margin-bottom: 16px;">
                     <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
-                        <strong>Current Price:</strong> $${currentPrice.toFixed(2)}
+                        <strong>Current Price:</strong> $${formatPrice(currentPrice)}
                     </div>
                     <label style="display: block; font-weight: 600; margin-bottom: 8px;">${label}</label>
                     <input 
