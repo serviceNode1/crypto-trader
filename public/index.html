@@ -1915,9 +1915,97 @@
             const technical = data.technical || {};
             const sentiment = data.sentiment || {};
             
-            return `
-                <div style="display: grid; gap: 20px;">
-                    <!-- Quick Summary -->
+            // Check if we have multi-model analysis
+            const hasMultiModel = recommendation.multiModel && recommendation.multiModel.openai && recommendation.multiModel.anthropic;
+            
+            let recommendationHTML = '';
+            
+            if (hasMultiModel) {
+                // Show both model analyses side-by-side
+                const openai = recommendation.multiModel.openai;
+                const anthropic = recommendation.multiModel.anthropic;
+                
+                recommendationHTML = `
+                    <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border: 2px solid #3b82f6; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 15px 0; color: #1e40af; text-align: center;">🔬 Multi-Model Analysis (Consensus)</h4>
+                        <div style="display: grid; gap: 15px; margin-bottom: 15px;">
+                            <div style="padding: 15px; background: white; border-radius: 6px; border-left: 4px solid ${
+                                recommendation.action === 'BUY' ? '#10b981' : 
+                                recommendation.action === 'SELL' ? '#ef4444' : '#6b7280'
+                            };">
+                                <div style="font-weight: 600; color: #374151; margin-bottom: 8px;">Final Consensus:</div>
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <span style="padding: 8px 16px; background: ${
+                                        recommendation.action === 'BUY' ? '#10b981' : 
+                                        recommendation.action === 'SELL' ? '#ef4444' : '#6b7280'
+                                    }; color: white; border-radius: 6px; font-weight: 600; font-size: 16px;">
+                                        ${recommendation.action}
+                                    </span>
+                                    <span style="color: #6b7280; font-size: 14px;">
+                                        Confidence: <strong>${recommendation.confidence}%</strong>
+                                    </span>
+                                </div>
+                                <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 14px;">
+                                    ${recommendation.reasoning?.conclusion}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <!-- OpenAI Analysis -->
+                            <div style="padding: 15px; background: white; border-radius: 6px; border-left: 4px solid #10a37f;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <strong style="color: #10a37f;">🤖 OpenAI GPT-4o-mini</strong>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="padding: 6px 12px; background: ${
+                                        openai.action === 'BUY' ? '#10b981' : 
+                                        openai.action === 'SELL' ? '#ef4444' : '#6b7280'
+                                    }; color: white; border-radius: 4px; font-weight: 600; font-size: 14px;">
+                                        ${openai.action}
+                                    </span>
+                                    <span style="color: #6b7280; font-size: 13px; margin-left: 8px;">
+                                        ${openai.confidence}% confidence
+                                    </span>
+                                </div>
+                                <p style="color: #6b7280; margin: 0; font-size: 13px; line-height: 1.5;">
+                                    ${openai.reasoning?.conclusion || 'No conclusion provided'}
+                                </p>
+                            </div>
+                            
+                            <!-- Anthropic Analysis -->
+                            <div style="padding: 15px; background: white; border-radius: 6px; border-left: 4px solid #d4732f;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <strong style="color: #d4732f;">🧠 Anthropic Claude Haiku</strong>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="padding: 6px 12px; background: ${
+                                        anthropic.action === 'BUY' ? '#10b981' : 
+                                        anthropic.action === 'SELL' ? '#ef4444' : '#6b7280'
+                                    }; color: white; border-radius: 4px; font-weight: 600; font-size: 14px;">
+                                        ${anthropic.action}
+                                    </span>
+                                    <span style="color: #6b7280; font-size: 13px; margin-left: 8px;">
+                                        ${anthropic.confidence}% confidence
+                                    </span>
+                                </div>
+                                <p style="color: #6b7280; margin: 0; font-size: 13px; line-height: 1.5;">
+                                    ${anthropic.reasoning?.conclusion || 'No conclusion provided'}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 15px; padding: 10px; background: white; border-radius: 4px; font-size: 12px; color: #6b7280; text-align: center;">
+                            ${openai.action === anthropic.action ? 
+                                `✅ <strong>Models Agree</strong> - Both models recommend ${openai.action}` : 
+                                `⚠️ <strong>Models Disagree</strong> - OpenAI: ${openai.action} vs Claude: ${anthropic.action}`
+                            }
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Single model display (existing)
+                recommendationHTML = `
                     <div style="padding: 20px; background: white; border-radius: 8px; border-left: 4px solid ${
                         recommendation.action === 'BUY' ? '#10b981' : 
                         recommendation.action === 'SELL' ? '#ef4444' : '#6b7280'
@@ -1938,6 +2026,12 @@
                             ${recommendation.reasoning?.conclusion || 'Analysis in progress...'}
                         </p>
                     </div>
+                `;
+            }
+            
+            return `
+                <div style="display: grid; gap: 20px;">
+                    ${recommendationHTML}
 
                     <!-- Price Chart -->
                     ${data.candlesticks && data.candlesticks.length > 0 ? `

@@ -274,7 +274,7 @@ export async function getAIRecommendation(
       return getLocalRecommendation(input);
     }
 
-    // Both models (consensus)
+    // Both models (return both for comparison)
     if (modelChoice === 'both') {
       // Get recommendations from both models
       const [openaiRec, claudeRec] = await Promise.allSettled([
@@ -282,9 +282,15 @@ export async function getAIRecommendation(
         getClaudeRecommendation(input),
       ]);
 
-      // Combine recommendations if both succeeded
+      // Return both recommendations if both succeeded
       if (openaiRec.status === 'fulfilled' && claudeRec.status === 'fulfilled') {
-        return combineRecommendations(openaiRec.value, claudeRec.value, input);
+        // Mark each with their source
+        const combined: any = combineRecommendations(openaiRec.value, claudeRec.value, input);
+        combined.multiModel = {
+          openai: { ...openaiRec.value, modelName: 'OpenAI GPT-4o-mini' },
+          anthropic: { ...claudeRec.value, modelName: 'Anthropic Claude Haiku' }
+        };
+        return combined;
       }
 
       // Use whichever succeeded
