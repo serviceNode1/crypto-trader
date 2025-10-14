@@ -80,6 +80,11 @@ export async function runDiscovery() {
             logContainer.style.display = 'block';
             logSummary.textContent = `${data.summary.totalAnalyzed} analyzed · ${data.summary.passed} passed · ${data.summary.rejected} rejected`;
             displayAnalysisLog(data.analysisLog, data.summary);
+            
+            // Ensure log starts collapsed
+            const toggle = document.getElementById('log-toggle');
+            if (toggle) toggle.textContent = '▼';
+            logContent.classList.remove('expanded');
         }
         
         // Display results
@@ -88,6 +93,14 @@ export async function runDiscovery() {
         } else {
             listDiv.innerHTML = formatNoOpportunities(data.summary, data.analysisLog);
         }
+        
+        // Ensure card content adjusts to new content size
+        setTimeout(() => {
+            const cardContent = document.getElementById('discovery-content');
+            if (cardContent && !cardContent.classList.contains('collapsed')) {
+                cardContent.style.maxHeight = cardContent.scrollHeight + 'px';
+            }
+        }, 100);
         
     } catch (error) {
         console.error('Discovery error:', error);
@@ -129,6 +142,15 @@ export async function loadCachedDiscoveries() {
                 document.getElementById('discovery-execution-time').textContent = 'N/A (cached)';
                 document.getElementById('discovery-cache-status').textContent = '✅ Yes (From database)';
             }
+            
+            // Ensure card content is visible after loading data
+            setTimeout(() => {
+                const cardContent = document.getElementById('discovery-content');
+                if (cardContent && !cardContent.classList.contains('collapsed')) {
+                    // Update max-height to accommodate new content
+                    cardContent.style.maxHeight = cardContent.scrollHeight + 'px';
+                }
+            }, 100); // Small delay to ensure DOM has updated
         } else {
             // No cached discoveries - auto-run first discovery
             setTimeout(() => {
@@ -152,9 +174,9 @@ export async function loadCachedDiscoveries() {
 export function refreshDiscoveryTimeDisplay() {
     if (!lastDiscoveryTimestamp) return;
     
-    const displayEl = document.getElementById('discovery-time');
+    const displayEl = document.getElementById('discovery-timestamp');
     if (displayEl) {
-        displayEl.textContent = `Last discovery: ${timeAgo(lastDiscoveryTimestamp)}`;
+        displayEl.textContent = timeAgo(lastDiscoveryTimestamp);
     }
 }
 
@@ -184,18 +206,33 @@ export function saveDiscoverySettings() {
 }
 
 /**
- * Toggle analysis log visibility
+ * Toggle analysis log visibility with animation
  */
 export function toggleAnalysisLog() {
     const content = document.getElementById('analysis-log-content');
     const toggle = document.getElementById('log-toggle');
     
-    if (content.style.display === 'none') {
-        content.style.display = 'block';
-        toggle.textContent = '▲';
-    } else {
-        content.style.display = 'none';
+    if (!content || !toggle) {
+        console.warn('Analysis log elements not found');
+        return;
+    }
+    
+    const isExpanded = content.classList.contains('expanded');
+    
+    console.log('Toggling analysis log. Currently expanded:', isExpanded);
+    console.log('Content classes before:', content.className);
+    console.log('Content style.maxHeight:', content.style.maxHeight);
+    
+    if (isExpanded) {
+        // Collapse
+        content.classList.remove('expanded');
         toggle.textContent = '▼';
+        console.log('Collapsed - classes after:', content.className);
+    } else {
+        // Expand
+        content.classList.add('expanded');
+        toggle.textContent = '▲';
+        console.log('Expanded - classes after:', content.className);
     }
 }
 

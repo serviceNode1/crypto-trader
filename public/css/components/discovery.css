@@ -81,13 +81,28 @@
 
 .analysis-log-toggle {
     font-size: 20px;
+    transition: transform 0.3s ease-in-out;
+    display: inline-block;
+}
+
+.analysis-log-toggle.rotated {
+    transform: rotate(180deg);
 }
 
 .analysis-log-content {
-    max-height: 400px;
-    overflow-y: auto;
-    display: none;
+    display: block !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
     background: var(--card-bg);
+    transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out !important;
+    opacity: 0 !important;
+}
+
+.analysis-log-content.expanded {
+    display: block !important;
+    max-height: 2000px !important;
+    overflow-y: auto !important;
+    opacity: 1 !important;
 }
 
 .analysis-log-entry {
