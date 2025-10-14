@@ -51,7 +51,7 @@ export interface DiscoveryResult {
   };
 }
 
-export type DiscoveryStrategy = 'conservative' | 'moderate' | 'aggressive';
+export type DiscoveryStrategy = 'conservative' | 'moderate' | 'aggressive' | 'debug';
 
 export interface DiscoveryFilters {
   minMarketCap?: number;
@@ -126,6 +126,23 @@ const STRATEGY_CONFIGS: Record<DiscoveryStrategy, StrategyConfig> = {
     },
     threshold: 60,
     description: 'High Risk/Reward - Emerging trends and momentum plays'
+  },
+  debug: {
+    filters: {
+      minMarketCap: 1_000_000,      // $1M - extremely low threshold
+      maxMarketCap: undefined,
+      minVolume24h: 100_000,        // $100K - very low liquidity OK
+      minVolumeChange: 1.0,         // No volume increase required
+      minPriceChange7d: -50,        // Accept large drawdowns
+      maxPriceChange7d: 1000,       // Accept massive pumps
+    },
+    weights: {
+      volume: 0.33,
+      momentum: 0.33,
+      sentiment: 0.34,
+    },
+    threshold: 40,                  // Very low threshold for testing
+    description: '⚠️ DEBUG MODE - Extremely liberal filters for testing auto-trading only'
   }
 };
 
@@ -139,6 +156,14 @@ export async function discoverCoins(
 ): Promise<DiscoveryResult> {
   try {
     logger.info('Starting coin discovery', { universe, strategy, forceRefresh });
+
+    // Warn if debug mode is active
+    if (strategy === 'debug') {
+      logger.warn('═══════════════════════════════════════════════════');
+      logger.warn('⚠️  DEBUG MODE ACTIVE - LIBERAL DISCOVERY FILTERS  ⚠️');
+      logger.warn('This is for TESTING ONLY - Not for production use');
+      logger.warn('═══════════════════════════════════════════════════');
+    }
 
     const config = STRATEGY_CONFIGS[strategy];
     const filters = config.filters;

@@ -1,9 +1,9 @@
 /**
  * Settings UI Module
- * Handles settings modal and user preferences
+ * Handles settings management functions
  */
 
-/* global document, window, alert */
+/* global document, alert, confirm, console */
 import { loadSettings, saveSettings as saveToStorage } from '../utils/storage.js';
 import { loadThemeSettings, saveThemeSettings, applyTheme } from '../utils/theme.js';
 
@@ -38,7 +38,8 @@ export function saveSettings() {
         autoStopLoss: document.getElementById('autoStopLossToggle').checked,
         coinUniverse: document.getElementById('coinUniverse').value,
         discoveryStrategy: document.getElementById('discoveryStrategy').value,
-        analysisFrequency: parseInt(document.getElementById('analysisFrequency').value)
+        analysisFrequency: parseInt(document.getElementById('analysisFrequency').value),
+        debugMode: document.getElementById('debugModeToggle').checked
     };
     
     saveToStorage(settings);
@@ -69,6 +70,11 @@ export function applySettings() {
     document.getElementById('coinUniverse').value = settings.coinUniverse;
     document.getElementById('discoveryStrategy').value = settings.discoveryStrategy;
     document.getElementById('analysisFrequency').value = settings.analysisFrequency;
+    
+    // Debug mode
+    const debugMode = settings.debugMode || false;
+    document.getElementById('debugModeToggle').checked = debugMode;
+    updateDebugModeUI(debugMode);
     
     // Theme settings
     const themeSettings = loadThemeSettings();
@@ -117,4 +123,49 @@ export function changeVisualStyle(visualStyle) {
     settings.visualStyle = visualStyle;
     saveThemeSettings(settings);
     applyTheme(settings);
+}
+
+/**
+ * Toggle debug mode with confirmation
+ */
+export function toggleDebugMode(isEnabled) {
+    if (isEnabled) {
+        const confirmed = confirm(
+            '⚠️ Enable Debug Mode?\n\n' +
+            'This will use EXTREMELY LIBERAL discovery filters.\n' +
+            'The system will find buy signals even in terrible market conditions.\n\n' +
+            '✅ Use this ONLY for testing automatic trading logic.\n' +
+            '❌ Do NOT use for making real investment decisions.\n\n' +
+            'Debug mode uses a 40/100 threshold instead of normal 60-70/100.\n\n' +
+            'Continue?'
+        );
+        
+        if (!confirmed) {
+            document.getElementById('debugModeToggle').checked = false;
+            return;
+        }
+        
+        console.warn('⚠️  DEBUG MODE ENABLED - Liberal discovery filters active');
+    } else {
+        console.info('✅ Debug Mode disabled - Normal discovery filters restored');
+    }
+    
+    updateDebugModeUI(isEnabled);
+    saveSettings();
+}
+
+/**
+ * Update debug mode UI indicators
+ */
+function updateDebugModeUI(isDebugMode) {
+    const banner = document.getElementById('debugModeBanner');
+    const warning = document.getElementById('debugModeWarning');
+    
+    if (isDebugMode) {
+        banner.style.display = 'block';
+        warning.style.display = 'block';
+    } else {
+        banner.style.display = 'none';
+        warning.style.display = 'none';
+    }
 }

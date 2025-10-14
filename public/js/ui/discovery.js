@@ -3,7 +3,7 @@
  * Handles crypto discovery and opportunity scanning
  */
 
-/* global document, fetch */
+/* global document, window, localStorage */
 /* eslint-disable no-console */
 import { API_BASE } from '../config.js';
 import { formatPrice, formatNumber, getScoreColor, renderSparkline } from '../utils/formatters.js';
@@ -27,9 +27,16 @@ export async function runDiscovery() {
     
     try {
         // Get coin universe from settings
-        const settings = window.getSettings ? window.getSettings() : { coinUniverse: 'top25', discoveryStrategy: 'moderate' };
+        const settings = window.getSettings ? window.getSettings() : { coinUniverse: 'top25', discoveryStrategy: 'moderate', debugMode: false };
         const universe = settings.coinUniverse || 'top25';
-        const strategy = settings.discoveryStrategy || 'moderate';
+        
+        // Use debug strategy if debug mode is enabled, otherwise use selected strategy
+        const strategy = settings.debugMode ? 'debug' : (settings.discoveryStrategy || 'moderate');
+        
+        // Log warning if debug mode is active
+        if (settings.debugMode) {
+            console.warn('⚠️  Running discovery in DEBUG MODE with liberal filters');
+        }
         
         // Show loading
         btn.disabled = true;
@@ -37,7 +44,7 @@ export async function runDiscovery() {
         status.style.display = 'block';
         const refreshText = forceRefresh ? ' (bypassing cache)' : '';
         const universeText = universe === 'top10' ? 'top 10' : universe === 'top25' ? 'top 25' : universe === 'top50' ? 'top 50' : 'top 100';
-        const strategyText = strategy === 'conservative' ? '(Conservative)' : strategy === 'aggressive' ? '(Aggressive)' : '(Moderate)';
+        const strategyText = strategy === 'debug' ? '⚠️ DEBUG MODE' : strategy === 'conservative' ? '(Conservative)' : strategy === 'aggressive' ? '(Aggressive)' : '(Moderate)';
         message.textContent = `Scanning ${universeText} coins ${strategyText}${refreshText}...`;
         
         // Clear previous log
@@ -207,7 +214,7 @@ export function analyzeDiscovered(symbol) {
 /**
  * Format no opportunities message
  */
-function formatNoOpportunities(summary, analysisLog) {
+function formatNoOpportunities(summary, _analysisLog) {
     return `
         <div style="padding: 30px; text-align: center;">
             <div style="font-size: 48px; margin-bottom: 15px;">😔</div>

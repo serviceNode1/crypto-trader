@@ -11,6 +11,11 @@
 </head>
 <body>
     <div class="container">
+        <!-- Debug Mode Banner -->
+        <div id="debugModeBanner" style="display: none; background: #ef4444; color: white; padding: 12px 20px; text-align: center; font-weight: 700; position: sticky; top: 0; z-index: 1000; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+            ⚠️ DEBUG MODE ACTIVE - LIBERAL DISCOVERY FILTERS - FOR TESTING ONLY ⚠️
+        </div>
+
         <header>
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
@@ -1557,6 +1562,37 @@
                                 <option value="24">Daily (Minimal cost)</option>
                             </select>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Debug Mode -->
+                <div class="info-section">
+                    <h3>🔧 Debug Mode</h3>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>⚠️ Enable Debug Mode</h4>
+                            <p style="color: #ef4444; font-weight: 600; margin-top: 5px;">
+                                TESTING ONLY - Uses extremely liberal discovery filters to generate buy signals even in poor market conditions. For testing auto-trading system only.
+                            </p>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="debugModeToggle" onchange="toggleDebugMode(this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="debugModeWarning" style="display: none; background: #fee2e2; border: 2px solid #ef4444; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                        <strong style="color: #991b1b;">⚠️ DEBUG MODE ACTIVE</strong>
+                        <p style="color: #991b1b; margin: 8px 0 0 0; font-size: 14px;">
+                            Discovery will accept poor-quality opportunities. This is for testing automatic trading logic ONLY. 
+                            The system will use a composite score threshold of 40/100 instead of the normal 60-70/100.
+                        </p>
+                        <p style="color: #991b1b; margin: 8px 0 0 0; font-size: 14px; font-weight: 600;">
+                            ✅ Remember to disable this after testing!
+                        </p>
                     </div>
                 </div>
 

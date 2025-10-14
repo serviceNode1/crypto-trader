@@ -130,14 +130,16 @@ export async function loadMarketContext() {
  * Run AI analysis now (force recommendation generation)
  */
 export async function runAIAnalysisNow(event) {
-    const button = event.target;
-    const originalText = button.textContent;
+    const button = event?.target || document.getElementById('runAnalysisBtn');
+    const originalText = button?.textContent || '🤖 Run AI Analysis Now';
     
     try {
         // Disable button and show loading
-        button.disabled = true;
-        button.textContent = '⏳ Running Analysis...';
-        button.style.opacity = '0.6';
+        if (button) {
+            button.disabled = true;
+            button.textContent = '⏳ Running Analysis...';
+            button.style.opacity = '0.6';
+        }
         
         // Trigger recommendation job via API
         const response = await fetch(`${API_BASE}/recommendations/generate`, {
@@ -218,8 +220,10 @@ export async function runAIAnalysisNow(event) {
         `;
     } finally {
         // Re-enable button
-        button.disabled = false;
-        button.textContent = originalText;
-        button.style.opacity = '1';
+        if (button) {
+            button.disabled = false;
+            button.textContent = originalText;
+            button.style.opacity = '1';
+        }
     }
 }

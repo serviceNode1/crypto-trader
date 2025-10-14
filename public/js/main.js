@@ -17,10 +17,11 @@ import {
     closeSettingsModal, 
     saveSettings,
     applySettings,
-    updateConfidenceValue,
+    updateConfidenceValue, 
     updateMaxPositionValue,
     changeColorMode,
-    changeVisualStyle
+    changeVisualStyle,
+    toggleDebugMode
 } from './ui/settings.js';
 import { analyzeCrypto, selectCrypto, closeAnalysis } from './ui/analysis.js';
 import { 
@@ -112,6 +113,7 @@ window.loadPortfolio = loadPortfolio;
 window.saveSettings = saveSettings;
 window.updateConfidenceValue = updateConfidenceValue;
 window.updateMaxPositionValue = updateMaxPositionValue;
+window.toggleDebugMode = toggleDebugMode;
 window.loadTrades = loadTrades;
 window.loadPortfolio = loadPortfolio;
 window.loadRecommendations = loadRecommendations;
