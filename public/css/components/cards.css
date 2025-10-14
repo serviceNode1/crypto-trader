@@ -45,7 +45,7 @@
 }
 
 .card-content {
-    transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
     overflow: hidden;
 }
 
@@ -86,6 +86,12 @@
     cursor: pointer;
     transition: all 0.3s ease;
     text-align: left;
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .coin-button {
+    background: var(--bg-card);
+    border-color: var(--border-color);
 }
 
 .coin-button:hover {
@@ -93,6 +99,11 @@
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+[data-theme="dark"] .coin-button:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .coin-button:active {
@@ -111,10 +122,18 @@
     font-size: 14px;
 }
 
+[data-theme="dark"] .coin-name {
+    color: var(--text-primary);
+}
+
 .coin-symbol {
     color: #6b7280;
     font-size: 12px;
     font-weight: 500;
+}
+
+[data-theme="dark"] .coin-symbol {
+    color: var(--text-secondary);
 }
 
 /* Analysis Result */

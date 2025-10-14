@@ -20,12 +20,14 @@ export function toggleCardCollapse(cardId) {
     if (isCollapsed) {
         // Expand
         content.classList.remove('collapsed');
+        content.style.maxHeight = content.scrollHeight + 'px';
         button.classList.remove('collapsed');
         button.textContent = '▼';
         localStorage.setItem(`card-${cardId}-collapsed`, 'false');
     } else {
         // Collapse
         content.classList.add('collapsed');
+        content.style.maxHeight = '0';
         button.classList.add('collapsed');
         button.textContent = '▼';
         localStorage.setItem(`card-${cardId}-collapsed`, 'true');
@@ -42,10 +44,14 @@ export function initializeCardStates() {
         
         if (isCollapsed) {
             content.classList.add('collapsed');
+            content.style.maxHeight = '0';
             const button = content.previousElementSibling?.querySelector('.collapse-btn');
             if (button) {
                 button.classList.add('collapsed');
             }
+        } else {
+            // Set max-height to content height for smooth transitions
+            content.style.maxHeight = content.scrollHeight + 'px';
         }
     });
 }

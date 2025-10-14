@@ -27,3 +27,189 @@
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
 }
+
+/* ====================================
+   Colored Info Boxes - Dark Mode
+   ==================================== */
+
+/* Blue info boxes (Composite Score, Volume Score) */
+[data-theme="dark"] div[style*="background: #f0f9ff"],
+[data-theme="dark"] div[style*="background:#f0f9ff"] {
+  background: #1e3a8a !important;
+}
+
+[data-theme="dark"] div[style*="background: #f0f9ff"] *,
+[data-theme="dark"] div[style*="background:#f0f9ff"] * {
+  color: #bfdbfe !important;
+}
+
+[data-theme="dark"] div[style*="background: #f0f9ff"] h4,
+[data-theme="dark"] div[style*="background:#f0f9ff"] h4 {
+  color: #dbeafe !important;
+}
+
+/* Green success boxes (Momentum Score, success messages) */
+[data-theme="dark"] div[style*="background: #f0fdf4"],
+[data-theme="dark"] div[style*="background:#f0fdf4"],
+[data-theme="dark"] div[style*="background: #d1fae5"],
+[data-theme="dark"] div[style*="background:#d1fae5"] {
+  background: #064e3b !important;
+}
+
+[data-theme="dark"] div[style*="background: #f0fdf4"] *,
+[data-theme="dark"] div[style*="background:#f0fdf4"] *,
+[data-theme="dark"] div[style*="background: #d1fae5"] *,
+[data-theme="dark"] div[style*="background:#d1fae5"] * {
+  color: #a7f3d0 !important;
+}
+
+[data-theme="dark"] div[style*="background: #f0fdf4"] h4,
+[data-theme="dark"] div[style*="background:#f0fdf4"] h4,
+[data-theme="dark"] div[style*="background: #d1fae5"] h4,
+[data-theme="dark"] div[style*="background:#d1fae5"] h4 {
+  color: #d1fae5 !important;
+}
+
+/* Yellow/Orange boxes (Sentiment Score, Exit Strategies) */
+[data-theme="dark"] div[style*="background: #fef3c7"],
+[data-theme="dark"] div[style*="background:#fef3c7"],
+[data-theme="dark"] div[style*="background: #fef9c3"],
+[data-theme="dark"] div[style*="background:#fef9c3"] {
+  background: #78350f !important;
+}
+
+[data-theme="dark"] div[style*="background: #fef3c7"] *,
+[data-theme="dark"] div[style*="background:#fef3c7"] *,
+[data-theme="dark"] div[style*="background: #fef9c3"] *,
+[data-theme="dark"] div[style*="background:#fef9c3"] * {
+  color: #fde68a !important;
+}
+
+[data-theme="dark"] div[style*="background: #fef3c7"] h4,
+[data-theme="dark"] div[style*="background:#fef3c7"] h4,
+[data-theme="dark"] div[style*="background: #fef9c3"] h4,
+[data-theme="dark"] div[style*="background:#fef9c3"] h4 {
+  color: #fef3c7 !important;
+}
+
+/* Light background sections (general info areas) */
+[data-theme="dark"] div[style*="background: #f9fafb"],
+[data-theme="dark"] div[style*="background:#f9fafb"],
+[data-theme="dark"] div[style*="background: #fafafa"],
+[data-theme="dark"] div[style*="background:#fafafa"] {
+  background: #374151 !important;
+}
+
+[data-theme="dark"] div[style*="background: #f9fafb"] *,
+[data-theme="dark"] div[style*="background:#f9fafb"] *,
+[data-theme="dark"] div[style*="background: #fafafa"] *,
+[data-theme="dark"] div[style*="background:#fafafa"] * {
+  color: #d1d5db !important;
+}
+
+/* Purple/Discovery status boxes */
+[data-theme="dark"] div[style*="background: #eff6ff"],
+[data-theme="dark"] div[style*="background:#eff6ff"] {
+  background: #1e3a8a !important;
+}
+
+[data-theme="dark"] div[style*="background: #eff6ff"] *,
+[data-theme="dark"] div[style*="background:#eff6ff"] * {
+  color: #bfdbfe !important;
+}
+
+/* White background boxes (market context cards, exit strategy panels) */
+[data-theme="dark"] div[style*="background: white"],
+[data-theme="dark"] div[style*="background:white"],
+[data-theme="dark"] div[style*="background: #fff"],
+[data-theme="dark"] div[style*="background:#fff"],
+[data-theme="dark"] div[style*="background: #ffffff"],
+[data-theme="dark"] div[style*="background:#ffffff"] {
+  background: #374151 !important;
+}
+
+[data-theme="dark"] div[style*="background: white"] *,
+[data-theme="dark"] div[style*="background:white"] *,
+[data-theme="dark"] div[style*="background: #fff"] *,
+[data-theme="dark"] div[style*="background:#fff"] *,
+[data-theme="dark"] div[style*="background: #ffffff"] *,
+[data-theme="dark"] div[style*="background:#ffffff"] * {
+  color: #d1d5db !important;
+}
+
+[data-theme="dark"] div[style*="background: white"] strong,
+[data-theme="dark"] div[style*="background:white"] strong,
+[data-theme="dark"] div[style*="background: #fff"] strong,
+[data-theme="dark"] div[style*="background:#fff"] strong {
+  color: #f9fafb !important;
+}
+
+/* Select dropdowns (AI Model Select, etc.) */
+[data-theme="dark"] select {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* Recommendations list */
+[data-theme="dark"] #recommendations-list {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* Discovery table styling */
+[data-theme="dark"] table thead tr {
+  background: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] table thead th {
+  color: var(--text-primary) !important;
+}
+
+/* Alternating table rows - grayscale for dark mode */
+[data-theme="dark"] table tbody tr {
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] table tbody tr[style*="background: #fafafa"],
+[data-theme="dark"] table tbody tr[style*="background:#fafafa"] {
+  background: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] table tbody tr:not([style*="background"]) {
+  background: var(--bg-card) !important;
+}
+
+[data-theme="dark"] table tbody td {
+  color: var(--text-secondary) !important;
+}
+
+/* Progress bars in discovery table */
+[data-theme="dark"] div[style*="background: #e5e7eb"] {
+  background: var(--bg-secondary) !important;
+}
+
+/* Override specific dark text colors that become unreadable */
+[data-theme="dark"] *[style*="color: #374151"],
+[data-theme="dark"] *[style*="color:#374151"],
+[data-theme="dark"] *[style*="color: #1e40af"],
+[data-theme="dark"] *[style*="color:#1e40af"],
+[data-theme="dark"] *[style*="color: #065f46"],
+[data-theme="dark"] *[style*="color:#065f46"],
+[data-theme="dark"] *[style*="color: #92400e"],
+[data-theme="dark"] *[style*="color:#92400e"],
+[data-theme="dark"] *[style*="color: #b45309"],
+[data-theme="dark"] *[style*="color:#b45309"],
+[data-theme="dark"] *[style*="color: #991b1b"],
+[data-theme="dark"] *[style*="color:#991b1b"],
+[data-theme="dark"] *[style*="color: #6b7280"],
+[data-theme="dark"] *[style*="color:#6b7280"],
+[data-theme="dark"] *[style*="color: #1f2937"],
+[data-theme="dark"] *[style*="color:#1f2937"] {
+  color: inherit !important;
+}

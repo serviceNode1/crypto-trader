@@ -55,23 +55,23 @@
                 </div>
 
                 <!-- AI Model Selector -->
-                <div style="margin-top: 15px; padding: 15px; background: #f9fafb; border-radius: 8px;">
-                    <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px; font-size: 14px;">
+                <div class="section-bg" style="margin-top: 15px;">
+                    <label class="label">
                         🤖 AI Analysis Model:
                     </label>
-                    <select id="aiModelSelect" style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid #e5e7eb; border-radius: 6px; background: white; cursor: pointer;">
+                    <select id="aiModelSelect" style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer;">
                         <option value="local">💻 Local Analysis (Free - No AI)</option>
                         <option value="openai">🤖 OpenAI GPT-4o-mini (Cheapest AI - $0.0007)</option>
                         <option value="anthropic" selected>🧠 Anthropic Claude Haiku (Fast - $0.0014)</option>
                         <option value="both">🔬 Both Models - Consensus ($0.0021)</option>
                     </select>
-                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">
+                    <p class="helper-text" style="margin: 8px 0 0 0;">
                         <strong>Estimated Cost per Analysis:</strong> Local = $0 | OpenAI = $0.0007 | Anthropic = $0.0014 | Both = $0.0021
                     </p>
                 </div>
                 
                 <div style="margin-top: 20px;">
-                    <p style="color: #6b7280; margin-bottom: 10px; font-size: 14px;">Or choose from popular cryptocurrencies:</p>
+                    <p class="text-muted" style="margin-bottom: 10px; font-size: 14px;">Or choose from popular cryptocurrencies:</p>
                     <div class="popular-coins">
                         <button class="coin-button" onclick="selectCrypto('BTC')">
                             <span class="coin-icon">₿</span>
@@ -134,10 +134,10 @@
             </div>
             
             <!-- Analysis Result Display -->
-            <div id="analysisResult" style="display: none; margin-top: 30px; padding: 20px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #667eea;">
+            <div id="analysisResult" class="analysis-result-panel" style="display: none; margin-top: 30px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3 id="analysisTitle" style="margin: 0; color: #667eea;">Analysis Results</h3>
-                    <button onclick="closeAnalysis()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #6b7280;">×</button>
+                    <h3 id="analysisTitle" class="text-brand" style="margin: 0;">Analysis Results</h3>
+                    <button onclick="closeAnalysis()" class="close-btn">×</button>
                 </div>
                 <div id="analysisContent" style="margin-top: 15px;"></div>
             </div>
@@ -149,7 +149,7 @@
             <h2 onclick="toggleCardCollapse('recommendations-content')">
                 <span>🤖 AI Recommendations</span>
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <span id="last-analysis-time" style="color: #666; font-size: 13px;"></span>
+                    <span id="last-analysis-time" class="text-muted" style="font-size: 13px;"></span>
                     <button class="collapse-btn" title="Collapse/Expand">▼</button>
                 </div>
             </h2>
@@ -178,7 +178,7 @@
                         <option value="moderate">⚖️ Moderate</option>
                         <option value="aggressive">🚀 Aggressive</option>
                     </select>
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 14px; color: #6b7280; cursor: pointer;">
+                    <label class="text-muted" style="display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer;">
                         <input type="checkbox" id="forceRefreshCheckbox" style="cursor: pointer;">
                         <span>Force Refresh</span>
                     </label>
@@ -189,7 +189,7 @@
             </div>
             
             <!-- Last Discovery Info -->
-            <div id="discovery-info" style="display: none; margin-bottom: 15px; padding: 10px; background: #f9fafb; border-radius: 4px; font-size: 13px; color: #6b7280;">
+            <div id="discovery-info" class="discovery-info-panel" style="display: none; margin-bottom: 15px;">
                 <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
                     <span>📅 <strong>Last Run:</strong> <span id="discovery-timestamp">Never</span></span>
                     <span>⏱️ <strong>Execution Time:</strong> <span id="discovery-execution-time">-</span></span>
@@ -197,19 +197,19 @@
                 </div>
             </div>
             
-            <div id="discovery-status" style="display: none; margin-bottom: 15px; padding: 12px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+            <div id="discovery-status" style="display: none; margin-bottom: 15px; padding: 12px; border-left: 4px solid #3b82f6; border-radius: 4px;">
                 <div class="spinner" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 10px;"></div>
                 <span id="discovery-message">Scanning markets...</span>
             </div>
 
             <!-- Analysis Log (Thinking Process) -->
-            <div id="analysis-log-container" style="display: none; margin-bottom: 15px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fafafa;">
-                <div onclick="toggleAnalysisLog()" style="padding: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f3f4f6; border-radius: 6px 6px 0 0;">
+            <div id="analysis-log-container" style="display: none; margin-bottom: 15px; border: 1px solid #e5e7eb; border-radius: 6px; ">
+                <div onclick="toggleAnalysisLog()" style="padding: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-radius: 6px 6px 0 0;">
                     <div>
-                        <strong style="color: #374151;">🔬 Analysis Log</strong>
-                        <span id="log-summary" style="margin-left: 10px; color: #6b7280; font-size: 14px;"></span>
+                        <strong class="text-primary-color">🔬 Analysis Log</strong>
+                        <span id="log-summary" class="text-muted" style="margin-left: 10px; font-size: 14px;"></span>
                     </div>
-                    <span id="log-toggle" style="color: #6b7280; font-size: 20px;">▼</span>
+                    <span id="log-toggle" class="text-muted" style="font-size: 20px;">▼</span>
                 </div>
                 <div id="analysis-log-content" style="max-height: 400px; overflow-y: auto; display: none;">
                     <!-- Log entries will be added here -->
@@ -217,7 +217,7 @@
             </div>
             
             <div id="discoveries-list">
-                <p style="color: #6b7280; text-align: center; padding: 20px;">
+                <p class="text-muted" style="text-align: center; padding: 20px;">
                     Click "Run Discovery" to find trading opportunities based on your coin universe setting.
                 </p>
             </div>
@@ -231,7 +231,7 @@
                 <button class="collapse-btn" title="Collapse/Expand">▼</button>
             </h2>
             <div id="manual-trading-content" class="card-content">
-            <p style="color: #6b7280; margin-bottom: 20px; font-size: 13px;">
+            <p class="text-muted" style="margin-bottom: 20px; font-size: 13px;">
                 Purchase any cryptocurrency manually. Use "Current Holdings" below to sell existing positions.
             </p>
             
@@ -276,7 +276,7 @@
                         <input type="checkbox" id="addStopLoss" onchange="toggleAdvancedOptions()" style="cursor: pointer;">
                         <span style="font-weight: 600; color: #374151;">Add Stop-Loss & Take-Profit</span>
                     </label>
-                    <div id="advancedOptions" style="display: none; margin-top: 10px; padding: 15px; background: #f9fafb; border-radius: 6px; border: 1px solid #e5e7eb;">
+                    <div id="advancedOptions" style="display: none; margin-top: 10px; padding: 15px;  border-radius: 6px; border: 1px solid #e5e7eb;">
                         <div style="margin-bottom: 10px;">
                             <label style="font-size: 14px; font-weight: 500; color: #374151; display: block; margin-bottom: 5px;">
                                 🛑 Stop-Loss Price ($)
@@ -453,7 +453,7 @@
                             Setting stop loss or take profit now auto-executes when levels are reached.
                         </div>
 
-                        <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                        <div style="border-left: 4px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
                             <h4 style="margin: 0 0 10px 0; color: #1e40af;">🔐 How Protection Auto-Execution Works</h4>
                             <p style="margin-bottom: 10px;"><strong>Setting a protection level = Pre-authorization to sell</strong></p>
                             <ul style="margin-left: 20px;">
@@ -466,11 +466,11 @@
                             <p style="margin-top: 10px; color: #1e40af;"><strong>💡 Think of it like:</strong> Placing a limit order on an exchange. You've already made the decision - execution is just fulfillment.</p>
                         </div>
 
-                        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                        <div style="border-left: 4px solid #f59e0b; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
                             <h4 style="margin: 0 0 10px 0; color: #b45309;">🎯 Exit Strategies - NEW!</h4>
                             <p style="margin-bottom: 10px;"><strong>Choose how your positions are closed when take profit is reached</strong></p>
                             
-                            <div style="margin: 15px 0; padding: 12px; background: white; border-radius: 4px;">
+                            <div style="margin: 15px 0; padding: 12px; border-radius: 4px;">
                                 <strong style="color: #10b981;">📤 Full Exit (Default)</strong>
                                 <ul style="margin: 8px 0 0 20px; font-size: 14px;">
                                     <li>Sells 100% of position when level hit</li>
@@ -479,7 +479,7 @@
                                 </ul>
                             </div>
                             
-                            <div style="margin: 15px 0; padding: 12px; background: white; border-radius: 4px;">
+                            <div style="margin: 15px 0; padding: 12px; border-radius: 4px;">
                                 <strong style="color: #f59e0b;">📊 Ladder Exit</strong>
                                 <ul style="margin: 8px 0 0 20px; font-size: 14px;">
                                     <li>Sells 50% each time level is hit</li>
@@ -494,7 +494,7 @@
                                 <strong>📚 Details:</strong> See <code>EXIT_STRATEGIES.md</code> for full comparison and examples.
                             </p>
                             
-                            <div style="margin-top: 12px; padding: 10px; background: #d1fae5; border-radius: 4px; font-size: 13px; border: 1px solid #10b981;">
+                            <div style="margin-top: 12px; padding: 10px; border-radius: 4px; font-size: 13px; border: 1px solid #10b981;">
                                 <strong style="color: #065f46;">✅ How to Set Your Strategy:</strong>
                                 <ol style="margin: 8px 0 0 20px; color: #065f46;">
                                     <li>Click the <strong>⚙️ Settings</strong> button (top-right)</li>
@@ -597,7 +597,7 @@
                             The discovery system evaluates coins using multiple scoring metrics (0-100 scale):
                         </p>
                         
-                        <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                        <div style="border-left: 4px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
                             <h4 style="margin: 0 0 10px 0; color: #1e40af;">📈 Volume Score (0-100)</h4>
                             <p style="margin-bottom: 8px;"><strong>What it measures:</strong> Unusual trading volume activity</p>
                             <ul style="margin-left: 20px;">
@@ -608,7 +608,7 @@
                             </ul>
                         </div>
 
-                        <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                        <div style="border-left: 4px solid #10b981; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
                             <h4 style="margin: 0 0 10px 0; color: #065f46;">🚀 Momentum Score (0-100)</h4>
                             <p style="margin-bottom: 8px;"><strong>What it measures:</strong> Recent price momentum strength</p>
                             <ul style="margin-left: 20px;">
@@ -620,7 +620,7 @@
                             </ul>
                         </div>
 
-                        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                        <div style="border-left: 4px solid #f59e0b; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
                             <h4 style="margin: 0 0 10px 0; color: #92400e;">💬 Sentiment Score (0-100)</h4>
                             <p style="margin-bottom: 8px;"><strong>What it measures:</strong> Social media and news sentiment</p>
                             <ul style="margin-left: 20px;">
@@ -736,7 +736,7 @@
                 <!-- Market Indicators Tab -->
                 <div id="indicators" class="tab-content">
                     <!-- Live Market Context -->
-                    <div class="info-section" style="background: #f0f9ff; padding: 20px; border-radius: 8px; border: 2px solid #3b82f6; margin-bottom: 30px;">
+                    <div class="info-section" style="padding: 20px; border-radius: 8px; border: 2px solid #3b82f6; margin-bottom: 30px;">
                         <h3 style="margin: 0 0 15px 0; color: #1e40af;">🌍 Live Market Context</h3>
                         <div id="live-market-context" class="loading">Loading current market data...</div>
                     </div>
@@ -990,7 +990,7 @@
                     <div class="info-section">
                         <h3>🕯️ About Candlestick Patterns</h3>
                         
-                        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                        <div style="border-left: 4px solid #f59e0b; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
                             <h4 style="margin: 0 0 10px 0; color: #92400e;">⚠️ Why This System Doesn't Use Candlestick Patterns</h4>
                             <p style="margin-bottom: 10px;"><strong>Candlestick patterns (hammers, engulfing, doji, etc.) are popular but scientifically weak predictors:</strong></p>
                             
@@ -1003,7 +1003,7 @@
                             </ul>
                         </div>
 
-                        <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                        <div style="border-left: 4px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
                             <h4 style="margin: 0 0 10px 0; color: #1e40af;">📊 Research Findings</h4>
                             <table class="info-table" style="margin-top: 10px;">
                                 <thead>
@@ -1272,7 +1272,7 @@
                             When you analyze a cryptocurrency, the AI models receive comprehensive data to make informed recommendations:
                         </p>
                         
-                        <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                        <div style="border-left: 4px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
                             <h4 style="margin: 0 0 10px 0; color: #1e40af;">📊 Technical Data</h4>
                             <ul style="margin-left: 20px;">
                                 <li><strong>Symbol & Current Price:</strong> Real-time market price</li>
@@ -1289,7 +1289,7 @@
                             </ul>
                         </div>
 
-                        <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                        <div style="border-left: 4px solid #10b981; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
                             <h4 style="margin: 0 0 10px 0; color: #065f46;">💬 Sentiment Data</h4>
                             <ul style="margin-left: 20px;">
                                 <li><strong>Reddit Mentions:</strong> Up to 50 recent posts from crypto subreddits</li>
@@ -1299,7 +1299,7 @@
                             </ul>
                         </div>
 
-                        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                        <div style="border-left: 4px solid #f59e0b; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
                             <h4 style="margin: 0 0 10px 0; color: #92400e;">🌍 Market Context</h4>
                             <ul style="margin-left: 20px;">
                                 <li><strong>BTC Dominance:</strong> Bitcoin's percentage of total crypto market cap</li>

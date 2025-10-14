@@ -104,12 +104,24 @@ code {
     color: #065f46;
 }
 
+[data-theme="dark"] .success-box {
+    background: #064e3b;
+    color: #a7f3d0;
+    border-left-color: #10b981;
+}
+
 .warning-box {
     background: #fee2e2;
     border-left: 4px solid var(--color-danger);
     padding: var(--spacing-md);
     border-radius: var(--radius-md);
     color: #991b1b;
+}
+
+[data-theme="dark"] .warning-box {
+    background: #7f1d1d;
+    color: #fecaca;
+    border-left-color: #ef4444;
 }
 
 .tip-box {
@@ -120,8 +132,131 @@ code {
     color: #1e40af;
 }
 
+[data-theme="dark"] .tip-box {
+    background: #1e3a8a;
+    color: #bfdbfe;
+    border-left-color: #3b82f6;
+}
+
 .info-section {
     margin-bottom: var(--spacing-xl);
+}
+
+/* ====================================
+   Utility Classes for Dark Mode
+   ==================================== */
+
+/* Text colors */
+.text-muted {
+    color: #6b7280;
+}
+
+[data-theme="dark"] .text-muted {
+    color: var(--text-muted);
+}
+
+.text-primary-color {
+    color: #374151;
+}
+
+[data-theme="dark"] .text-primary-color {
+    color: var(--text-primary);
+}
+
+.text-brand {
+    color: #667eea;
+}
+
+/* Labels */
+.label {
+    display: block;
+    color: #374151;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+[data-theme="dark"] .label {
+    color: var(--text-primary);
+}
+
+/* Info boxes with left border */
+.info-box {
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.info-box-blue {
+    border-left: 4px solid #3b82f6;
+}
+
+.info-box-green {
+    border-left: 4px solid #10b981;
+}
+
+.info-box-yellow {
+    border-left: 4px solid #f59e0b;
+}
+
+.info-box-red {
+    border-left: 4px solid #ef4444;
+}
+
+/* Section backgrounds */
+.section-bg {
+    padding: 15px;
+    border-radius: 8px;
+}
+
+[data-theme="dark"] .section-bg {
+    background: var(--bg-secondary);
+}
+
+/* Discovery info panel */
+.discovery-info-panel {
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+[data-theme="dark"] .discovery-info-panel {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+/* Analysis result panel */
+.analysis-result-panel {
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+[data-theme="dark"] .analysis-result-panel {
+    background: var(--bg-card);
+}
+
+/* Close buttons */
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+[data-theme="dark"] .close-btn {
+    color: var(--text-muted);
+}
+
+/* Helper text */
+.helper-text {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+[data-theme="dark"] .helper-text {
+    color: var(--text-muted);
 }
 
 .metric {

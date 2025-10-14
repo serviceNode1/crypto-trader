@@ -61,10 +61,10 @@ export async function loadRecommendations() {
             // Show helpful message with next analysis time and force button
             const nextAnalysisTime = new Date(Date.now() + 3600000); // Next hour
             document.getElementById('recommendations-list').innerHTML = `
-                <div style="padding: 20px; background: #fafbfc; border-radius: 6px; border: 1px solid #e5e7eb;">
+                <div style="padding: 20px; border-radius: 6px; border: 1px solid #e5e7eb;">
                     <div style="text-align: center; margin-bottom: 15px;">
-                        <div style="color: #6b7280; font-size: 14px; margin-bottom: 8px;">No active recommendations yet</div>
-                        <div style="color: #9ca3af; font-size: 13px;">Next scheduled analysis: <strong>${nextAnalysisTime.toLocaleTimeString()}</strong></div>
+                        <div style="font-size: 14px; margin-bottom: 8px;">No active recommendations yet</div>
+                        <div style="font-size: 13px;">Next scheduled analysis: <strong>${nextAnalysisTime.toLocaleTimeString()}</strong></div>
                     </div>
                     
                     <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
