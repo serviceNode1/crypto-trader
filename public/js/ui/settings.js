@@ -3,7 +3,8 @@
  * Handles settings management functions
  */
 
-/* global document, alert, confirm, console */
+/* global document, alert, confirm */
+/* eslint-disable no-console */
 import { loadSettings, saveSettings as saveToStorage } from '../utils/storage.js';
 import { loadThemeSettings, saveThemeSettings, applyTheme } from '../utils/theme.js';
 
@@ -75,6 +76,12 @@ export function applySettings() {
     const debugMode = settings.debugMode || false;
     document.getElementById('debugModeToggle').checked = debugMode;
     updateDebugModeUI(debugMode);
+    
+    // Sync discovery section dropdowns with saved settings
+    const universeSelectEl = document.getElementById('discoveryUniverseSelect');
+    const strategySelectEl = document.getElementById('discoveryStrategySelect');
+    if (universeSelectEl) universeSelectEl.value = settings.coinUniverse || 'top25';
+    if (strategySelectEl) strategySelectEl.value = settings.discoveryStrategy || 'moderate';
     
     // Theme settings
     const themeSettings = loadThemeSettings();

@@ -3,12 +3,53 @@
  * Handles displaying AI recommendations
  */
 
-/* global document */
+/* global document, localStorage */
 /* eslint-disable no-console */
 import { fetchRecommendations } from '../api/analysis.js';
 import { timeAgo } from '../utils/time.js';
 
 let lastAnalysisTimestamp = null;
+let nextScheduledAnalysis = null;
+
+/**
+ * Get next scheduled analysis time based on last run and user settings
+ */
+function getNextScheduledAnalysisTime() {
+    // If already calculated and still in future, return it
+    if (nextScheduledAnalysis && nextScheduledAnalysis > new Date()) {
+        return nextScheduledAnalysis;
+    }
+    
+    // Get user's analysis frequency setting (in hours)
+    const settingsStr = localStorage.getItem('tradingSettings');
+    const settings = settingsStr ? JSON.parse(settingsStr) : { analysisFrequency: 4 };
+    const frequencyHours = settings.analysisFrequency || 4;
+    
+    // Get last analysis time from localStorage or use current time
+    const lastRunStr = localStorage.getItem('lastAIAnalysisRun');
+    const lastRun = lastRunStr ? new Date(lastRunStr) : new Date();
+    
+    // Calculate next run: last run + frequency
+    const nextRun = new Date(lastRun.getTime() + (frequencyHours * 60 * 60 * 1000));
+    
+    // If next run is in the past, schedule for next interval from now
+    if (nextRun <= new Date()) {
+        nextScheduledAnalysis = new Date(Date.now() + (frequencyHours * 60 * 60 * 1000));
+    } else {
+        nextScheduledAnalysis = nextRun;
+    }
+    
+    return nextScheduledAnalysis;
+}
+
+/**
+ * Update last analysis run time
+ */
+export function recordAnalysisRun() {
+    const now = new Date();
+    localStorage.setItem('lastAIAnalysisRun', now.toISOString());
+    nextScheduledAnalysis = null; // Reset so it recalculates
+}
 
 /**
  * Load and display recommendations
@@ -36,19 +77,19 @@ export async function loadRecommendations() {
                     <div class="metric" style="border-left: 4px solid ${
                         rec.action === 'BUY' ? '#10b981' : 
                         rec.action === 'SELL' ? '#ef4444' : '#6b7280'
-                    }; padding-left: 15px; margin-bottom: 15px;">
+                    }; padding-left: 15px; margin-bottom: 15px; background: var(--card-bg-secondary); padding: 12px; border-radius: 6px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <strong style="font-size: 16px;">${rec.symbol}</strong>
+                            <strong style="font-size: 16px; color: var(--text-color);">${rec.symbol}</strong>
                             <span class="badge badge-${rec.action.toLowerCase()}" style="font-size: 13px;">
                                 ${rec.action}
                             </span>
                         </div>
-                        <div style="color: #6b7280; font-size: 13px; line-height: 1.5;">
-                            <div><strong>Confidence:</strong> ${rec.confidence}% | <strong>Risk:</strong> ${rec.riskLevel || 'Medium'}</div>
-                            ${rec.reasoning ? `<div style="margin-top: 4px;"><strong>Reasoning:</strong> ${rec.reasoning}</div>` : ''}
-                            ${rec.entryPrice ? `<div style="margin-top: 4px;">Entry: $${rec.entryPrice.toFixed(2)}</div>` : ''}
-                            ${rec.stopLoss ? `<div style="margin-top: 4px;">Stop Loss: $${rec.stopLoss.toFixed(2)}</div>` : ''}
-                            <div style="font-size: 11px; margin-top: 5px; color: #9ca3af;">
+                        <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
+                            <div><strong style="color: var(--text-color);">Confidence:</strong> ${rec.confidence}% | <strong style="color: var(--text-color);">Risk:</strong> ${rec.riskLevel || 'Medium'}</div>
+                            ${rec.reasoning ? `<div style="margin-top: 4px;"><strong style="color: var(--text-color);">Reasoning:</strong> ${rec.reasoning}</div>` : ''}
+                            ${rec.entryPrice ? `<div style="margin-top: 4px;"><strong style="color: var(--text-color);">Entry:</strong> $${rec.entryPrice.toFixed(2)}</div>` : ''}
+                            ${rec.stopLoss ? `<div style="margin-top: 4px;"><strong style="color: var(--text-color);">Stop Loss:</strong> $${rec.stopLoss.toFixed(2)}</div>` : ''}
+                            <div style="font-size: 11px; margin-top: 5px; color: var(--text-muted);">
                                 ${timeAgo(rec.createdAt)}
                             </div>
                         </div>
@@ -57,14 +98,22 @@ export async function loadRecommendations() {
             }).join('');
 
             document.getElementById('recommendations-list').innerHTML = recsHTML;
+            
+            // Trigger card resize to fit content
+            setTimeout(() => {
+                const cardContent = document.getElementById('recommendations-content');
+                if (cardContent && !cardContent.classList.contains('collapsed')) {
+                    cardContent.style.maxHeight = cardContent.scrollHeight + 'px';
+                }
+            }, 100);
         } else {
             // Show helpful message with next analysis time and force button
-            const nextAnalysisTime = new Date(Date.now() + 3600000); // Next hour
+            const nextAnalysisTime = getNextScheduledAnalysisTime();
             document.getElementById('recommendations-list').innerHTML = `
                 <div style="padding: 20px; border-radius: 6px; border: 1px solid #e5e7eb;">
                     <div style="text-align: center; margin-bottom: 15px;">
-                        <div style="font-size: 14px; margin-bottom: 8px;">No active recommendations yet</div>
-                        <div style="font-size: 13px;">Next scheduled analysis: <strong>${nextAnalysisTime.toLocaleTimeString()}</strong></div>
+                        <div style="font-size: 14px; margin-bottom: 8px; color: var(--text-color);">No active recommendations yet</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">Next scheduled analysis: <strong style="color: var(--text-color);">${nextAnalysisTime.toLocaleString()}</strong></div>
                     </div>
                     
                     <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
@@ -84,6 +133,14 @@ export async function loadRecommendations() {
                 </div>
             `;
             document.getElementById('last-analysis-time').textContent = 'No analysis yet';
+            
+            // Trigger card resize
+            setTimeout(() => {
+                const cardContent = document.getElementById('recommendations-content');
+                if (cardContent && !cardContent.classList.contains('collapsed')) {
+                    cardContent.style.maxHeight = cardContent.scrollHeight + 'px';
+                }
+            }, 100);
         }
     } catch (error) {
         console.error('Failed to load recommendations:', error);

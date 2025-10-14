@@ -20,6 +20,19 @@
   --error-bg-light: #7f1d1d;
   --info-bg-light: #1e3a8a;
   
+  /* Status Message Colors */
+  --success-bg: #064e3b;
+  --success-border: #10b981;
+  --success-text: #d1fae5;
+  --success-text-secondary: #a7f3d0;
+  
+  --warning-bg: #78350f;
+  --warning-border: #f59e0b;
+  --warning-text: #fef3c7;
+  --warning-text-secondary: #fde68a;
+  
+  --progress-bg: #374151;
+  
   /* Text Colors */
   --text-primary: #f9fafb;
   --text-secondary: #d1d5db;

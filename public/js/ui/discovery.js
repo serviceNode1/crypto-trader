@@ -184,18 +184,35 @@ export function refreshDiscoveryTimeDisplay() {
  * Load discovery settings into dropdowns
  */
 export function loadDiscoverySettings() {
-    const settings = window.loadSettings ? window.loadSettings() : { coinUniverse: 'top25', discoveryStrategy: 'moderate' };
-    document.getElementById('discoveryUniverseSelect').value = settings.coinUniverse || 'top25';
-    document.getElementById('discoveryStrategySelect').value = settings.discoveryStrategy || 'moderate';
+    // Load from localStorage
+    const savedSettings = localStorage.getItem('tradingSettings');
+    const settings = savedSettings ? JSON.parse(savedSettings) : { coinUniverse: 'top25', discoveryStrategy: 'moderate' };
+    
+    // Set dropdown values
+    const universeSelect = document.getElementById('discoveryUniverseSelect');
+    const strategySelect = document.getElementById('discoveryStrategySelect');
+    
+    if (universeSelect) {
+        universeSelect.value = settings.coinUniverse || 'top25';
+    }
+    if (strategySelect) {
+        strategySelect.value = settings.discoveryStrategy || 'moderate';
+    }
 }
 
 /**
  * Save discovery settings
  */
 export function saveDiscoverySettings() {
-    const settings = window.loadSettings ? window.loadSettings() : {};
+    // Load current settings
+    const savedSettings = localStorage.getItem('tradingSettings');
+    const settings = savedSettings ? JSON.parse(savedSettings) : {};
+    
+    // Update with current dropdown values
     settings.coinUniverse = document.getElementById('discoveryUniverseSelect').value;
     settings.discoveryStrategy = document.getElementById('discoveryStrategySelect').value;
+    
+    // Save back to localStorage
     localStorage.setItem('tradingSettings', JSON.stringify(settings));
     
     // Also update settings modal if it exists

@@ -3,9 +3,10 @@
  * Handles market indicators and AI analysis triggers
  */
 
-/* global document, window */
+/* global window, document */
 /* eslint-disable no-console */
 import { API_BASE } from '../config.js';
+import { recordAnalysisRun } from './recommendations.js';
 
 /**
  * Get color for market regime
@@ -127,6 +128,66 @@ export async function loadMarketContext() {
 }
 
 /**
+ * Show AI analysis progress messages
+ */
+function showAnalysisProgress() {
+    const messages = [
+        { icon: '🔍', text: 'Gathering coins for review...', delay: 0 },
+        { icon: '📊', text: 'Analyzing market data and trends...', delay: 2000 },
+        { icon: '📰', text: 'Reviewing news sentiment...', delay: 4000 },
+        { icon: '🤖', text: 'Anthropic AI is evaluating opportunities...', delay: 6000 },
+        { icon: '💭', text: 'OpenAI is analyzing coin fundamentals...', delay: 8000 },
+        { icon: '🔄', text: 'AI models are discussing possibilities...', delay: 10000 },
+        { icon: '⚖️', text: 'Weighing risk vs. reward scenarios...', delay: 12000 },
+        { icon: '✨', text: 'Finalizing recommendations...', delay: 14000 },
+    ];
+    
+    const listDiv = document.getElementById('recommendations-list');
+    let currentMessage = 0;
+    
+    const updateMessage = () => {
+        if (currentMessage < messages.length) {
+            const msg = messages[currentMessage];
+            listDiv.innerHTML = `
+                <div style="padding: 25px; text-align: center;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 15px;">
+                        <div class="spinner" style="width: 30px; height: 30px;"></div>
+                        <div style="font-size: 32px;">${msg.icon}</div>
+                    </div>
+                    <h4 style="color: var(--text-color); margin-bottom: 8px; font-size: 16px;">AI Analysis in Progress</h4>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">
+                        ${msg.text}
+                    </p>
+                    <div style="max-width: 250px; margin: 0 auto; background: var(--progress-bg, #e5e7eb); border-radius: 8px; height: 6px; overflow: hidden;">
+                        <div style="height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); width: ${((currentMessage + 1) / messages.length * 100)}%; transition: width 0.5s ease;"></div>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-top: 8px;">
+                        Step ${currentMessage + 1} of ${messages.length}
+                    </p>
+                </div>
+            `;
+            currentMessage++;
+            
+            // Trigger card resize to fit content
+            setTimeout(() => {
+                const cardContent = document.getElementById('recommendations-content');
+                if (cardContent && !cardContent.classList.contains('collapsed')) {
+                    cardContent.style.maxHeight = cardContent.scrollHeight + 'px';
+                }
+            }, 50);
+        }
+    };
+    
+    // Show first message immediately
+    updateMessage();
+    
+    // Schedule remaining messages
+    const interval = setInterval(updateMessage, 2000);
+    
+    return () => clearInterval(interval);
+}
+
+/**
  * Run AI analysis now (force recommendation generation)
  */
 export async function runAIAnalysisNow(event) {
@@ -141,6 +202,9 @@ export async function runAIAnalysisNow(event) {
             button.style.opacity = '0.6';
         }
         
+        // Start progress animation
+        const stopProgress = showAnalysisProgress();
+        
         // Trigger recommendation job via API
         const response = await fetch(`${API_BASE}/recommendations/generate`, {
             method: 'POST',
@@ -148,28 +212,50 @@ export async function runAIAnalysisNow(event) {
             body: JSON.stringify({ maxBuy: 5, maxSell: 5 })
         });
         
+        // Stop progress animation
+        stopProgress();
+        
         if (!response.ok) {
             throw new Error('Failed to trigger AI analysis');
         }
         
         const result = await response.json();
         
+        console.log('AI Analysis result:', result);
+        
+        // Record analysis run time for scheduling
+        recordAnalysisRun();
+        
         // Check if recommendations were generated
         const hasRecommendations = result.recommendations && result.recommendations.length > 0;
+        
+        // Count buy and sell recommendations
+        const buyCount = result.recommendations?.filter(r => r.action === 'BUY').length || 0;
+        const sellCount = result.recommendations?.filter(r => r.action === 'SELL').length || 0;
         
         if (hasRecommendations) {
             // Show success message with results coming
             document.getElementById('recommendations-list').innerHTML = `
-                <div style="padding: 20px; text-align: center; background: #d1fae5; border-radius: 6px; border: 1px solid #10b981;">
-                    <div style="color: #065f46; font-weight: 600; margin-bottom: 8px;">✅ Analysis Complete!</div>
-                    <p style="color: #047857; margin-bottom: 10px; font-size: 14px;">
-                        ${result.message || 'Generated recommendations'}
+                <div style="padding: 20px; text-align: center; background: var(--success-bg, #d1fae5); border-radius: 6px; border: 1px solid var(--success-border, #10b981);">
+                    <div style="font-size: 36px; margin-bottom: 10px;">✅</div>
+                    <h4 style="color: var(--success-text, #065f46); margin-bottom: 8px; font-size: 16px;">Analysis Complete!</h4>
+                    <p style="color: var(--success-text-secondary, #047857); margin-bottom: 10px; font-size: 15px; font-weight: 600;">
+                        Generated ${buyCount} BUY and ${sellCount} SELL recommendation${(buyCount + sellCount) !== 1 ? 's' : ''}
                     </p>
-                    <p style="color: #6b7280; font-size: 13px;">
-                        Refreshing to show results...
+                    <div class="spinner" style="width: 30px; height: 30px; margin: 15px auto;"></div>
+                    <p style="color: var(--text-muted); font-size: 13px;">
+                        Loading recommendations...
                     </p>
                 </div>
             `;
+            
+            // Trigger card resize
+            setTimeout(() => {
+                const cardContent = document.getElementById('recommendations-content');
+                if (cardContent && !cardContent.classList.contains('collapsed')) {
+                    cardContent.style.maxHeight = cardContent.scrollHeight + 'px';
+                }
+            }, 50);
             
             // Reload recommendations immediately
             setTimeout(() => {
@@ -181,22 +267,40 @@ export async function runAIAnalysisNow(event) {
         } else {
             // No recommendations generated
             document.getElementById('recommendations-list').innerHTML = `
-                <div style="padding: 20px; text-align: center; background: #fef3c7; border-radius: 6px; border: 1px solid #f59e0b;">
-                    <div style="color: #92400e; font-weight: 600; margin-bottom: 8px;">⚠️ Analysis Complete</div>
-                    <p style="color: #78350f; margin-bottom: 10px; font-size: 14px;">
+                <div style="padding: 20px; text-align: center; background: var(--warning-bg, #fef3c7); border-radius: 6px; border: 1px solid var(--warning-border, #f59e0b);">
+                    <div style="font-size: 36px; margin-bottom: 10px;">⚠️</div>
+                    <h4 style="color: var(--warning-text, #92400e); margin-bottom: 8px; font-size: 16px;">Analysis Complete</h4>
+                    <p style="color: var(--warning-text-secondary, #78350f); margin-bottom: 8px; font-size: 15px; font-weight: 600;">
+                        Generated 0 BUY and 0 SELL recommendations
+                    </p>
+                    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 15px;">
                         ${result.message || 'No trading opportunities found at this time'}
                     </p>
-                    <p style="color: #6b7280; font-size: 13px; margin-bottom: 15px;">
-                        Current market conditions don't meet the AI's criteria for safe trades.
-                    </p>
+                    <div style="background: var(--card-bg-secondary); border-radius: 4px; padding: 12px; margin: 15px 0; text-align: left;">
+                        <strong style="color: var(--text-color); font-size: 13px;">💡 Why no recommendations?</strong>
+                        <ul style="margin: 8px 0 0 20px; color: var(--text-muted); font-size: 12px; line-height: 1.5;">
+                            <li>Market conditions may not meet AI safety criteria</li>
+                            <li>Current prices may not offer favorable risk/reward</li>
+                            <li>Market volatility may be too high for safe entries</li>
+                            <li>Portfolio may already have optimal positions</li>
+                        </ul>
+                    </div>
                     <button 
                         onclick="loadRecommendations()" 
                         class="button" 
                         style="padding: 8px 16px; font-size: 13px;">
-                        ← Back
+                        ← Back to Recommendations
                     </button>
                 </div>
             `;
+            
+            // Trigger card resize
+            setTimeout(() => {
+                const cardContent = document.getElementById('recommendations-content');
+                if (cardContent && !cardContent.classList.contains('collapsed')) {
+                    cardContent.style.maxHeight = cardContent.scrollHeight + 'px';
+                }
+            }, 50);
         }
         
     } catch (error) {
@@ -204,20 +308,28 @@ export async function runAIAnalysisNow(event) {
         
         // Show error
         document.getElementById('recommendations-list').innerHTML = `
-            <div style="padding: 30px; text-align: center; background: #fee2e2; border-radius: 8px; border: 2px solid #ef4444;">
-                <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
-                <h3 style="color: #991b1b; margin-bottom: 10px;">Analysis Failed</h3>
-                <p style="color: #7f1d1d; margin-bottom: 20px;">
+            <div style="padding: 20px; text-align: center; background: #fee2e2; border-radius: 6px; border: 1px solid #ef4444;">
+                <div style="font-size: 36px; margin-bottom: 10px;">❌</div>
+                <h4 style="color: #991b1b; margin-bottom: 8px; font-size: 16px;">Analysis Failed</h4>
+                <p style="color: #7f1d1d; margin-bottom: 15px; font-size: 13px;">
                     ${error.message}
                 </p>
                 <button 
                     onclick="loadRecommendations()" 
                     class="button" 
-                    style="background: #667eea;">
-                    ← Back
+                    style="background: #667eea; padding: 8px 16px; font-size: 13px;">
+                    ← Back to Recommendations
                 </button>
             </div>
         `;
+        
+        // Trigger card resize
+        setTimeout(() => {
+            const cardContent = document.getElementById('recommendations-content');
+            if (cardContent && !cardContent.classList.contains('collapsed')) {
+                cardContent.style.maxHeight = cardContent.scrollHeight + 'px';
+            }
+        }, 50);
     } finally {
         // Re-enable button
         if (button) {

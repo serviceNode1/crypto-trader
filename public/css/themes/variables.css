@@ -43,6 +43,19 @@
   --error-bg-light: #fee2e2;
   --info-bg-light: #dbeafe;
   
+  /* Status Message Colors */
+  --success-bg: #d1fae5;
+  --success-border: #10b981;
+  --success-text: #065f46;
+  --success-text-secondary: #047857;
+  
+  --warning-bg: #fef3c7;
+  --warning-border: #f59e0b;
+  --warning-text: #92400e;
+  --warning-text-secondary: #78350f;
+  
+  --progress-bg: #e5e7eb;
+  
   /* Text Colors */
   --text-primary: #1f2937;
   --text-secondary: #6b7280;
