@@ -358,8 +358,7 @@
    ==================================== */
 
 [data-theme="dark"][data-style="glass"] .toggle-switch {
-    background: rgba(55, 65, 81, 0.4);
-    backdrop-filter: blur(5px);
+    background: transparent;
 }
 
 [data-theme="dark"][data-style="glass"] .toggle-switch input:checked + .toggle-slider {

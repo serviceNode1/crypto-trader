@@ -354,8 +354,7 @@
    ==================================== */
 
 [data-theme="light"][data-style="glass"] .toggle-switch {
-    background: rgba(203, 213, 225, 0.4);
-    backdrop-filter: blur(5px);
+    background: transparent;
 }
 
 [data-theme="light"][data-style="glass"] .toggle-switch input:checked + .toggle-slider {

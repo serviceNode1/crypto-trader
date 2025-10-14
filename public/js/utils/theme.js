@@ -14,7 +14,7 @@ const THEME_CONFIG = {
     visualStyles: ['default', 'glass'],
     // Future: Add seasonal themes like 'halloween', 'winter', 'spring'
     defaultColorMode: 'auto',
-    defaultVisualStyle: 'default',
+    defaultVisualStyle: 'glass',
 };
 
 /**
@@ -37,7 +37,7 @@ export function loadThemeSettings() {
     if (oldTheme) {
         const migrated = {
             colorMode: oldTheme === 'auto' ? 'auto' : oldTheme,
-            visualStyle: 'default',
+            visualStyle: 'glass',
         };
         saveThemeSettings(migrated);
         localStorage.removeItem('theme'); // Clean up old format
