@@ -165,15 +165,15 @@
                 <button class="collapse-btn" title="Collapse/Expand">▼</button>
             </h2>
             <div id="discovery-content" class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <select id="discoveryUniverseSelect" style="padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;" onchange="saveDiscoverySettings()">
+            <div class="discovery-controls">
+                <div class="discovery-controls-left">
+                    <select id="discoveryUniverseSelect" class="discovery-select" onchange="saveDiscoverySettings()">
                         <option value="top10">Top 10</option>
                         <option value="top25">Top 25</option>
                         <option value="top50">Top 50</option>
                         <option value="top100">Top 100</option>
                     </select>
-                    <select id="discoveryStrategySelect" style="padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;" onchange="saveDiscoverySettings()">
+                    <select id="discoveryStrategySelect" class="discovery-select" onchange="saveDiscoverySettings()">
                         <option value="conservative">🛡️ Conservative</option>
                         <option value="moderate">⚖️ Moderate</option>
                         <option value="aggressive">🚀 Aggressive</option>
@@ -189,7 +189,7 @@
             </div>
             
             <!-- Last Discovery Info -->
-            <div id="discovery-info" class="discovery-info-panel" style="display: none; margin-bottom: 15px;">
+            <div id="discovery-info" class="discovery-info-panel" style="display: none;">
                 <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
                     <span>📅 <strong>Last Run:</strong> <span id="discovery-timestamp">Never</span></span>
                     <span>⏱️ <strong>Execution Time:</strong> <span id="discovery-execution-time">-</span></span>
@@ -197,21 +197,21 @@
                 </div>
             </div>
             
-            <div id="discovery-status" style="display: none; margin-bottom: 15px; padding: 12px; border-left: 4px solid #3b82f6; border-radius: 4px;">
+            <div id="discovery-status" class="discovery-status">
                 <div class="spinner" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 10px;"></div>
                 <span id="discovery-message">Scanning markets...</span>
             </div>
 
             <!-- Analysis Log (Thinking Process) -->
-            <div id="analysis-log-container" style="display: none; margin-bottom: 15px; border: 1px solid #e5e7eb; border-radius: 6px; ">
-                <div onclick="toggleAnalysisLog()" style="padding: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-radius: 6px 6px 0 0;">
+            <div id="analysis-log-container" class="analysis-log-container">
+                <div onclick="toggleAnalysisLog()" class="analysis-log-header">
                     <div>
                         <strong class="text-primary-color">🔬 Analysis Log</strong>
-                        <span id="log-summary" class="text-muted" style="margin-left: 10px; font-size: 14px;"></span>
+                        <span id="log-summary" class="text-muted analysis-log-summary"></span>
                     </div>
-                    <span id="log-toggle" class="text-muted" style="font-size: 20px;">▼</span>
+                    <span id="log-toggle" class="text-muted analysis-log-toggle">▼</span>
                 </div>
-                <div id="analysis-log-content" style="max-height: 400px; overflow-y: auto; display: none;">
+                <div id="analysis-log-content" class="analysis-log-content">
                     <!-- Log entries will be added here -->
                 </div>
             </div>
@@ -1378,14 +1378,27 @@
                     
                     <div class="setting-row">
                         <div class="setting-info">
-                            <h4>Theme</h4>
-                            <p>Choose between light and dark mode</p>
+                            <h4>Color Mode</h4>
+                            <p>Choose between light, dark, or follow system preference</p>
                         </div>
                         <div class="setting-control">
-                            <select id="themeSelect" class="setting-select" onchange="changeTheme(this.value)">
-                                <option value="light">☀️ Light Mode</option>
-                                <option value="dark">🌙 Dark Mode</option>
-                                <option value="auto">💻 Auto (System)</option>
+                            <select id="colorModeSelect" class="setting-select" onchange="changeColorMode(this.value)">
+                                <option value="light">☀️ Light</option>
+                                <option value="dark">🌙 Dark</option>
+                                <option value="auto">🔄 Auto (System)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Visual Style</h4>
+                            <p>Change the overall look and feel of the interface</p>
+                        </div>
+                        <div class="setting-control">
+                            <select id="visualStyleSelect" class="setting-select" onchange="changeVisualStyle(this.value)">
+                                <option value="default">Default - Classic solid design</option>
+                                <option value="glass">Glass - Modern transparent</option>
                             </select>
                         </div>
                     </div>

@@ -1,0 +1,130 @@
+/**
+ * Discovery Component Styles
+ * Moved from inline styles for better theme control
+ */
+
+/* Discovery controls */
+.discovery-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.discovery-controls-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.discovery-select {
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    background: var(--input-bg);
+    color: var(--text-color);
+}
+
+/* Discovery info panel */
+.discovery-info-panel {
+    background: var(--card-bg-secondary);
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+/* Discovery status */
+.discovery-status {
+    display: none;
+    margin-bottom: 15px;
+    padding: 12px;
+    border-left: 4px solid #3b82f6;
+    border-radius: 4px;
+    background: var(--info-bg);
+}
+
+/* Analysis Log Container */
+.analysis-log-container {
+    display: none;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--card-bg);
+}
+
+.analysis-log-header {
+    padding: 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 6px 6px 0 0;
+    background: var(--card-bg-secondary);
+}
+
+.analysis-log-header:hover {
+    background: var(--hover-bg);
+}
+
+.analysis-log-summary {
+    margin-left: 10px;
+    font-size: 14px;
+}
+
+.analysis-log-toggle {
+    font-size: 20px;
+}
+
+.analysis-log-content {
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+    background: var(--card-bg);
+}
+
+.analysis-log-entry {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13px;
+}
+
+.analysis-log-entry:last-child {
+    border-bottom: none;
+}
+
+.analysis-log-entry.success {
+    background: var(--success-bg-light);
+    border-left: 3px solid #10b981;
+}
+
+.analysis-log-entry.error {
+    background: var(--error-bg-light);
+    border-left: 3px solid #ef4444;
+}
+
+.analysis-log-entry.info {
+    background: var(--info-bg-light);
+    border-left: 3px solid #3b82f6;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .analysis-log-container {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .analysis-log-header {
+    background: var(--card-bg-secondary);
+}
+
+[data-theme="dark"] .analysis-log-content {
+    background: var(--card-bg);
+}

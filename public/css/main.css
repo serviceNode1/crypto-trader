@@ -6,6 +6,8 @@
 /* 1. CSS Variables & Themes (must be first) */
 @import url('themes/variables.css');
 @import url('themes/dark.css');
+@import url('themes/glass-light.css');
+@import url('themes/glass-dark.css');
 
 /* 2. Base & Layout */
 @import url('base.css');
@@ -19,3 +21,4 @@
 @import url('components/tables.css');
 @import url('components/badges.css');
 @import url('components/charts.css');
+@import url('components/discovery.css');

@@ -5,7 +5,7 @@
 
 /* global document, window, alert */
 import { loadSettings, saveSettings as saveToStorage } from '../utils/storage.js';
-import { saveTheme } from '../utils/storage.js';
+import { loadThemeSettings, saveThemeSettings, applyTheme } from '../utils/theme.js';
 
 /**
  * Open settings modal
@@ -13,6 +13,7 @@ import { saveTheme } from '../utils/storage.js';
 export function openSettingsModal() {
     applySettings();
     document.getElementById('settingsModal').classList.add('active');
+    document.body.classList.add('modal-open');
 }
 
 /**
@@ -20,6 +21,7 @@ export function openSettingsModal() {
  */
 export function closeSettingsModal() {
     document.getElementById('settingsModal').classList.remove('active');
+    document.body.classList.remove('modal-open');
 }
 
 /**
@@ -54,6 +56,7 @@ export function saveSettings() {
 export function applySettings() {
     const settings = loadSettings();
     
+    // Trading settings
     document.getElementById('autoExecuteToggle').checked = settings.autoExecute;
     document.getElementById('confidenceThreshold').value = settings.confidenceThreshold;
     document.getElementById('confidenceValue').textContent = settings.confidenceThreshold;
@@ -66,6 +69,11 @@ export function applySettings() {
     document.getElementById('coinUniverse').value = settings.coinUniverse;
     document.getElementById('discoveryStrategy').value = settings.discoveryStrategy;
     document.getElementById('analysisFrequency').value = settings.analysisFrequency;
+    
+    // Theme settings
+    const themeSettings = loadThemeSettings();
+    document.getElementById('colorModeSelect').value = themeSettings.colorMode;
+    document.getElementById('visualStyleSelect').value = themeSettings.visualStyle;
 }
 
 /**
@@ -92,12 +100,21 @@ export function saveAndCloseSettings() {
 }
 
 /**
- * Change theme
+ * Change color mode
  */
-export function changeTheme(theme) {
-    saveTheme(theme);
-    // Apply theme without reloading (keeps settings modal open)
-    if (window.applyTheme) {
-        window.applyTheme(theme);
-    }
+export function changeColorMode(colorMode) {
+    const settings = loadThemeSettings();
+    settings.colorMode = colorMode;
+    saveThemeSettings(settings);
+    applyTheme(settings);
+}
+
+/**
+ * Change visual style
+ */
+export function changeVisualStyle(visualStyle) {
+    const settings = loadThemeSettings();
+    settings.visualStyle = visualStyle;
+    saveThemeSettings(settings);
+    applyTheme(settings);
 }

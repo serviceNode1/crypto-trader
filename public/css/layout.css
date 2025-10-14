@@ -13,11 +13,11 @@ header {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: white;
+    background: var(--bg-card);
     color: var(--text-primary);
     padding: 10px 20px;
     border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
     margin-bottom: 20px;
 }
 
@@ -28,7 +28,7 @@ header h1 {
 }
 
 header .subtitle {
-    color: #666;
+    color: var(--text-secondary);
     font-size: 14px;
 }
 

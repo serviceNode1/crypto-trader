@@ -33,11 +33,22 @@
   --bg-hover: #f3f4f6;
   --bg-active: #e5e7eb;
   
+  /* Component-specific backgrounds */
+  --card-bg: #ffffff;
+  --card-bg-secondary: #f9fafb;
+  --input-bg: #ffffff;
+  --hover-bg: #f3f4f6;
+  --info-bg: #eff6ff;
+  --success-bg-light: #d1fae5;
+  --error-bg-light: #fee2e2;
+  --info-bg-light: #dbeafe;
+  
   /* Text Colors */
   --text-primary: #1f2937;
   --text-secondary: #6b7280;
   --text-muted: #9ca3af;
   --text-inverse: #ffffff;
+  --text-color: #1f2937;
   
   /* Border Colors */
   --border-color: #e5e7eb;

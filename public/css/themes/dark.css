@@ -10,11 +10,22 @@
   --bg-hover: #4b5563;
   --bg-active: #6b7280;
   
+  /* Component-specific backgrounds */
+  --card-bg: #1f2937;
+  --card-bg-secondary: #374151;
+  --input-bg: #1f2937;
+  --hover-bg: #4b5563;
+  --info-bg: #1e3a8a;
+  --success-bg-light: #064e3b;
+  --error-bg-light: #7f1d1d;
+  --info-bg-light: #1e3a8a;
+  
   /* Text Colors */
   --text-primary: #f9fafb;
   --text-secondary: #d1d5db;
   --text-muted: #9ca3af;
   --text-inverse: #1f2937;
+  --text-color: #f9fafb;
   
   /* Border Colors */
   --border-color: #374151;

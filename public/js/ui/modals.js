@@ -10,6 +10,7 @@
  */
 export function openInfoModal() {
     document.getElementById('infoModal').classList.add('active');
+    document.body.classList.add('modal-open');
 }
 
 /**
@@ -17,6 +18,7 @@ export function openInfoModal() {
  */
 export function closeInfoModal() {
     document.getElementById('infoModal').classList.remove('active');
+    document.body.classList.remove('modal-open');
 }
 
 /**

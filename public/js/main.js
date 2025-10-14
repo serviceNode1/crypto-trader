@@ -6,7 +6,7 @@
 /* global document, window */
 /* eslint-disable no-console */
 import { REFRESH_INTERVALS } from './config.js';
-import { loadTheme, saveTheme } from './utils/storage.js';
+import { initializeTheme } from './utils/theme.js';
 import { loadPortfolio, loadPerformance, loadRisk, loadPortfolioChart } from './ui/portfolio.js';
 import { loadTrades } from './ui/trades.js';
 import { loadRecommendations, refreshAnalysisTimeDisplay } from './ui/recommendations.js';
@@ -19,7 +19,8 @@ import {
     applySettings,
     updateConfidenceValue,
     updateMaxPositionValue,
-    changeTheme
+    changeColorMode,
+    changeVisualStyle
 } from './ui/settings.js';
 import { analyzeCrypto, selectCrypto, closeAnalysis } from './ui/analysis.js';
 import { 
@@ -45,38 +46,6 @@ import {
     getSettings
 } from './ui/trading.js';
 import { formatPrice, formatNumber, renderSparkline, getScoreColor } from './utils/formatters.js';
-
-/**
- * Theme management
- */
-function applyTheme(theme) {
-    const html = document.documentElement;
-    
-    if (theme === 'auto') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        html.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-    } else {
-        html.setAttribute('data-theme', theme);
-    }
-    
-    const themeSelect = document.getElementById('themeSelect');
-    if (themeSelect) {
-        themeSelect.value = theme;
-    }
-}
-
-function initializeTheme() {
-    const savedTheme = loadTheme();
-    applyTheme(savedTheme);
-    
-    if (savedTheme === 'auto') {
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-            if (loadTheme() === 'auto') {
-                applyTheme('auto');
-            }
-        });
-    }
-}
 
 /**
  * Load all dashboard data
@@ -131,7 +100,8 @@ async function init() {
 }
 
 // Expose functions globally for onclick handlers in HTML
-window.applyTheme = applyTheme;
+window.changeColorMode = changeColorMode;
+window.changeVisualStyle = changeVisualStyle;
 window.toggleCardCollapse = toggleCardCollapse;
 window.openInfoModal = openInfoModal;
 window.closeInfoModal = closeInfoModal;
@@ -142,7 +112,6 @@ window.loadPortfolio = loadPortfolio;
 window.saveSettings = saveSettings;
 window.updateConfidenceValue = updateConfidenceValue;
 window.updateMaxPositionValue = updateMaxPositionValue;
-window.changeTheme = changeTheme;
 window.loadTrades = loadTrades;
 window.loadPortfolio = loadPortfolio;
 window.loadRecommendations = loadRecommendations;

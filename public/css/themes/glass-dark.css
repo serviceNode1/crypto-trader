@@ -1,0 +1,539 @@
+/**
+ * Glass Theme - Dark Mode
+ * Modern glassmorphism aesthetic with transparency and blur
+ */
+
+/* ====================================
+   Background & Body
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] body {
+    background: linear-gradient(135deg, 
+        #1a1a2e 0%, 
+        #16213e 25%,
+        #0f3460 50%,
+        #533483 75%,
+        #1a1a2e 100%
+    );
+    background-attachment: fixed;
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ====================================
+   Container
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .container {
+    background: none;
+}
+
+/* ====================================
+   Header
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] header {
+    background: rgba(17, 25, 40, 0.5);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.125);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"][data-style="glass"] h1 {
+    text-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+    color: #f9fafb;
+}
+
+[data-theme="dark"][data-style="glass"] .subtitle {
+    color: rgba(249, 250, 251, 0.8);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"][data-style="glass"] .paper-trading-badge {
+    background: rgba(239, 68, 68, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fecaca;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* ====================================
+   Cards
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .card {
+    background: rgba(17, 25, 40, 0.4);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.125);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+[data-theme="dark"][data-style="glass"] .card h2 {
+    color: #f9fafb;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    border-bottom-color: rgba(255, 255, 255, 0.125);
+}
+
+[data-theme="dark"][data-style="glass"] .card-content {
+    background: rgba(17, 25, 40, 0.2);
+}
+
+/* ====================================
+   Buttons
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .button {
+    background: rgba(102, 126, 234, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #f9fafb;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+[data-theme="dark"][data-style="glass"] .button:hover {
+    background: rgba(102, 126, 234, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+[data-theme="dark"][data-style="glass"] .button:active {
+    transform: translateY(0);
+}
+
+/* Specific button colors */
+[data-theme="dark"][data-style="glass"] .refresh-btn {
+    background: rgba(59, 130, 246, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"][data-style="glass"] .refresh-btn:hover {
+    background: rgba(59, 130, 246, 0.5);
+}
+
+/* ====================================
+   Info Button
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .info-button {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #f9fafb;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"][data-style="glass"] .info-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* ====================================
+   Inputs & Selects
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] input[type="text"],
+[data-theme="dark"][data-style="glass"] input[type="number"],
+[data-theme="dark"][data-style="glass"] select {
+    background: rgba(17, 25, 40, 0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #f9fafb;
+}
+
+[data-theme="dark"][data-style="glass"] input[type="text"]::placeholder,
+[data-theme="dark"][data-style="glass"] input[type="number"]::placeholder {
+    color: rgba(156, 163, 175, 0.6);
+}
+
+[data-theme="dark"][data-style="glass"] input:focus,
+[data-theme="dark"][data-style="glass"] select:focus {
+    border-color: rgba(102, 126, 234, 0.6);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+
+[data-theme="dark"][data-style="glass"] select option {
+    background: #1f2937;
+    color: #f9fafb;
+}
+
+/* ====================================
+   Coin Buttons
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .coin-button {
+    background: rgba(17, 25, 40, 0.4);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"][data-style="glass"] .coin-button:hover {
+    background: rgba(102, 126, 234, 0.3);
+    border-color: rgba(102, 126, 234, 0.5);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+[data-theme="dark"][data-style="glass"] .coin-name {
+    color: #f9fafb;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"][data-style="glass"] .coin-symbol {
+    color: rgba(209, 213, 219, 0.8);
+}
+
+/* ====================================
+   Modals
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+}
+
+[data-theme="dark"][data-style="glass"] .modal-content {
+    background: rgba(17, 25, 40, 0.6);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.125);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"][data-style="glass"] .modal-header {
+    background: linear-gradient(135deg, 
+        rgba(102, 126, 234, 0.4) 0%, 
+        rgba(118, 75, 162, 0.4) 100%
+    );
+    backdrop-filter: blur(10px);
+}
+
+[data-theme="dark"][data-style="glass"] .modal-body {
+    background: rgba(17, 25, 40, 0.3);
+    color: #d1d5db;
+}
+
+[data-theme="dark"][data-style="glass"] .modal-body h1,
+[data-theme="dark"][data-style="glass"] .modal-body h2,
+[data-theme="dark"][data-style="glass"] .modal-body h3,
+[data-theme="dark"][data-style="glass"] .modal-body h4 {
+    color: #f9fafb;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"][data-style="glass"] .modal-footer {
+    background: rgba(17, 25, 40, 0.4);
+    border-top-color: rgba(255, 255, 255, 0.125);
+}
+
+[data-theme="dark"][data-style="glass"] .modal-tabs {
+    background: rgba(17, 25, 40, 0.3);
+    border-bottom-color: rgba(255, 255, 255, 0.125);
+}
+
+[data-theme="dark"][data-style="glass"] .tab-button {
+    color: rgba(209, 213, 219, 0.8);
+}
+
+[data-theme="dark"][data-style="glass"] .tab-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #d1d5db;
+}
+
+[data-theme="dark"][data-style="glass"] .tab-button.active {
+    background: rgba(17, 25, 40, 0.5);
+    color: #bfdbfe;
+}
+
+/* ====================================
+   Info Boxes
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .success-box {
+    background: rgba(6, 78, 59, 0.4);
+    backdrop-filter: blur(10px);
+    border-left-color: #10b981;
+    color: #a7f3d0;
+}
+
+[data-theme="dark"][data-style="glass"] .warning-box {
+    background: rgba(127, 29, 29, 0.4);
+    backdrop-filter: blur(10px);
+    border-left-color: #ef4444;
+    color: #fecaca;
+}
+
+[data-theme="dark"][data-style="glass"] .tip-box {
+    background: rgba(30, 58, 138, 0.4);
+    backdrop-filter: blur(10px);
+    border-left-color: #3b82f6;
+    color: #bfdbfe;
+}
+
+/* ====================================
+   Text Colors for Readability
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .text-muted {
+    color: rgba(209, 213, 219, 0.8);
+}
+
+[data-theme="dark"][data-style="glass"] .text-primary-color {
+    color: #f9fafb;
+}
+
+[data-theme="dark"][data-style="glass"] .label {
+    color: #f9fafb;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* ====================================
+   Tables
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] table {
+    background: rgba(17, 25, 40, 0.3);
+}
+
+[data-theme="dark"][data-style="glass"] table thead tr {
+    background: rgba(17, 25, 40, 0.6);
+    backdrop-filter: blur(10px);
+}
+
+[data-theme="dark"][data-style="glass"] table thead th {
+    background: rgba(17, 25, 40, 0.6);
+    backdrop-filter: blur(10px);
+    color: #f9fafb;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"][data-style="glass"] th {
+    background: rgba(17, 25, 40, 0.6) !important;
+    backdrop-filter: blur(10px);
+}
+
+[data-theme="dark"][data-style="glass"] table tbody tr {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"][data-style="glass"] table tbody tr:nth-child(even) {
+    background: rgba(17, 25, 40, 0.2);
+}
+
+[data-theme="dark"][data-style="glass"] table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.2);
+    backdrop-filter: blur(5px);
+}
+
+[data-theme="dark"][data-style="glass"] .trade-row:hover {
+    background: rgba(102, 126, 234, 0.2);
+    backdrop-filter: blur(5px);
+}
+
+[data-theme="dark"][data-style="glass"] .info-table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.2);
+    backdrop-filter: blur(5px);
+}
+
+[data-theme="dark"][data-style="glass"] table tbody td {
+    color: #d1d5db;
+}
+
+[data-theme="dark"][data-style="glass"] .info-table th {
+    background: rgba(17, 25, 40, 0.6);
+    backdrop-filter: blur(10px);
+}
+
+/* ====================================
+   Settings & Sliders
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .toggle-switch {
+    background: rgba(55, 65, 81, 0.4);
+    backdrop-filter: blur(5px);
+}
+
+[data-theme="dark"][data-style="glass"] .toggle-switch input:checked + .toggle-slider {
+    background: rgba(102, 126, 234, 0.6);
+}
+
+[data-theme="dark"][data-style="glass"] .range-slider input {
+    background: rgba(17, 25, 40, 0.5);
+}
+
+/* ====================================
+   Collapse Button
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .collapse-btn {
+    color: rgba(209, 213, 219, 0.8);
+}
+
+[data-theme="dark"][data-style="glass"] .collapse-btn:hover {
+    color: #bfdbfe;
+}
+
+/* ====================================
+   Charts
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .chart-container {
+    background: rgba(17, 25, 40, 0.4) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+[data-theme="dark"][data-style="glass"] .chart-container canvas {
+    width: 100% !important;
+}
+
+/* ====================================
+   Discovery Section Overrides
+   ==================================== */
+
+/* Analysis Log Container */
+[data-theme="dark"][data-style="glass"] #analysis-log-container {
+    background: rgba(17, 25, 40, 0.4) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"][data-style="glass"] .analysis-log-header {
+    background: rgba(17, 25, 40, 0.5) !important;
+    backdrop-filter: blur(8px);
+}
+
+/* Discovery Info Panel */
+[data-theme="dark"][data-style="glass"] #discovery-info,
+[data-theme="dark"][data-style="glass"] .discovery-info-panel {
+    background: rgba(17, 25, 40, 0.5) !important;
+    backdrop-filter: blur(8px);
+}
+
+/* Discovery List Footer Tip */
+[data-theme="dark"][data-style="glass"] #discoveries-list > div[style*="background: #f9fafb"],
+[data-theme="dark"][data-style="glass"] #discoveries-list > div[style*="background:#f9fafb"] {
+    background: rgba(17, 25, 40, 0.5) !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Discovery Table */
+[data-theme="dark"][data-style="glass"] #discoveries-list table thead tr {
+    background: rgba(17, 25, 40, 0.6) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"][data-style="glass"] #discoveries-list table thead th {
+    background: transparent !important;
+}
+
+[data-theme="dark"][data-style="glass"] #discoveries-list table tbody tr {
+    background: rgba(17, 25, 40, 0.2) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"][data-style="glass"] #discoveries-list table tbody tr:nth-child(even) {
+    background: rgba(17, 25, 40, 0.3) !important;
+}
+
+[data-theme="dark"][data-style="glass"] #discoveries-list table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.2) !important;
+    backdrop-filter: blur(5px);
+}
+
+/* ====================================
+   Grid Layout
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .grid {
+    gap: 20px;
+}
+
+/* ====================================
+   Analysis & Discovery Panels
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .section-bg {
+    background: rgba(17, 25, 40, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+[data-theme="dark"][data-style="glass"] .discovery-info-panel {
+    background: rgba(17, 25, 40, 0.4);
+    backdrop-filter: blur(10px);
+}
+
+[data-theme="dark"][data-style="glass"] .analysis-result-panel {
+    background: rgba(17, 25, 40, 0.4);
+    backdrop-filter: blur(10px);
+}
+
+/* ====================================
+   Performance Optimization
+   ==================================== */
+
+[data-theme="dark"][data-style="glass"] .card,
+[data-theme="dark"][data-style="glass"] .modal-content,
+[data-theme="dark"][data-style="glass"] header {
+    will-change: transform;
+}
+
+/* ====================================
+   Accessibility - Reduced Motion
+   ==================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    [data-theme="dark"][data-style="glass"] body {
+        animation: none;
+    }
+}
+
+/* ====================================
+   Mobile Optimization
+   ==================================== */
+
+@media (max-width: 768px) {
+    /* Reduce blur for better mobile performance */
+    [data-theme="dark"][data-style="glass"] .card {
+        backdrop-filter: blur(10px) saturate(180%);
+        -webkit-backdrop-filter: blur(10px) saturate(180%);
+    }
+    
+    [data-theme="dark"][data-style="glass"] .modal-content {
+        backdrop-filter: blur(12px) saturate(180%);
+        -webkit-backdrop-filter: blur(12px) saturate(180%);
+    }
+}
+
+/* ====================================
+   Inline Style Overrides
+   ==================================== */
+
+/* Override white background divs */
+[data-theme="dark"][data-style="glass"] div[style*="background: white"],
+[data-theme="dark"][data-style="glass"] div[style*="background:white"],
+[data-theme="dark"][data-style="glass"] div[style*="background: #fff"],
+[data-theme="dark"][data-style="glass"] div[style*="background:#fff"] {
+    background: rgba(17, 25, 40, 0.4) !important;
+    backdrop-filter: blur(10px);
+}
+
+/* Override light background divs */
+[data-theme="dark"][data-style="glass"] div[style*="background: #f9fafb"],
+[data-theme="dark"][data-style="glass"] div[style*="background:#f9fafb"],
+[data-theme="dark"][data-style="glass"] div[style*="background: #fafafa"],
+[data-theme="dark"][data-style="glass"] div[style*="background:#fafafa"] {
+    background: rgba(17, 25, 40, 0.3) !important;
+    backdrop-filter: blur(10px);
+}

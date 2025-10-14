@@ -399,6 +399,7 @@ export function showConfirm(title, message, options = {}) {
         else confirmBtn.style.background = '#667eea';
 
         modal.classList.add('active');
+        document.body.classList.add('modal-open');
         modalResolveCallback = resolve;
     });
 }
@@ -406,6 +407,7 @@ export function showConfirm(title, message, options = {}) {
 export function handleConfirmClick(result) {
     const modal = document.getElementById('confirmModal');
     modal.classList.remove('active');
+    document.body.classList.remove('modal-open');
     if (modalResolveCallback) {
         modalResolveCallback(result);
         modalResolveCallback = null;
@@ -427,9 +429,11 @@ export function showSuccess(title, message) {
         messageEl.innerHTML = message;
 
         modal.classList.add('active');
+        document.body.classList.add('modal-open');
 
         okBtn.onclick = () => {
             modal.classList.remove('active');
+            document.body.classList.remove('modal-open');
             resolve();
         };
     });
@@ -450,9 +454,11 @@ export function showError(title, message) {
         messageEl.innerHTML = message;
 
         modal.classList.add('active');
+        document.body.classList.add('modal-open');
 
         okBtn.onclick = () => {
             modal.classList.remove('active');
+            document.body.classList.remove('modal-open');
             resolve();
         };
     });
