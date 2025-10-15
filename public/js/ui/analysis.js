@@ -71,6 +71,12 @@ export async function analyzeCrypto() {
         titleDiv.textContent = `✅ Analysis Complete: ${symbol}`;
         contentDiv.innerHTML = formatAnalysisResults(data);
         
+        // Force layout recalculation and scroll to ensure panel resizes
+        requestAnimationFrame(() => {
+            resultDiv.style.height = 'auto';
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+        
     } catch (error) {
         console.error('Analysis error:', error);
         titleDiv.textContent = `❌ Analysis Failed`;
@@ -83,6 +89,12 @@ export async function analyzeCrypto() {
                 </p>
             </div>
         `;
+        
+        // Force layout recalculation for error display
+        requestAnimationFrame(() => {
+            resultDiv.style.height = 'auto';
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
     }
 }
 

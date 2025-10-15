@@ -68,9 +68,13 @@ export async function loadTrades(page = 1) {
                             // Calculate total if not provided
                             const total = trade.total || (Number(trade.quantity) * Number(trade.price));
                             
+                            // Format timestamp safely (PostgreSQL returns snake_case)
+                            const timestamp = trade.executed_at || trade.timestamp || trade.created_at;
+                            const dateStr = timestamp ? new Date(timestamp).toLocaleString() : 'N/A';
+                            
                             return `
                             <tr>
-                                <td style="font-size: 13px;">${new Date(trade.timestamp).toLocaleString()}</td>
+                                <td style="font-size: 13px;">${dateStr}</td>
                                 <td><strong>${trade.symbol}</strong></td>
                                 <td>
                                     <span class="badge badge-${trade.side.toLowerCase()}">
