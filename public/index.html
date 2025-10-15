@@ -152,9 +152,16 @@
         <!-- AI Recommendations -->
         <div class="card">
             <h2 onclick="toggleCardCollapse('recommendations-content')">
-                <span>🤖 AI Recommendations</span>
+                <span style="display: flex; align-items: center; gap: 8px;">
+                    🤖 AI Recommendations
+                    <span id="recommendations-badge" style="display: none; background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;"></span>
+                </span>
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <span id="last-analysis-time" class="text-muted" style="font-size: 13px;"></span>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; font-size: 12px; color: var(--text-muted);">
+                        <span id="last-review-time"></span>
+                        <span id="next-review-time"></span>
+                        <span id="active-recommendations-count"></span>
+                    </div>
                     <button class="collapse-btn" title="Collapse/Expand">▼</button>
                 </div>
             </h2>
