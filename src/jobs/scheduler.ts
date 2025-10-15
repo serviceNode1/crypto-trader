@@ -113,8 +113,8 @@ export async function scheduleJobs(): Promise<void> {
     );
     logger.info(`Scheduled analysis: ${analysisCron}`);
 
-    // AI recommendations - every 4 hours
-    const recommendationCron = process.env.CRON_RECOMMENDATIONS || '0 */4 * * *';
+    // AI recommendations - every 2 hours (optimal for crypto markets)
+    const recommendationCron = process.env.CRON_RECOMMENDATIONS || '0 */2 * * *';
     await recommendationQueue.add(
       {},
       {

@@ -103,7 +103,7 @@ export function saveSettings() {
         autoStopLoss: document.getElementById('autoStopLossToggle').checked,
         coinUniverse: document.getElementById('coinUniverse').value,
         discoveryStrategy: document.getElementById('discoveryStrategy').value,
-        analysisFrequency: parseInt(document.getElementById('analysisFrequency').value),
+        // analysisFrequency removed - fixed at 2 hours in backend
         debugMode: document.getElementById('debugModeToggle').checked
     };
     
@@ -150,7 +150,7 @@ export function applySettings() {
     document.getElementById('autoStopLossToggle').checked = settings.autoStopLoss;
     document.getElementById('coinUniverse').value = settings.coinUniverse;
     document.getElementById('discoveryStrategy').value = settings.discoveryStrategy;
-    document.getElementById('analysisFrequency').value = settings.analysisFrequency;
+    // analysisFrequency removed - fixed at 2 hours in backend
     
     // Debug mode
     const debugMode = settings.debugMode || false;

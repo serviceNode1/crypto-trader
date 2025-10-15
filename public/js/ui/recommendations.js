@@ -13,7 +13,9 @@ let nextScheduledAnalysis = null;
 let countdownInterval = null;
 
 /**
- * Get next scheduled analysis time based on last run and user settings
+ * Get next scheduled analysis time based on cron schedule
+ * Backend runs on cron: at minute 0 of every 2nd hour
+ * Runs at: 12 AM, 2 AM, 4 AM, 6 AM, 8 AM, 10 AM, 12 PM, 2 PM, 4 PM, 6 PM, 8 PM, 10 PM
  */
 function getNextScheduledAnalysisTime() {
     // If already calculated and still in future, return it
@@ -21,24 +23,44 @@ function getNextScheduledAnalysisTime() {
         return nextScheduledAnalysis;
     }
     
-    // Get user's analysis frequency setting (in hours)
-    const settingsStr = localStorage.getItem('tradingSettings');
-    const settings = settingsStr ? JSON.parse(settingsStr) : { analysisFrequency: 4 };
-    const frequencyHours = settings.analysisFrequency || 4;
+    // Fixed schedule: every 2 hours
+    const frequencyHours = 2;
     
-    // Get last analysis time from localStorage or use current time
-    const lastRunStr = localStorage.getItem('lastAIAnalysisRun');
-    const lastRun = lastRunStr ? new Date(lastRunStr) : new Date();
+    // Calculate next cron execution time
+    // Cron format: '0 */X * * *' means at minute 0 of every Xth hour
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
     
-    // Calculate next run: last run + frequency
-    const nextRun = new Date(lastRun.getTime() + (frequencyHours * 60 * 60 * 1000));
+    // Find next hour that's a multiple of frequencyHours
+    let nextHour = Math.floor(currentHour / frequencyHours) * frequencyHours;
     
-    // If next run is in the past, schedule for next interval from now
-    if (nextRun <= new Date()) {
-        nextScheduledAnalysis = new Date(Date.now() + (frequencyHours * 60 * 60 * 1000));
-    } else {
-        nextScheduledAnalysis = nextRun;
+    // If we're past the hour mark (e.g., it's 4:15 PM and cron runs at 4:00 PM)
+    // or if we're exactly on the hour but past minute 0, move to next interval
+    if (currentHour >= nextHour && currentMinute > 0) {
+        nextHour += frequencyHours;
+    } else if (currentHour > nextHour) {
+        nextHour += frequencyHours;
     }
+    
+    // Handle day rollover
+    let nextDay = now.getDate();
+    let nextMonth = now.getMonth();
+    let nextYear = now.getFullYear();
+    
+    if (nextHour >= 24) {
+        nextHour -= 24;
+        nextDay += 1;
+        
+        // Handle month rollover (simplified - Date constructor handles this)
+        const tempDate = new Date(nextYear, nextMonth, nextDay);
+        nextDay = tempDate.getDate();
+        nextMonth = tempDate.getMonth();
+        nextYear = tempDate.getFullYear();
+    }
+    
+    // Create next scheduled time (always at minute 0)
+    nextScheduledAnalysis = new Date(nextYear, nextMonth, nextDay, nextHour, 0, 0, 0);
     
     return nextScheduledAnalysis;
 }

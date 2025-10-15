@@ -12,18 +12,40 @@ import { timeAgo } from '../utils/time.js';
  * Load and display AI review logs
  */
 export async function loadAIReviewLogs() {
+    console.log('loadAIReviewLogs called');
+    
+    const contentEl = document.getElementById('ai-review-logs-content');
+    if (!contentEl) {
+        console.error('AI review logs content element not found');
+        return;
+    }
+    
+    contentEl.innerHTML = '<p style="padding: 20px; text-align: center;">Loading logs...</p>';
+    
     try {
+        console.log('Fetching AI review logs from:', `${API_BASE}/ai-review-logs?limit=50`);
         const response = await fetch(`${API_BASE}/ai-review-logs?limit=50`);
+        
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         const data = await response.json();
+        console.log('AI review logs loaded:', data);
         displayAIReviewLogs(data.logs, data.stats);
+        
+        // Update parent card height after content is rendered
+        setTimeout(() => {
+            const cardContent = document.getElementById('recommendations-content');
+            if (cardContent && !cardContent.classList.contains('collapsed')) {
+                cardContent.style.maxHeight = cardContent.scrollHeight + 'px';
+                console.log('Updated card height after logs loaded:', cardContent.scrollHeight + 'px');
+            }
+        }, 50);
         
     } catch (error) {
         console.error('Failed to load AI review logs:', error);
-        document.getElementById('ai-review-logs-content').innerHTML = `
+        contentEl.innerHTML = `
             <p style="color: #ef4444; padding: 20px; text-align: center;">
                 Failed to load AI review logs: ${error.message}
             </p>
@@ -142,13 +164,45 @@ function displayAIReviewLogs(logs, stats) {
  * Toggle AI review logs visibility
  */
 export function toggleAIReviewLogs() {
+    console.log('toggleAIReviewLogs called');
     const container = document.getElementById('ai-review-logs-panel');
-    const isVisible = container.style.display !== 'none';
+    
+    if (!container) {
+        console.error('AI review logs panel not found - check HTML for id="ai-review-logs-panel"');
+        return;
+    }
+    
+    // Check computed style, not just inline style
+    const computedStyle = window.getComputedStyle(container);
+    const isVisible = computedStyle.display !== 'none';
+    
+    console.log('AI review logs panel current display:', computedStyle.display, 'isVisible:', isVisible);
     
     if (isVisible) {
+        console.log('Hiding AI review logs panel');
         container.style.display = 'none';
+        // Update parent card height after hiding
+        updateParentCardHeight();
     } else {
+        console.log('Showing AI review logs panel');
         container.style.display = 'block';
         loadAIReviewLogs();
+        // Update parent card height after showing (with slight delay for content to render)
+        setTimeout(() => updateParentCardHeight(), 100);
     }
+}
+
+/**
+ * Update the parent card's max-height to accommodate new content
+ */
+function updateParentCardHeight() {
+    const cardContent = document.getElementById('recommendations-content');
+    if (!cardContent) return;
+    
+    // Don't update if card is collapsed
+    if (cardContent.classList.contains('collapsed')) return;
+    
+    // Update max-height to current scroll height
+    cardContent.style.maxHeight = cardContent.scrollHeight + 'px';
+    console.log('Updated recommendations-content max-height to:', cardContent.scrollHeight + 'px');
 }

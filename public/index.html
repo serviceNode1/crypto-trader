@@ -1611,18 +1611,18 @@
                         </div>
                     </div>
 
-                    <div class="setting-row">
-                        <div class="setting-info">
-                            <h4>Analysis Frequency</h4>
-                            <p>How often to generate new AI recommendations</p>
-                        </div>
-                        <div class="setting-control">
-                            <select id="analysisFrequency" class="setting-select" onchange="saveSettings()">
-                                <option value="1">Every 1 Hour (High cost)</option>
-                                <option value="4" selected>Every 4 Hours (Recommended)</option>
-                                <option value="8">Every 8 Hours (Low cost)</option>
-                                <option value="24">Daily (Minimal cost)</option>
-                            </select>
+                    <div style="padding: 15px; background: var(--card-bg-secondary); border-radius: 8px; border-left: 4px solid #3b82f6;">
+                        <div style="display: flex; align-items: start; gap: 10px;">
+                            <span style="font-size: 20px;">⏰</span>
+                            <div>
+                                <h4 style="margin: 0 0 5px 0; color: var(--text-primary);">AI Review Schedule</h4>
+                                <p style="margin: 0; font-size: 13px; color: var(--text-muted);">
+                                    AI recommendations run automatically <strong>every 2 hours</strong> (12 AM, 2 AM, 4 AM, 6 AM, 8 AM, 10 AM, 12 PM, 2 PM, 4 PM, 6 PM, 8 PM, 10 PM).
+                                </p>
+                                <p style="margin: 8px 0 0 0; font-size: 13px; color: var(--text-muted);">
+                                    💡 For manual analysis anytime, use the <strong>Discovered Opportunities</strong> section below.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

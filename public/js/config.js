@@ -25,7 +25,7 @@ export const DEFAULT_SETTINGS = {
     autoStopLoss: true,
     coinUniverse: 'top25',
     discoveryStrategy: 'moderate',
-    analysisFrequency: 4,
+    // analysisFrequency removed - now fixed at 2 hours in backend
 };
 
 export const THEMES = {
