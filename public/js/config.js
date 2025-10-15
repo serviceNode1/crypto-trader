@@ -16,9 +16,9 @@ export const PAGINATION = {
 };
 
 export const DEFAULT_SETTINGS = {
-    autoExecute: false,
+    autoExecute: true,          // Semi-auto mode by default
     confidenceThreshold: 75,
-    humanApproval: true,
+    humanApproval: true,        // Semi-auto mode by default
     positionSizingStrategy: 'equal',
     maxPositionSize: 5,
     takeProfitStrategy: 'full',

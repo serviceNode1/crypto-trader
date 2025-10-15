@@ -26,13 +26,77 @@ export function closeSettingsModal() {
 }
 
 /**
+ * Handle trading mode change from radio buttons
+ */
+export function handleTradingModeChange(mode) {
+    // Map mode to autoExecute and humanApproval settings
+    let autoExecute, humanApproval;
+    
+    switch(mode) {
+        case 'manual':
+            autoExecute = false;
+            humanApproval = true;
+            break;
+        case 'semi-auto':
+            autoExecute = true;
+            humanApproval = true;
+            break;
+        case 'full-auto':
+            autoExecute = true;
+            humanApproval = false;
+            break;
+        default:
+            autoExecute = true;
+            humanApproval = true; // Default to semi-auto
+    }
+    
+    // Save immediately when mode changes
+    const settings = loadSettings();
+    settings.autoExecute = autoExecute;
+    settings.humanApproval = humanApproval;
+    saveToStorage(settings);
+    
+    console.log(`Trading mode changed to: ${mode}`, { autoExecute, humanApproval });
+}
+
+/**
  * Save settings to localStorage
  */
 export function saveSettings() {
+    // Get trading mode from radio buttons
+    const tradingModeRadios = document.getElementsByName('tradingMode');
+    let tradingMode = 'semi-auto'; // default
+    for (const radio of tradingModeRadios) {
+        if (radio.checked) {
+            tradingMode = radio.value;
+            break;
+        }
+    }
+    
+    // Convert trading mode to autoExecute/humanApproval
+    let autoExecute, humanApproval;
+    switch(tradingMode) {
+        case 'manual':
+            autoExecute = false;
+            humanApproval = true;
+            break;
+        case 'semi-auto':
+            autoExecute = true;
+            humanApproval = true;
+            break;
+        case 'full-auto':
+            autoExecute = true;
+            humanApproval = false;
+            break;
+        default:
+            autoExecute = true;
+            humanApproval = true;
+    }
+    
     const settings = {
-        autoExecute: document.getElementById('autoExecuteToggle').checked,
+        autoExecute: autoExecute,
         confidenceThreshold: parseInt(document.getElementById('confidenceThreshold').value),
-        humanApproval: document.getElementById('humanApprovalToggle').checked,
+        humanApproval: humanApproval,
         positionSizingStrategy: document.getElementById('positionSizingStrategy').value,
         maxPositionSize: parseInt(document.getElementById('maxPositionSize').value),
         takeProfitStrategy: document.getElementById('takeProfitStrategy').value,
@@ -58,11 +122,27 @@ export function saveSettings() {
 export function applySettings() {
     const settings = loadSettings();
     
+    // Determine trading mode from autoExecute and humanApproval
+    let tradingMode;
+    if (!settings.autoExecute) {
+        tradingMode = 'manual';
+    } else if (settings.autoExecute && settings.humanApproval) {
+        tradingMode = 'semi-auto';
+    } else if (settings.autoExecute && !settings.humanApproval) {
+        tradingMode = 'full-auto';
+    } else {
+        tradingMode = 'semi-auto'; // Default
+    }
+    
+    // Set the correct radio button
+    const tradingModeRadios = document.getElementsByName('tradingMode');
+    for (const radio of tradingModeRadios) {
+        radio.checked = (radio.value === tradingMode);
+    }
+    
     // Trading settings
-    document.getElementById('autoExecuteToggle').checked = settings.autoExecute;
     document.getElementById('confidenceThreshold').value = settings.confidenceThreshold;
     document.getElementById('confidenceValue').textContent = settings.confidenceThreshold;
-    document.getElementById('humanApprovalToggle').checked = settings.humanApproval;
     document.getElementById('positionSizingStrategy').value = settings.positionSizingStrategy;
     document.getElementById('maxPositionSize').value = settings.maxPositionSize;
     document.getElementById('maxPositionValue').textContent = settings.maxPositionSize;
