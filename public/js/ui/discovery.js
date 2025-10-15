@@ -47,8 +47,18 @@ export async function runDiscovery() {
         const strategyText = strategy === 'debug' ? '⚠️ DEBUG MODE' : strategy === 'conservative' ? '(Conservative)' : strategy === 'aggressive' ? '(Aggressive)' : '(Moderate)';
         message.textContent = `Scanning ${universeText} coins ${strategyText}${refreshText}...`;
         
-        // Clear previous log
-        logContent.innerHTML = '';
+        // Clear previous log entries (but keep the AI section structure)
+        const logEntriesContainer = document.getElementById('analysis-log-entries');
+        if (logEntriesContainer) {
+            logEntriesContainer.innerHTML = '';
+        }
+        
+        // Hide AI recommendations section (will be shown again if discoveries found)
+        const recsSection = document.getElementById('recommendations-section');
+        if (recsSection) {
+            recsSection.style.display = 'none';
+        }
+        
         logContainer.style.display = 'none';
         
         // Run discovery
@@ -78,10 +88,14 @@ export async function runDiscovery() {
         // Show analysis log
         if (data.analysisLog && data.analysisLog.length > 0) {
             logContainer.style.display = 'block';
-            logSummary.textContent = `${data.summary.totalAnalyzed} analyzed · ${data.summary.passed} passed · ${data.summary.rejected} rejected`;
+            
+            // Add hint about AI section if there are discoveries
+            const aiHint = data.candidates && data.candidates.length > 0 ? ' · 🤖 Click to see AI analysis' : '';
+            logSummary.textContent = `${data.summary.totalAnalyzed} analyzed · ${data.summary.passed} passed · ${data.summary.rejected} rejected${aiHint}`;
+            
             displayAnalysisLog(data.analysisLog, data.summary);
             
-            // Ensure log starts collapsed
+            // Keep log collapsed by default - user must manually expand
             const toggle = document.getElementById('log-toggle');
             if (toggle) toggle.textContent = '▼';
             logContent.classList.remove('expanded');
@@ -103,8 +117,17 @@ export async function runDiscovery() {
         }, 100);
         
         // Show AI recommendations section if there are discoveries
+        // Note: Log stays collapsed by default - user can manually expand to see AI section
         if (data.candidates && data.candidates.length > 0) {
-            document.getElementById('recommendations-section').style.display = 'block';
+            setTimeout(() => {
+                const recsSection = document.getElementById('recommendations-section');
+                
+                // Make the AI section visible (but keep log collapsed)
+                if (recsSection) {
+                    recsSection.style.display = 'block';
+                    console.log('[Discovery] AI recommendations section ready (expand Analysis Log to see it)');
+                }
+            }, 150);
         }
         
     } catch (error) {
@@ -309,69 +332,44 @@ function formatNoOpportunities(summary, _analysisLog) {
  * Display analysis log
  */
 function displayAnalysisLog(analysisLog, summary) {
-    const logContent = document.getElementById('analysis-log-content');
+    const logEntriesContainer = document.getElementById('analysis-log-entries');
+    
+    if (!logEntriesContainer) {
+        console.error('[Discovery] analysis-log-entries container not found! Did you refresh the page?');
+        console.log('[Discovery] Available elements:', document.querySelectorAll('[id*="log"]'));
+        return;
+    }
+    
+    console.log('[Discovery] Found log entries container, rendering', analysisLog.length, 'entries');
     
     const html = `
-        <div style="padding: 15px;">
-            <!-- Summary Stats -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
-                <div style="text-align: center; padding: 15px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
-                    <div style="font-size: 24px; font-weight: 600; color: #3b82f6;">${summary.totalAnalyzed}</div>
-                    <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">Total Analyzed</div>
-                </div>
-                <div style="text-align: center; padding: 15px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
-                    <div style="font-size: 24px; font-weight: 600; color: #10b981;">${summary.passed}</div>
-                    <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">Passed</div>
-                </div>
-                <div style="text-align: center; padding: 15px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
-                    <div style="font-size: 24px; font-weight: 600; color: #ef4444;">${summary.rejected}</div>
-                    <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">Rejected</div>
-                </div>
+        <div style="padding: 10px; background: white;">
+            <div style="font-size: 13px; font-weight: 600; color: #374151; padding: 8px 10px; border-bottom: 2px solid #e5e7eb; margin-bottom: 5px;">
+                📋 Detailed Analysis (${analysisLog.length} coins)
             </div>
-
-            <!-- Log Entries -->
-            <div style="background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+            <!-- Log Entries - COMPACT with SCROLL -->
+            <div style="font-size: 11px; max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 4px;">
                 ${analysisLog.map((entry, index) => `
-                    <div style="padding: 12px; border-bottom: ${index < analysisLog.length - 1 ? '1px solid #f3f4f6' : 'none'}; ${entry.passed ? 'background: #f0fdf4;' : ''}">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 5px;">
-                            <div>
-                                <strong style="color: #1f2937; font-size: 15px;">
-                                    ${entry.symbol}
-                                </strong>
-                                <span style="color: #6b7280; font-size: 13px; margin-left: 8px;">
-                                    ${entry.name} · Rank #${entry.rank}
+                    <div style="padding: 6px 10px; border-bottom: ${index < analysisLog.length - 1 ? '1px solid #f3f4f6' : 'none'}; ${entry.passed ? 'background: #f0fdf4;' : 'background: #fafafa;'}">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1;">
+                                <strong style="color: #1f2937; font-size: 12px;">${entry.symbol}</strong>
+                                <span style="color: #6b7280; font-size: 11px; margin-left: 6px;">#${entry.rank}</span>
+                                <span style="color: ${entry.passed ? '#059669' : '#6b7280'}; font-size: 11px; margin-left: 10px;">
+                                    ${entry.passed ? '✅' : '❌'} ${entry.reason}
                                 </span>
                             </div>
-                            <span style="font-size: 11px; color: #9ca3af;">
-                                ${new Date(entry.timestamp).toLocaleTimeString()}
-                            </span>
-                        </div>
-                        <div style="color: ${entry.passed ? '#059669' : '#6b7280'}; font-size: 13px; margin-bottom: 8px;">
-                            ${entry.reason}
-                        </div>
-                        ${entry.details && Object.keys(entry.details).length > 0 ? `
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; font-size: 12px; color: #6b7280;">
-                                ${entry.details.volumeScore !== undefined ? `
-                                    <div>Vol Score: <strong>${entry.details.volumeScore.toFixed(0)}</strong></div>
-                                ` : ''}
-                                ${entry.details.momentumScore !== undefined ? `
-                                    <div>Momentum: <strong>${entry.details.momentumScore.toFixed(0)}</strong></div>
-                                ` : ''}
-                                ${entry.details.sentimentScore !== undefined ? `
-                                    <div>Sentiment: <strong>${entry.details.sentimentScore.toFixed(0)}</strong></div>
-                                ` : ''}
-                                ${entry.compositeScore !== undefined ? `
-                                    <div>Composite: <strong style="color: ${getScoreColor(entry.compositeScore)};">${entry.compositeScore.toFixed(0)}</strong></div>
-                                ` : ''}
+                            <div style="font-size: 10px; color: #9ca3af; margin-left: 15px;">
+                                ${entry.compositeScore !== undefined ? `Score: <strong style="color: ${getScoreColor(entry.compositeScore)};">${entry.compositeScore.toFixed(0)}</strong>` : ''}
                             </div>
-                        ` : ''}
+                        </div>
                     </div>
                 `).join('')}
             </div>
         </div>
     `;
     
-    logContent.innerHTML = html;
+    logEntriesContainer.innerHTML = html;
 }
 
 /**
@@ -517,7 +515,22 @@ export async function generateAIRecommendations() {
     let messageInterval;
     
     try {
+        // Check if debug mode is enabled
+        const settings = window.getSettings ? window.getSettings() : { debugMode: false };
+        const debugMode = settings.debugMode || false;
+        
         console.log(`[AI Recommendations] Starting analysis for ${maxRecs} coins...`);
+        if (debugMode) {
+            console.warn('[AI Recommendations] ⚠️ DEBUG MODE ACTIVE - Using aggressive/risky AI prompts');
+        }
+        
+        // Expand the analysis log so user can see the AI section
+        const logContent = document.getElementById('analysis-log-content');
+        const logToggle = document.getElementById('log-toggle');
+        if (logContent && !logContent.classList.contains('expanded')) {
+            logContent.classList.add('expanded');
+            if (logToggle) logToggle.textContent = '▲';
+        }
         
         // Show loading
         btn.disabled = true;
@@ -533,7 +546,7 @@ export async function generateAIRecommendations() {
         }, 3000);
         
         console.log(`[AI Recommendations] Calling API: POST ${API_BASE}/recommendations/generate`);
-        console.log(`[AI Recommendations] Request body:`, { maxBuy: maxRecs, maxSell: 0 });
+        console.log(`[AI Recommendations] Request body:`, { maxBuy: maxRecs, maxSell: 0, debugMode });
         
         // Call API
         const response = await fetch(`${API_BASE}/recommendations/generate`, {
@@ -541,7 +554,8 @@ export async function generateAIRecommendations() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 maxBuy: maxRecs, 
-                maxSell: 0  // We only want BUY recommendations from discovery
+                maxSell: 0,  // We only want BUY recommendations from discovery
+                debugMode: debugMode  // Pass debug mode to backend
             })
         });
         
@@ -609,16 +623,22 @@ function displayRecommendations(data, maxAnalyzed) {
     const buyRecs = data.buyRecommendations || [];
     const skipped = data.skipped || { buy: 0, sell: 0 };
     
-    // Summary header
+    // Debug: log first recommendation to see structure
+    if (buyRecs.length > 0) {
+        console.log('[AI Recommendations] First rec structure:', buyRecs[0]);
+    }
+    
+    // Summary header - collapsible
     let html = `
-        <div style="background: ${buyRecs.length > 0 ? '#f0fdf4' : '#fef3c7'}; border-left: 4px solid ${buyRecs.length > 0 ? '#10b981' : '#f59e0b'}; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+        <div onclick="toggleRecommendationsResults()" style="background: ${buyRecs.length > 0 ? '#f0fdf4' : '#fef3c7'}; border-left: 4px solid ${buyRecs.length > 0 ? '#10b981' : '#f59e0b'}; padding: 15px; border-radius: 6px; margin-bottom: 20px; cursor: pointer; user-select: none;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong style="color: ${buyRecs.length > 0 ? '#065f46' : '#92400e'}; font-size: 16px;">
                         ${buyRecs.length > 0 ? '✅ Analysis Complete' : '⚠️ Analysis Complete'}
+                        <span id="recommendations-toggle" style="margin-left: 10px; font-size: 14px;">▼</span>
                     </strong>
                     <p style="margin: 5px 0 0 0; color: ${buyRecs.length > 0 ? '#065f46' : '#92400e'}; font-size: 14px;">
-                        Generated <strong>${buyRecs.length} BUY</strong> and <strong>0 SELL</strong> recommendations
+                        Generated <strong>${buyRecs.length} BUY</strong> and <strong>0 SELL</strong> recommendations · Click to expand
                     </p>
                 </div>
                 <div style="text-align: right; font-size: 13px; color: ${buyRecs.length > 0 ? '#065f46' : '#92400e'};">
@@ -628,6 +648,9 @@ function displayRecommendations(data, maxAnalyzed) {
             </div>
         </div>
     `;
+    
+    // Single wrapper with the ID for animation (inside Analysis Log)
+    html += '<div id="ai-recommendations-content">';
     
     if (buyRecs.length === 0) {
         html += `
@@ -660,8 +683,8 @@ function displayRecommendations(data, maxAnalyzed) {
             </div>
         `;
     } else {
-        // Show BUY recommendations
-        html += '<div style="display: grid; gap: 20px;">';
+        // Show BUY recommendations with scrolling (CSS handles max-height)
+        html += '<div style="padding-right: 10px;"><div style="display: grid; gap: 20px;">';
         
         buyRecs.forEach((rec, index) => {
             const confidenceColor = rec.confidence >= 80 ? '#10b981' : rec.confidence >= 70 ? '#3b82f6' : '#f59e0b';
@@ -679,8 +702,9 @@ function displayRecommendations(data, maxAnalyzed) {
                                 </span>
                             </div>
                             <div style="color: #6b7280; font-size: 13px; margin-top: 5px;">
+                                Current Price: $${rec.currentPrice?.toFixed(6) || rec.entryPrice?.toFixed(6) || 'N/A'} · 
                                 Discovery Score: ${rec.discoveryScore?.toFixed(0) || 'N/A'}/100 · 
-                                Reason: ${rec.discoveryReason || 'discovery'}
+                                ${rec.discoveryReason || 'discovery'}
                             </div>
                         </div>
                         <div style="text-align: right;">
@@ -783,17 +807,55 @@ function displayRecommendations(data, maxAnalyzed) {
                             </div>
                         </div>
                     ` : ''}
-                    
-                    <!-- Action Button -->
-                    <button class="button" onclick="window.analyzeDiscovered('${rec.symbol || ''}')" style="width: 100%; padding: 12px; font-size: 15px; font-weight: 600;">
-                        📊 View Full Analysis
-                    </button>
                 </div>
             `;
         });
         
-        html += '</div>';
+        html += '</div></div>';
     }
     
+    // Close the recommendations-content wrapper
+    html += '</div>';
+    
     results.innerHTML = html;
+    
+    // Auto-expand with animation after a short delay
+    setTimeout(() => {
+        const content = document.getElementById('ai-recommendations-content');
+        const toggle = document.getElementById('recommendations-toggle');
+        if (content && toggle) {
+            console.log('[AI Recommendations] Adding expanded class');
+            
+            content.classList.add('expanded');
+            toggle.textContent = '▲';
+            
+            console.log('[AI Recommendations] Expanded class added, classes:', content.classList.value);
+        }
+    }, 100);
 }
+
+/**
+ * Toggle recommendations results visibility with smooth animation
+ */
+window.toggleRecommendationsResults = function() {
+    const content = document.getElementById('ai-recommendations-content');
+    const toggle = document.getElementById('recommendations-toggle');
+    
+    if (!content || !toggle) {
+        console.error('[Toggle] Elements not found!');
+        return;
+    }
+    
+    // Toggle using CSS class
+    if (content.classList.contains('expanded')) {
+        content.classList.remove('expanded');
+        toggle.textContent = '▼';
+        console.log('[Toggle] Removed expanded class - collapsing');
+    } else {
+        content.classList.add('expanded');
+        toggle.textContent = '▲';
+        console.log('[Toggle] Added expanded class - expanding');
+    }
+    
+    console.log('[Toggle] Current classes:', content.classList.value);
+};

@@ -379,10 +379,15 @@ router.post('/recommendations/generate', async (req: Request, res: Response) => 
   try {
     const maxBuy = parseInt(req.body.maxBuy as string) || 3;
     const maxSell = parseInt(req.body.maxSell as string) || 3;
+    const debugMode = req.body.debugMode === true;
     
-    logger.info('Generating actionable AI recommendations', { maxBuy, maxSell });
+    if (debugMode) {
+      logger.warn('⚠️ DEBUG MODE - Using aggressive AI prompts for recommendations');
+    }
     
-    const result = await generateActionableRecommendations(maxBuy, maxSell);
+    logger.info('Generating actionable AI recommendations', { maxBuy, maxSell, debugMode });
+    
+    const result = await generateActionableRecommendations(maxBuy, maxSell, debugMode);
     
     res.json({
       success: true,

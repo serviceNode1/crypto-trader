@@ -232,13 +232,17 @@ async function findSellOpportunities(): Promise<SellOpportunity[]> {
  */
 export async function generateActionableRecommendations(
   maxBuyRecommendations: number = 3,
-  maxSellRecommendations: number = 3
+  maxSellRecommendations: number = 3,
+  debugMode: boolean = false
 ): Promise<{
   buyRecommendations: any[];
   sellRecommendations: any[];
   skipped: { buy: number; sell: number };
 }> {
   try {
+    if (debugMode) {
+      logger.warn('⚠️ DEBUG MODE - AI will use aggressive/risky prompts');
+    }
     logger.info('🤖 Generating AI recommendations for top opportunities...');
 
     const opportunities = await findOpportunities(false);
@@ -276,7 +280,7 @@ export async function generateActionableRecommendations(
           sentiment,
           news,
           marketContext,
-        });
+        }, 'anthropic', debugMode);
         
         // Only store if AI agrees it's a BUY
         if (recommendation.action === 'BUY') {
@@ -320,7 +324,7 @@ export async function generateActionableRecommendations(
           sentiment,
           news,
           marketContext,
-        });
+        }, 'anthropic', debugMode);
         
         // Only store if AI agrees it's a SELL
         if (recommendation.action === 'SELL') {

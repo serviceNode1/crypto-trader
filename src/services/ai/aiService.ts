@@ -40,6 +40,8 @@ try {
 
 export interface TradeRecommendation {
   id?: number;  // Database ID (added after insert)
+  symbol: string;  // Coin symbol (e.g., 'BTC', 'ETH')
+  currentPrice?: number;  // Current price at analysis time
   action: 'BUY' | 'SELL' | 'HOLD';
   confidence: number; // 0-100
   reasoning: {
@@ -71,7 +73,8 @@ export interface AnalysisInput {
  * Generate trade recommendation using OpenAI
  */
 async function getOpenAIRecommendation(
-  input: AnalysisInput
+  input: AnalysisInput,
+  debugMode: boolean = false
 ): Promise<TradeRecommendation> {
   if (!openai) {
     throw new Error('OpenAI client not initialized - check OPENAI_API_KEY');
@@ -81,9 +84,10 @@ async function getOpenAIRecommendation(
     rateLimiters.openai,
     async () => {
       return withRetryJitter(async () => {
-        const prompt = buildAnalysisPrompt(input);
+        const prompt = buildAnalysisPrompt(input, debugMode);
 
         logger.debug('Requesting OpenAI analysis', { symbol: input.symbol });
+        logger.debug('2B: Debug mode:',debugMode, ' Prompt:', prompt);
 
         const response = await openai!.chat.completions.create({
           model: AI_MODELS.OPENAI.MODEL,
@@ -109,6 +113,10 @@ async function getOpenAIRecommendation(
         }
 
         const recommendation = JSON.parse(content);
+        
+        // Add symbol and currentPrice from input
+        recommendation.symbol = input.symbol;
+        recommendation.currentPrice = input.currentPrice;
 
         logger.info('OpenAI recommendation received', {
           symbol: input.symbol,
@@ -127,7 +135,8 @@ async function getOpenAIRecommendation(
  * Generate trade recommendation using Anthropic Claude
  */
 async function getClaudeRecommendation(
-  input: AnalysisInput
+  input: AnalysisInput,
+  debugMode: boolean = false
 ): Promise<TradeRecommendation> {
   if (!anthropic) {
     throw new Error('Anthropic client not initialized - check ANTHROPIC_API_KEY');
@@ -137,9 +146,10 @@ async function getClaudeRecommendation(
     rateLimiters.anthropic,
     async () => {
       return withRetryJitter(async () => {
-        const prompt = buildAnalysisPrompt(input);
+        const prompt = buildAnalysisPrompt(input, debugMode);
 
         logger.info('Requesting Claude analysis', { symbol: input.symbol });
+        logger.debug('1a: Debug mode:',debugMode, ' Prompt:', prompt);
 
         try {
           const response = await anthropic!.messages.create({
@@ -160,6 +170,10 @@ async function getClaudeRecommendation(
           }
 
           const recommendation = JSON.parse(content.text);
+          
+          // Add symbol and currentPrice from input
+          recommendation.symbol = input.symbol;
+          recommendation.currentPrice = input.currentPrice;
 
           logger.info('Claude recommendation received', {
             symbol: input.symbol,
@@ -187,7 +201,7 @@ async function getClaudeRecommendation(
 /**
  * Build analysis prompt for AI models
  */
-function buildAnalysisPrompt(input: AnalysisInput): string {
+function buildAnalysisPrompt(input: AnalysisInput, debugMode: boolean = false): string {
   const {
     symbol,
     currentPrice,
@@ -248,13 +262,27 @@ Provide a JSON response with the following structure:
 }
 
 **Important Guidelines**:
+${debugMode ? `
+⚠️ **DEBUG/TESTING MODE - AGGRESSIVE ANALYSIS** ⚠️
+1. Be AGGRESSIVE and OPPORTUNISTIC - lean toward BUY recommendations when there's ANY positive signal
+2. Lower your standards - even mixed signals can be a BUY if there's upside potential
+3. Ignore market regime concerns - we're testing the system, not making real trades
+4. Confidence can be high (70-90%) even with moderate conviction
+5. Focus on the UPSIDE - emphasize bull case over bear case
+6. Any combination of: rising volume, positive sentiment, OR technical setup = potential BUY
+7. We WANT to find opportunities - be optimistic about price action
+8. Stop loss is still required, but be generous with risk tolerance
+9. Use larger position sizes (4-5% is fine for testing)
+**Remember: This is for TESTING AUTO-TRADING LOGIC, not real investment decisions!**
+` : `
 1. Be conservative - only recommend BUY/SELL with strong conviction
 2. Consider all data sources - technical, sentiment, news, and market context
 3. Account for current market regime and risk sentiment
 4. Stop loss is MANDATORY for any BUY recommendation
 5. Position size should reflect risk level (lower for higher risk)
 6. Be explicit about uncertainties and risks in reasoning
-7. Confidence should be realistic (rarely above 80)`;
+7. Confidence should be realistic (rarely above 80)
+`}`;
 }
 
 export type AIModel = 'local' | 'anthropic' | 'openai' | 'both';
@@ -264,10 +292,14 @@ export type AIModel = 'local' | 'anthropic' | 'openai' | 'both';
  */
 export async function getAIRecommendation(
   input: AnalysisInput,
-  modelChoice: AIModel = 'anthropic'
+  modelChoice: AIModel = 'anthropic',
+  debugMode: boolean = false
 ): Promise<TradeRecommendation> {
   try {
-    logger.info('Getting AI recommendation', { symbol: input.symbol, modelChoice });
+    if (debugMode) {
+      logger.warn('⚠️ DEBUG MODE - Using aggressive/risky AI prompts');
+    }
+    logger.info('Getting AI recommendation', { symbol: input.symbol, modelChoice, debugMode });
 
     // Local fallback (no AI)
     if (modelChoice === 'local') {
@@ -278,8 +310,8 @@ export async function getAIRecommendation(
     if (modelChoice === 'both') {
       // Get recommendations from both models
       const [openaiRec, claudeRec] = await Promise.allSettled([
-        getOpenAIRecommendation(input),
-        getClaudeRecommendation(input),
+        getOpenAIRecommendation(input, debugMode),
+        getClaudeRecommendation(input, debugMode),
       ]);
 
       // Return both recommendations if both succeeded
@@ -308,11 +340,11 @@ export async function getAIRecommendation(
 
     // Use specific model
     if (modelChoice === 'openai') {
-      return await getOpenAIRecommendation(input);
+      return await getOpenAIRecommendation(input, debugMode);
     }
 
     // Default to Anthropic (faster and cheaper for structured outputs)
-    return await getClaudeRecommendation(input);
+    return await getClaudeRecommendation(input, debugMode);
     
   } catch (error) {
     logger.error('AI recommendation failed', { 
@@ -346,6 +378,8 @@ function combineRecommendations(
   });
 
   return {
+    symbol: _input.symbol,
+    currentPrice: _input.currentPrice,
     action: TRADE_ACTIONS.HOLD,
     confidence: 50,
     reasoning: {
@@ -411,6 +445,8 @@ export function getLocalRecommendation(input: AnalysisInput): TradeRecommendatio
   );
 
   return {
+    symbol: input.symbol,
+    currentPrice: input.currentPrice,
     action,
     confidence,
     reasoning: {
