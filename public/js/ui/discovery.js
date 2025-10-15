@@ -300,17 +300,17 @@ function formatNoOpportunities(summary, _analysisLog) {
     return `
         <div style="padding: 30px; text-align: center;">
             <div style="font-size: 48px; margin-bottom: 15px;">😔</div>
-            <h3 style="color: #374151; margin-bottom: 10px;">No Opportunities Found</h3>
-            <p style="color: #6b7280; margin-bottom: 20px;">
+            <h3 style="color: var(--text-primary); margin-bottom: 10px;">No Opportunities Found</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">
                 Analyzed ${summary.totalAnalyzed} coins, but none met the criteria.
             </p>
             
-            <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: left;">
-                <h4 style="color: #374151; margin-bottom: 15px;">📊 Top Rejection Reasons:</h4>
+            <div style="border-radius: 8px; padding: 20px; margin: 20px 0; text-align: left;">
+                <h4 style="color: var(--text-primary); margin-bottom: 15px;">📊 Top Rejection Reasons:</h4>
                 ${summary.topRejectionReasons.map((r, i) => `
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: ${i < summary.topRejectionReasons.length - 1 ? '1px solid #e5e7eb' : 'none'};">
-                        <span style="color: #6b7280;">${r.reason}</span>
-                        <span style="font-weight: 600; color: #374151;">${r.count} coins</span>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: ${i < summary.topRejectionReasons.length - 1 ? '1px solid var(--border-color)' : 'none'};">
+                        <span style="color: var(--text-muted);">${r.reason}</span>
+                        <span style="font-weight: 600; color: var(--text-primary);">${r.count} coins</span>
                     </div>
                 `).join('')}
             </div>
@@ -343,12 +343,12 @@ function displayAnalysisLog(analysisLog, summary) {
     console.log('[Discovery] Found log entries container, rendering', analysisLog.length, 'entries');
     
     const html = `
-        <div style="padding: 10px; background: white;">
-            <div style="font-size: 13px; font-weight: 600; color: #374151; padding: 8px 10px; border-bottom: 2px solid #e5e7eb; margin-bottom: 5px;">
+        <div style="padding: 10px;">
+            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); padding: 8px 10px; border-bottom: 2px solid var(--border-color); margin-bottom: 5px;">
                 📋 Detailed Analysis (${analysisLog.length} coins)
             </div>
             <!-- Log Entries - COMPACT with SCROLL -->
-            <div style="font-size: 11px; max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 4px;">
+            <div style="font-size: 11px; max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px;">
                 ${analysisLog.map((entry, index) => `
                     <div style="padding: 6px 10px; border-bottom: ${index < analysisLog.length - 1 ? '1px solid #f3f4f6' : 'none'}; ${entry.passed ? 'background: #f0fdf4;' : 'background: #fafafa;'}">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -480,7 +480,7 @@ function formatDiscoveries(discoveries) {
             </tbody>
         </table>
         
-        <div style="margin-top: 15px; padding: 12px; background: #f9fafb; border-radius: 6px; text-align: center; color: #6b7280; font-size: 14px;">
+        <div style="margin-top: 15px; padding: 12px; border-radius: 6px; text-align: center; color: var(--text-muted); font-size: 14px;">
             <strong>💡 Tip:</strong> 
             Price shows current value + 24h change. Chart shows last 48 hours of price movement.
         </div>
@@ -656,13 +656,13 @@ function displayRecommendations(data, maxAnalyzed) {
         html += `
             <div style="text-align: center; padding: 40px 20px;">
                 <div style="font-size: 48px; margin-bottom: 15px;">🤔</div>
-                <h3 style="color: #374151; margin-bottom: 10px;">No Strong BUY Signals Found</h3>
-                <p style="color: #6b7280; margin-bottom: 20px;">
+                <h3 style="color: var(--text-primary); margin-bottom: 10px;">No Strong BUY Signals Found</h3>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">
                     The AI analyzed ${maxAnalyzed} coins but found no strong buy opportunities at this time.
                 </p>
-                <div style="background: #f9fafb; border-radius: 8px; padding: 20px; text-align: left; max-width: 600px; margin: 0 auto;">
-                    <strong style="color: #374151;">💡 What this means:</strong>
-                    <ul style="margin: 10px 0 0 20px; color: #6b7280; line-height: 1.8;">
+                <div style="border-radius: 8px; padding: 20px; text-align: left; max-width: 600px; margin: 0 auto;">
+                    <strong style="color: var(--text-primary);">💡 What this means:</strong>
+                    <ul style="margin: 10px 0 0 20px; color: var(--text-muted); line-height: 1.8;">
                         <li>Discovery found candidates, but AI analysis was <strong>not convinced</strong></li>
                         <li>Technical indicators may show mixed signals</li>
                         <li>Sentiment could be neutral or negative</li>
@@ -691,17 +691,17 @@ function displayRecommendations(data, maxAnalyzed) {
             const riskColor = rec.riskLevel === 'LOW' ? '#10b981' : rec.riskLevel === 'MEDIUM' ? '#f59e0b' : '#ef4444';
             
             html += `
-                <div style="border: 2px solid ${confidenceColor}; border-radius: 12px; padding: 20px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div class="recommendation-card" style="border: 2px solid ${confidenceColor};">
                     <!-- Header -->
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; border-bottom: 2px solid #f3f4f6; padding-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px;">
                         <div>
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-                                <h3 style="margin: 0; color: #1f2937; font-size: 24px;">${rec.symbol || 'Unknown'}</h3>
+                                <h3 style="margin: 0; color: var(--text-primary); font-size: 24px;">${rec.symbol || 'Unknown'}</h3>
                                 <span style="background: #10b981; color: white; padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 13px;">
                                     📈 BUY
                                 </span>
                             </div>
-                            <div style="color: #6b7280; font-size: 13px; margin-top: 5px;">
+                            <div style="color: var(--text-muted); font-size: 13px; margin-top: 5px;">
                                 Current Price: $${rec.currentPrice?.toFixed(6) || rec.entryPrice?.toFixed(6) || 'N/A'} · 
                                 Discovery Score: ${rec.discoveryScore?.toFixed(0) || 'N/A'}/100 · 
                                 ${rec.discoveryReason || 'discovery'}
@@ -711,32 +711,32 @@ function displayRecommendations(data, maxAnalyzed) {
                             <div style="font-size: 28px; font-weight: 700; color: ${confidenceColor};">
                                 ${rec.confidence}%
                             </div>
-                            <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Confidence</div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Confidence</div>
                         </div>
                     </div>
                     
                     <!-- Price Levels -->
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
-                        <div style="text-align: center; padding: 12px; background: #f9fafb; border-radius: 6px;">
-                            <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">ENTRY</div>
+                        <div class="recommendation-info-box">
+                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 5px;">ENTRY</div>
                             <div style="font-size: 16px; font-weight: 600; color: #3b82f6;">
                                 $${rec.entryPrice?.toFixed(4) || 'N/A'}
                             </div>
                         </div>
-                        <div style="text-align: center; padding: 12px; background: #fef2f2; border-radius: 6px;">
-                            <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">STOP LOSS</div>
+                        <div class="recommendation-info-box" style="background: #fef2f2;">
+                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 5px;">STOP LOSS</div>
                             <div style="font-size: 16px; font-weight: 600; color: #ef4444;">
                                 $${rec.stopLoss?.toFixed(4) || 'N/A'}
                             </div>
                         </div>
-                        <div style="text-align: center; padding: 12px; background: #f0fdf4; border-radius: 6px;">
-                            <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">TARGET 1</div>
+                        <div class="recommendation-info-box" style="background: #f0fdf4;">
+                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 5px;">TARGET 1</div>
                             <div style="font-size: 16px; font-weight: 600; color: #10b981;">
                                 $${rec.takeProfitLevels?.[0]?.toFixed(4) || 'N/A'}
                             </div>
                         </div>
-                        <div style="text-align: center; padding: 12px; background: #f0fdf4; border-radius: 6px;">
-                            <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">TARGET 2</div>
+                        <div class="recommendation-info-box" style="background: #f0fdf4;">
+                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 5px;">TARGET 2</div>
                             <div style="font-size: 16px; font-weight: 600; color: #10b981;">
                                 $${rec.takeProfitLevels?.[1]?.toFixed(4) || 'N/A'}
                             </div>
@@ -745,48 +745,48 @@ function displayRecommendations(data, maxAnalyzed) {
                     
                     <!-- Key Metrics -->
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
-                        <div style="padding: 10px; background: #f9fafb; border-radius: 6px; text-align: center;">
-                            <div style="font-size: 11px; color: #6b7280;">POSITION SIZE</div>
-                            <div style="font-size: 15px; font-weight: 600; color: #1f2937; margin-top: 3px;">
+                        <div class="recommendation-info-box">
+                            <div style="font-size: 11px; color: var(--text-muted);">POSITION SIZE</div>
+                            <div style="font-size: 15px; font-weight: 600; color: var(--text-primary); margin-top: 3px;">
                                 ${((rec.positionSize || 0) * 100).toFixed(1)}%
                             </div>
                         </div>
-                        <div style="padding: 10px; background: #f9fafb; border-radius: 6px; text-align: center;">
-                            <div style="font-size: 11px; color: #6b7280;">RISK LEVEL</div>
+                        <div class="recommendation-info-box">
+                            <div style="font-size: 11px; color: var(--text-muted);">RISK LEVEL</div>
                             <div style="font-size: 15px; font-weight: 600; color: ${riskColor}; margin-top: 3px;">
                                 ${rec.riskLevel || 'MEDIUM'}
                             </div>
                         </div>
-                        <div style="padding: 10px; background: #f9fafb; border-radius: 6px; text-align: center;">
-                            <div style="font-size: 11px; color: #6b7280;">TIMEFRAME</div>
-                            <div style="font-size: 15px; font-weight: 600; color: #1f2937; margin-top: 3px;">
+                        <div class="recommendation-info-box">
+                            <div style="font-size: 11px; color: var(--text-muted);">TIMEFRAME</div>
+                            <div style="font-size: 15px; font-weight: 600; color: var(--text-primary); margin-top: 3px;">
                                 ${rec.timeframe?.replace('-term', '') || 'N/A'}
                             </div>
                         </div>
                     </div>
                     
                     <!-- Reasoning -->
-                    <div style="background: #f9fafb; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <div class="recommendation-reasoning">
                         <details>
-                            <summary style="cursor: pointer; font-weight: 600; color: #374151; margin-bottom: 10px;">
+                            <summary style="cursor: pointer; font-weight: 600; color: var(--text-primary); margin-bottom: 10px;">
                                 🧠 AI Reasoning (Click to expand)
                             </summary>
-                            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e7eb;">
+                            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color);">
                                 <div style="margin-bottom: 15px;">
                                     <strong style="color: #10b981;">✅ Bull Case:</strong>
-                                    <p style="margin: 5px 0 0 0; color: #374151; font-size: 13px; line-height: 1.6;">
+                                    <p style="margin: 5px 0 0 0; color: var(--text-primary); font-size: 13px; line-height: 1.6;">
                                         ${rec.reasoning?.bullCase || 'Not provided'}
                                     </p>
                                 </div>
                                 <div style="margin-bottom: 15px;">
                                     <strong style="color: #ef4444;">⚠️ Bear Case:</strong>
-                                    <p style="margin: 5px 0 0 0; color: #374151; font-size: 13px; line-height: 1.6;">
+                                    <p style="margin: 5px 0 0 0; color: var(--text-primary); font-size: 13px; line-height: 1.6;">
                                         ${rec.reasoning?.bearCase || 'Not provided'}
                                     </p>
                                 </div>
                                 <div>
                                     <strong style="color: #3b82f6;">🎯 Conclusion:</strong>
-                                    <p style="margin: 5px 0 0 0; color: #374151; font-size: 13px; line-height: 1.6;">
+                                    <p style="margin: 5px 0 0 0; color: var(--text-primary); font-size: 13px; line-height: 1.6;">
                                         ${rec.reasoning?.conclusion || 'Not provided'}
                                     </p>
                                 </div>
@@ -797,7 +797,7 @@ function displayRecommendations(data, maxAnalyzed) {
                     <!-- Key Factors -->
                     ${rec.keyFactors && rec.keyFactors.length > 0 ? `
                         <div style="margin-bottom: 15px;">
-                            <strong style="color: #374151; font-size: 13px;">🔑 Key Factors:</strong>
+                            <strong style="color: var(--text-primary); font-size: 13px;">🔑 Key Factors:</strong>
                             <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
                                 ${rec.keyFactors.map(factor => `
                                     <span style="background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 4px; font-size: 12px;">

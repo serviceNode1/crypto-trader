@@ -51,7 +51,7 @@
                         type="text" 
                         id="cryptoSearch" 
                         placeholder="Enter symbol (e.g., BTC, ETH, SOL, ADA)..." 
-                        style="flex: 1; padding: 12px 16px; font-size: 16px; border: 2px solid #e5e7eb; border-radius: 8px; outline: none; transition: border 0.3s;"
+                        style="flex: 1; padding: 12px 16px; font-size: 16px; border: 2px solid var(--border-color); border-radius: 8px; outline: none; transition: border 0.3s;"
                         onkeypress="if(event.key === 'Enter') analyzeCrypto()"
                     />
                     <button class="button" onclick="analyzeCrypto()" style="margin-left: 10px; padding: 12px 24px;">
@@ -64,7 +64,7 @@
                     <label class="label">
                         🤖 AI Analysis Model:
                     </label>
-                    <select id="aiModelSelect" style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer;">
+                    <select id="aiModelSelect" style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid var(--border-color); border-radius: 6px; cursor: pointer;">
                         <option value="local">💻 Local Analysis (Free - No AI)</option>
                         <option value="openai">🤖 OpenAI GPT-4o-mini (Cheapest AI - $0.0007)</option>
                         <option value="anthropic" selected>🧠 Anthropic Claude Haiku (Fast - $0.0014)</option>
@@ -218,18 +218,18 @@
                 </div>
                 <div id="analysis-log-content" class="analysis-log-content">
                     <!-- AI Recommendations Section (at TOP of log, before entries) -->
-                    <div id="recommendations-section" style="display: none; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #f9fafb; padding: 15px; border-radius: 8px;">
+                    <div id="recommendations-section" style="display: none; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px solid var(--border-color);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 15px; border-radius: 8px;">
                             <div>
-                                <h4 style="margin: 0 0 5px 0; color: #1f2937; display: flex; align-items: center; gap: 8px;">
+                                <h4 style="margin: 0 0 5px 0; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
                                     🤖 AI Deep Dive Analysis
                                 </h4>
                                 <p class="text-muted" style="margin: 0; font-size: 12px;">Full technical + sentiment analysis with BUY/SELL recommendations (~$0.001-0.002 per coin)</p>
                             </div>
                             <div style="display: flex; gap: 10px; align-items: center;">
-                                <label style="font-size: 13px; color: #6b7280;">
+                                <label style="font-size: 13px; color: var(--text-muted);">
                                     Analyze top:
-                                    <select id="maxRecommendations" style="margin-left: 5px; padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+                                    <select id="maxRecommendations" style="margin-left: 5px; padding: 5px 8px; border: 1px solid var(--border-color); border-radius: 4px;">
                                         <option value="3" selected>3 coins</option>
                                         <option value="5">5 coins</option>
                                         <option value="10">10 coins</option>
@@ -318,7 +318,7 @@
                         <input type="checkbox" id="addStopLoss" onchange="toggleAdvancedOptions()" style="cursor: pointer;">
                         <span style="font-weight: 600; color: #374151;">Add Stop-Loss & Take-Profit</span>
                     </label>
-                    <div id="advancedOptions" style="display: none; margin-top: 10px; padding: 15px;  border-radius: 6px; border: 1px solid #e5e7eb;">
+                    <div id="advancedOptions" style="display: none; margin-top: 10px; padding: 15px;  border-radius: 6px; border: 1px solid var(--border-color);">
                         <div style="margin-bottom: 10px;">
                             <label style="font-size: 14px; font-weight: 500; color: #374151; display: block; margin-bottom: 5px;">
                                 🛑 Stop-Loss Price ($)

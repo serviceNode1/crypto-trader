@@ -31,7 +31,6 @@
 
 /* Discovery info panel */
 .discovery-info-panel {
-    background: var(--card-bg-secondary);
     padding: 12px 15px;
     border-radius: 6px;
     margin-bottom: 15px;
@@ -57,7 +56,6 @@
     margin-bottom: 15px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    background: var(--card-bg);
 }
 
 .analysis-log-header {
@@ -67,7 +65,6 @@
     justify-content: space-between;
     align-items: center;
     border-radius: 6px 6px 0 0;
-    background: var(--card-bg-secondary);
 }
 
 .analysis-log-header:hover {
@@ -93,7 +90,6 @@
     display: block !important;
     max-height: 0 !important;
     overflow: hidden !important;
-    background: var(--card-bg);
     transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out !important;
     opacity: 0 !important;
 }
@@ -105,7 +101,7 @@
     opacity: 1 !important;
 }
 
-/* AI Recommendations content animation (inside Analysis Log) */
+/* AI Recommendations content animation */
 #ai-recommendations-content {
     max-height: 0;
     overflow: hidden;
@@ -117,6 +113,35 @@
     max-height: 1000px;
     overflow-y: auto;
     opacity: 1;
+}
+
+/* Recommendation card styles */
+.recommendation-card {
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+[data-theme="dark"] .recommendation-card {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.recommendation-header-section {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.recommendation-info-box {
+    padding: 12px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.recommendation-reasoning {
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
 }
 
 .analysis-log-entry {
@@ -142,18 +167,4 @@
 .analysis-log-entry.info {
     background: var(--info-bg-light);
     border-left: 3px solid #3b82f6;
-}
-
-/* Dark mode adjustments */
-[data-theme="dark"] .analysis-log-container {
-    background: var(--card-bg);
-    border-color: var(--border-color);
-}
-
-[data-theme="dark"] .analysis-log-header {
-    background: var(--card-bg-secondary);
-}
-
-[data-theme="dark"] .analysis-log-content {
-    background: var(--card-bg);
 }
