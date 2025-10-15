@@ -31,7 +31,8 @@ import {
     saveDiscoverySettings,
     refreshDiscoveryTimeDisplay,
     toggleAnalysisLog,
-    analyzeDiscovered 
+    analyzeDiscovered,
+    generateAIRecommendations 
 } from './ui/discovery.js';
 import { loadMarketContext, runAIAnalysisNow } from './ui/market-context.js';
 import { 
@@ -124,6 +125,7 @@ window.runDiscovery = runDiscovery;
 window.toggleAnalysisLog = toggleAnalysisLog;
 window.analyzeDiscovered = analyzeDiscovered;
 window.saveDiscoverySettings = saveDiscoverySettings;
+window.generateAIRecommendations = generateAIRecommendations;
 window.runAIAnalysisNow = runAIAnalysisNow;
 window.toggleAdvancedOptions = toggleAdvancedOptions;
 window.updateQuantityPlaceholder = updateQuantityPlaceholder;

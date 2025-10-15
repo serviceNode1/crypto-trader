@@ -102,6 +102,11 @@ export async function runDiscovery() {
             }
         }, 100);
         
+        // Show AI recommendations section if there are discoveries
+        if (data.candidates && data.candidates.length > 0) {
+            document.getElementById('recommendations-section').style.display = 'block';
+        }
+        
     } catch (error) {
         console.error('Discovery error:', error);
         status.style.display = 'none';
@@ -482,4 +487,313 @@ function formatDiscoveries(discoveries) {
             Price shows current value + 24h change. Chart shows last 48 hours of price movement.
         </div>
     `;
+}
+
+/**
+ * Generate AI recommendations for discovered coins
+ */
+export async function generateAIRecommendations() {
+    const btn = document.getElementById('generateRecommendationsBtn');
+    const status = document.getElementById('recommendations-status');
+    const message = document.getElementById('recommendations-message');
+    const results = document.getElementById('recommendations-results');
+    const maxRecs = parseInt(document.getElementById('maxRecommendations').value) || 5;
+    
+    // Dynamic loading messages
+    const loadingMessages = [
+        `🔍 Scanning top ${maxRecs} discovered coins...`,
+        `📊 Fetching technical indicators...`,
+        `📰 Collecting news and sentiment data...`,
+        `🤖 Running AI analysis...`,
+        `💭 AI is thinking deeply...`,
+        `🧠 Analyzing market conditions...`,
+        `⚡ Processing signals...`,
+        `📈 Calculating entry and exit points...`,
+        `🎯 Determining confidence levels...`,
+        `✨ Finalizing recommendations...`
+    ];
+    
+    let messageIndex = 0;
+    let messageInterval;
+    
+    try {
+        console.log(`[AI Recommendations] Starting analysis for ${maxRecs} coins...`);
+        
+        // Show loading
+        btn.disabled = true;
+        btn.textContent = '⏳ Analyzing...';
+        status.style.display = 'block';
+        message.textContent = loadingMessages[0];
+        results.innerHTML = '';
+        
+        // Rotate messages every 3 seconds
+        messageInterval = setInterval(() => {
+            messageIndex = (messageIndex + 1) % loadingMessages.length;
+            message.textContent = loadingMessages[messageIndex];
+        }, 3000);
+        
+        console.log(`[AI Recommendations] Calling API: POST ${API_BASE}/recommendations/generate`);
+        console.log(`[AI Recommendations] Request body:`, { maxBuy: maxRecs, maxSell: 0 });
+        
+        // Call API
+        const response = await fetch(`${API_BASE}/recommendations/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                maxBuy: maxRecs, 
+                maxSell: 0  // We only want BUY recommendations from discovery
+            })
+        });
+        
+        console.log(`[AI Recommendations] Response status:`, response.status, response.statusText);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[AI Recommendations] API Error:`, errorText);
+            throw new Error(`Failed to generate recommendations: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log(`[AI Recommendations] Success! Received data:`, data);
+        
+        // Stop message rotation
+        clearInterval(messageInterval);
+        
+        // Hide loading
+        status.style.display = 'none';
+        btn.disabled = false;
+        btn.textContent = '🤖 Generate AI Recommendations';
+        
+        // Display results
+        displayRecommendations(data, maxRecs);
+        
+        console.log(`[AI Recommendations] Displayed ${data.buyRecommendations?.length || 0} BUY recommendations`);
+        
+    } catch (error) {
+        console.error('[AI Recommendations] Error:', error);
+        
+        // Stop message rotation
+        if (messageInterval) clearInterval(messageInterval);
+        
+        status.style.display = 'none';
+        btn.disabled = false;
+        btn.textContent = '🤖 Generate AI Recommendations';
+        
+        results.innerHTML = `
+            <div style="color: #ef4444; text-align: center; padding: 40px 20px; background: #fee2e2; border: 2px solid #ef4444; border-radius: 8px;">
+                <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
+                <h3 style="margin-bottom: 10px;">Failed to Generate Recommendations</h3>
+                <p style="margin-bottom: 15px;">${error.message}</p>
+                <div style="background: white; padding: 15px; border-radius: 6px; text-align: left; max-width: 600px; margin: 0 auto;">
+                    <strong>🔧 Troubleshooting:</strong>
+                    <ul style="margin: 10px 0 0 20px; line-height: 1.8;">
+                        <li>Check the browser console for detailed errors (F12)</li>
+                        <li>Verify the API server is running</li>
+                        <li>Check your OpenAI or Anthropic API keys</li>
+                        <li>Try analyzing fewer coins (select 3 instead of ${maxRecs})</li>
+                    </ul>
+                </div>
+                <button class="button" onclick="generateAIRecommendations()" style="margin-top: 20px;">
+                    🔄 Try Again
+                </button>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Display AI recommendations
+ */
+function displayRecommendations(data, maxAnalyzed) {
+    const results = document.getElementById('recommendations-results');
+    const buyRecs = data.buyRecommendations || [];
+    const skipped = data.skipped || { buy: 0, sell: 0 };
+    
+    // Summary header
+    let html = `
+        <div style="background: ${buyRecs.length > 0 ? '#f0fdf4' : '#fef3c7'}; border-left: 4px solid ${buyRecs.length > 0 ? '#10b981' : '#f59e0b'}; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong style="color: ${buyRecs.length > 0 ? '#065f46' : '#92400e'}; font-size: 16px;">
+                        ${buyRecs.length > 0 ? '✅ Analysis Complete' : '⚠️ Analysis Complete'}
+                    </strong>
+                    <p style="margin: 5px 0 0 0; color: ${buyRecs.length > 0 ? '#065f46' : '#92400e'}; font-size: 14px;">
+                        Generated <strong>${buyRecs.length} BUY</strong> and <strong>0 SELL</strong> recommendations
+                    </p>
+                </div>
+                <div style="text-align: right; font-size: 13px; color: ${buyRecs.length > 0 ? '#065f46' : '#92400e'};">
+                    <div>Analyzed: ${maxAnalyzed} coins</div>
+                    <div>AI Confirmed: ${buyRecs.length} BUY signals</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    if (buyRecs.length === 0) {
+        html += `
+            <div style="text-align: center; padding: 40px 20px;">
+                <div style="font-size: 48px; margin-bottom: 15px;">🤔</div>
+                <h3 style="color: #374151; margin-bottom: 10px;">No Strong BUY Signals Found</h3>
+                <p style="color: #6b7280; margin-bottom: 20px;">
+                    The AI analyzed ${maxAnalyzed} coins but found no strong buy opportunities at this time.
+                </p>
+                <div style="background: #f9fafb; border-radius: 8px; padding: 20px; text-align: left; max-width: 600px; margin: 0 auto;">
+                    <strong style="color: #374151;">💡 What this means:</strong>
+                    <ul style="margin: 10px 0 0 20px; color: #6b7280; line-height: 1.8;">
+                        <li>Discovery found candidates, but AI analysis was <strong>not convinced</strong></li>
+                        <li>Technical indicators may show mixed signals</li>
+                        <li>Sentiment could be neutral or negative</li>
+                        <li>Market conditions may not be favorable</li>
+                        <li>The AI is being <strong>conservative</strong> (which is good!)</li>
+                    </ul>
+                </div>
+                <div style="margin-top: 20px; padding: 15px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px; text-align: left; max-width: 600px; margin: 20px auto 0;">
+                    <strong style="color: #92400e;">🔧 Try These:</strong>
+                    <ul style="margin: 10px 0 0 20px; color: #78350f; line-height: 1.8;">
+                        <li>Enable <strong>Debug Mode</strong> in settings (lowers AI thresholds)</li>
+                        <li>Try a different coin universe (Top 50 or Top 100)</li>
+                        <li>Use <strong>Aggressive</strong> discovery strategy</li>
+                        <li>Wait for better market conditions</li>
+                        <li>Manually analyze individual coins with "Analyze" button</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    } else {
+        // Show BUY recommendations
+        html += '<div style="display: grid; gap: 20px;">';
+        
+        buyRecs.forEach((rec, index) => {
+            const confidenceColor = rec.confidence >= 80 ? '#10b981' : rec.confidence >= 70 ? '#3b82f6' : '#f59e0b';
+            const riskColor = rec.riskLevel === 'LOW' ? '#10b981' : rec.riskLevel === 'MEDIUM' ? '#f59e0b' : '#ef4444';
+            
+            html += `
+                <div style="border: 2px solid ${confidenceColor}; border-radius: 12px; padding: 20px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; border-bottom: 2px solid #f3f4f6; padding-bottom: 15px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                                <h3 style="margin: 0; color: #1f2937; font-size: 24px;">${rec.symbol || 'Unknown'}</h3>
+                                <span style="background: #10b981; color: white; padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 13px;">
+                                    📈 BUY
+                                </span>
+                            </div>
+                            <div style="color: #6b7280; font-size: 13px; margin-top: 5px;">
+                                Discovery Score: ${rec.discoveryScore?.toFixed(0) || 'N/A'}/100 · 
+                                Reason: ${rec.discoveryReason || 'discovery'}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 28px; font-weight: 700; color: ${confidenceColor};">
+                                ${rec.confidence}%
+                            </div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Confidence</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Price Levels -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+                        <div style="text-align: center; padding: 12px; background: #f9fafb; border-radius: 6px;">
+                            <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">ENTRY</div>
+                            <div style="font-size: 16px; font-weight: 600; color: #3b82f6;">
+                                $${rec.entryPrice?.toFixed(4) || 'N/A'}
+                            </div>
+                        </div>
+                        <div style="text-align: center; padding: 12px; background: #fef2f2; border-radius: 6px;">
+                            <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">STOP LOSS</div>
+                            <div style="font-size: 16px; font-weight: 600; color: #ef4444;">
+                                $${rec.stopLoss?.toFixed(4) || 'N/A'}
+                            </div>
+                        </div>
+                        <div style="text-align: center; padding: 12px; background: #f0fdf4; border-radius: 6px;">
+                            <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">TARGET 1</div>
+                            <div style="font-size: 16px; font-weight: 600; color: #10b981;">
+                                $${rec.takeProfitLevels?.[0]?.toFixed(4) || 'N/A'}
+                            </div>
+                        </div>
+                        <div style="text-align: center; padding: 12px; background: #f0fdf4; border-radius: 6px;">
+                            <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">TARGET 2</div>
+                            <div style="font-size: 16px; font-weight: 600; color: #10b981;">
+                                $${rec.takeProfitLevels?.[1]?.toFixed(4) || 'N/A'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Key Metrics -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
+                        <div style="padding: 10px; background: #f9fafb; border-radius: 6px; text-align: center;">
+                            <div style="font-size: 11px; color: #6b7280;">POSITION SIZE</div>
+                            <div style="font-size: 15px; font-weight: 600; color: #1f2937; margin-top: 3px;">
+                                ${((rec.positionSize || 0) * 100).toFixed(1)}%
+                            </div>
+                        </div>
+                        <div style="padding: 10px; background: #f9fafb; border-radius: 6px; text-align: center;">
+                            <div style="font-size: 11px; color: #6b7280;">RISK LEVEL</div>
+                            <div style="font-size: 15px; font-weight: 600; color: ${riskColor}; margin-top: 3px;">
+                                ${rec.riskLevel || 'MEDIUM'}
+                            </div>
+                        </div>
+                        <div style="padding: 10px; background: #f9fafb; border-radius: 6px; text-align: center;">
+                            <div style="font-size: 11px; color: #6b7280;">TIMEFRAME</div>
+                            <div style="font-size: 15px; font-weight: 600; color: #1f2937; margin-top: 3px;">
+                                ${rec.timeframe?.replace('-term', '') || 'N/A'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Reasoning -->
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                        <details>
+                            <summary style="cursor: pointer; font-weight: 600; color: #374151; margin-bottom: 10px;">
+                                🧠 AI Reasoning (Click to expand)
+                            </summary>
+                            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e7eb;">
+                                <div style="margin-bottom: 15px;">
+                                    <strong style="color: #10b981;">✅ Bull Case:</strong>
+                                    <p style="margin: 5px 0 0 0; color: #374151; font-size: 13px; line-height: 1.6;">
+                                        ${rec.reasoning?.bullCase || 'Not provided'}
+                                    </p>
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <strong style="color: #ef4444;">⚠️ Bear Case:</strong>
+                                    <p style="margin: 5px 0 0 0; color: #374151; font-size: 13px; line-height: 1.6;">
+                                        ${rec.reasoning?.bearCase || 'Not provided'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #3b82f6;">🎯 Conclusion:</strong>
+                                    <p style="margin: 5px 0 0 0; color: #374151; font-size: 13px; line-height: 1.6;">
+                                        ${rec.reasoning?.conclusion || 'Not provided'}
+                                    </p>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                    
+                    <!-- Key Factors -->
+                    ${rec.keyFactors && rec.keyFactors.length > 0 ? `
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: #374151; font-size: 13px;">🔑 Key Factors:</strong>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+                                ${rec.keyFactors.map(factor => `
+                                    <span style="background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 4px; font-size: 12px;">
+                                        ${factor}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Action Button -->
+                    <button class="button" onclick="window.analyzeDiscovered('${rec.symbol || ''}')" style="width: 100%; padding: 12px; font-size: 15px; font-weight: 600;">
+                        📊 View Full Analysis
+                    </button>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+    }
+    
+    results.innerHTML = html;
 }
