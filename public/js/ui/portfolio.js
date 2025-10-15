@@ -194,6 +194,18 @@ export async function loadPortfolioChart() {
 
         const ctx = document.getElementById('portfolioChart');
         if (!ctx) return;
+        
+        // Get the container dimensions
+        const container = ctx.parentElement;
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+        
+        // Set canvas size to match container (native resolution, not CSS)
+        const dpr = window.devicePixelRatio || 1;
+        ctx.width = containerWidth * dpr;
+        ctx.height = containerHeight * dpr;
+        ctx.style.width = containerWidth + 'px';
+        ctx.style.height = containerHeight + 'px';
 
         // Destroy existing chart if it exists
         if (portfolioChart) {
@@ -214,8 +226,8 @@ export async function loadPortfolioChart() {
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: true,
+                responsive: false,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         display: false
@@ -233,6 +245,25 @@ export async function loadPortfolioChart() {
                 }
             }
         });
+        
+        // Handle window resize
+        const resizeObserver = new ResizeObserver(() => {
+            if (portfolioChart && container) {
+                const newWidth = container.clientWidth;
+                const newHeight = container.clientHeight;
+                const dpr = window.devicePixelRatio || 1;
+                
+                ctx.width = newWidth * dpr;
+                ctx.height = newHeight * dpr;
+                ctx.style.width = newWidth + 'px';
+                ctx.style.height = newHeight + 'px';
+                
+                portfolioChart.resize();
+            }
+        });
+        
+        resizeObserver.observe(container);
+        
     } catch (error) {
         console.error('Failed to load portfolio chart:', error);
     }

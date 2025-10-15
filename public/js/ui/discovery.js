@@ -717,7 +717,7 @@ function displayRecommendations(data, maxAnalyzed) {
                     
                     <!-- Price Levels -->
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
-                        <div class="recommendation-info-box">
+                        <div class="recommendation-info-box" style="background:#ffffff;">
                             <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 5px;">ENTRY</div>
                             <div style="font-size: 16px; font-weight: 600; color: #3b82f6;">
                                 $${rec.entryPrice?.toFixed(4) || 'N/A'}
