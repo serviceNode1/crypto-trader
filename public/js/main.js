@@ -10,6 +10,7 @@ import { initializeTheme } from './utils/theme.js';
 import { loadPortfolio, loadPerformance, loadRisk, loadPortfolioChart } from './ui/portfolio.js';
 import { loadTrades } from './ui/trades.js';
 import { loadRecommendations, refreshAnalysisTimeDisplay } from './ui/recommendations.js';
+import { loadAIReviewLogs, toggleAIReviewLogs } from './ui/ai-review-logs.js';
 import { toggleCardCollapse, initializeCardStates } from './ui/cards.js';
 import { openInfoModal, closeInfoModal, switchTab } from './ui/modals.js';
 import { 
@@ -143,6 +144,8 @@ window.formatPrice = formatPrice;
 window.formatNumber = formatNumber;
 window.renderSparkline = renderSparkline;
 window.getScoreColor = getScoreColor;
+window.loadAIReviewLogs = loadAIReviewLogs;
+window.toggleAIReviewLogs = toggleAIReviewLogs;
 
 // Start the app
 if (document.readyState === 'loading') {

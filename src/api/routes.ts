@@ -1093,4 +1093,35 @@ router.delete('/coin-mapping/:symbol', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/ai-review-logs - Get AI review logs
+ */
+router.get('/ai-review-logs', async (req: Request, res: Response) => {
+  try {
+    const { getRecentAIReviewLogs, getAIReviewStats } = await import('../services/logging/aiReviewLogger');
+    
+    const limit = parseInt(req.query.limit as string) || 50;
+    const [logs, stats] = await Promise.all([
+      getRecentAIReviewLogs(limit),
+      getAIReviewStats()
+    ]);
+    
+    res.json({
+      logs,
+      stats: {
+        totalReviews: parseInt(stats.total_reviews) || 0,
+        successfulReviews: parseInt(stats.successful_reviews) || 0,
+        failedReviews: parseInt(stats.failed_reviews) || 0,
+        totalBuyRecommendations: parseInt(stats.total_buy_recommendations) || 0,
+        totalSellRecommendations: parseInt(stats.total_sell_recommendations) || 0,
+        avgDurationMs: Math.round(parseFloat(stats.avg_duration_ms) || 0),
+        lastReviewTime: stats.last_review_time
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to get AI review logs', { error });
+    res.status(500).json({ error: 'Failed to retrieve AI review logs' });
+  }
+});
+
 export default router;

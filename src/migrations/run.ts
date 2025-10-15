@@ -27,6 +27,10 @@ async function runMigrations() {
         executed_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    
+    // Initialize AI review log table
+    const { initAIReviewLogTable } = await import('../services/logging/aiReviewLogger');
+    await initAIReviewLogTable();
 
     // Get list of executed migrations
     const executedResult = await query(

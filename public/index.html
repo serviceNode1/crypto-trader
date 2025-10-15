@@ -162,11 +162,25 @@
                         <span id="next-review-time"></span>
                         <span id="active-recommendations-count"></span>
                     </div>
+                    <button class="button" onclick="event.stopPropagation(); toggleAIReviewLogs();" style="padding: 6px 12px; font-size: 13px; background: #6b7280;">
+                        📋 View Logs
+                    </button>
                     <button class="collapse-btn" title="Collapse/Expand">▼</button>
                 </div>
             </h2>
             <div id="recommendations-content" class="card-content">
                 <div id="recommendations-list" class="loading">Loading...</div>
+                
+                <!-- AI Review Logs Panel -->
+                <div id="ai-review-logs-panel" style="display: none; margin-top: 30px; padding-top: 30px; border-top: 2px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0; color: var(--text-primary);">📋 AI Review Logs</h3>
+                        <button onclick="loadAIReviewLogs()" class="button" style="padding: 6px 12px; font-size: 13px;">
+                            ↻ Refresh
+                        </button>
+                    </div>
+                    <div id="ai-review-logs-content" class="loading">Loading logs...</div>
+                </div>
             </div>
         </div>
 

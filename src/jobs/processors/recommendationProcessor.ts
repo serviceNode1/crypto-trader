@@ -2,6 +2,7 @@ import { Job } from 'bull';
 import { generateActionableRecommendations } from '../../services/discovery/opportunityFinder';
 import { query } from '../../config/database';
 import { logger } from '../../utils/logger';
+import { logAIReview, updateAIReviewLog } from '../../services/logging/aiReviewLogger';
 
 interface RecommendationJobData {
   symbol?: string;
@@ -48,10 +49,22 @@ async function storeRecommendation(recommendation: any): Promise<void> {
  */
 export async function processRecommendation(job: Job<RecommendationJobData>): Promise<void> {
   const { maxBuy = 3, maxSell = 3 } = job.data;
+  const startTime = Date.now();
   
   logger.info('🚀 Processing recommendation job with new opportunity-based workflow');
   
+  // Create initial log entry
+  const logId = await logAIReview({
+    reviewType: 'scheduled',
+    status: 'started',
+    phase: 'discovery',
+    timestamp: new Date()
+  });
+  
   try {
+    // Phase 1: Discovery
+    await updateAIReviewLog(logId, { phase: 'discovery', status: 'started' });
+    
     // Use the new intelligent opportunity finder
     // This will:
     // 1. Run discovery (or use cached results)
@@ -60,7 +73,11 @@ export async function processRecommendation(job: Job<RecommendationJobData>): Pr
     // 4. Send only top candidates to AI
     // 5. Only return BUY/SELL recommendations (no HOLD)
     
+    await updateAIReviewLog(logId, { phase: 'ai_analysis' });
     const result = await generateActionableRecommendations(maxBuy, maxSell);
+    
+    // Phase 2: Storing recommendations
+    await updateAIReviewLog(logId, { phase: 'storing' });
     
     // Store buy recommendations
     for (const rec of result.buyRecommendations) {
@@ -72,10 +89,44 @@ export async function processRecommendation(job: Job<RecommendationJobData>): Pr
       await storeRecommendation(rec);
     }
     
-    logger.info(`✅ Recommendation job completed: ${result.buyRecommendations.length} BUY, ${result.sellRecommendations.length} SELL`);
+    // Calculate duration
+    const duration = Date.now() - startTime;
+    
+    // Update log with final results
+    await updateAIReviewLog(logId, {
+      status: 'completed',
+      phase: 'completed',
+      coinsAnalyzed: (result as any).metadata?.totalAnalyzed || 0,
+      buyRecommendations: result.buyRecommendations.length,
+      sellRecommendations: result.sellRecommendations.length,
+      skippedOpportunities: (result.skipped?.buy || 0) + (result.skipped?.sell || 0),
+      duration,
+      metadata: {
+        maxBuy,
+        maxSell,
+        skipped: result.skipped,
+        totalAnalyzed: (result as any).metadata?.totalAnalyzed || 0
+      }
+    });
+    
+    logger.info(`✅ Recommendation job completed: ${result.buyRecommendations.length} BUY, ${result.sellRecommendations.length} SELL (${duration}ms)`);
     logger.info(`⏭️  Skipped ${result.skipped.buy} lower-priority buy opportunities, ${result.skipped.sell} sell opportunities`);
     
   } catch (error) {
+    const duration = Date.now() - startTime;
+    
+    // Log the failure
+    await updateAIReviewLog(logId, {
+      status: 'failed',
+      errorMessage: error instanceof Error ? error.message : String(error),
+      duration,
+      metadata: {
+        maxBuy,
+        maxSell,
+        error: error instanceof Error ? error.stack : String(error)
+      }
+    });
+    
     logger.error('❌ Recommendation job failed', { error });
     throw error;
   }
