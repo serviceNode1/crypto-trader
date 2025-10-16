@@ -27,12 +27,37 @@
                     </div>
                     <p class="subtitle">AI-Powered Paper Trading System | Starting Capital: $10,000</p>
                 </div>
-                <div style="display: flex; gap: 10px;">
+                <div style="display: flex; gap: 10px; align-items: center;">
                     <button class="info-button" onclick="openSettingsModal()" title="Trading Settings">
                         ⚙️
                     </button>
                     <button class="info-button" onclick="openInfoModal()" title="Trading Guide & Information">
                         💡
+                    </button>
+                    <!-- Account Dropdown -->
+                    <div class="account-dropdown" id="accountDropdown" style="display: none;">
+                        <button class="account-btn" onclick="toggleAccountMenu()">
+                            <img id="userAvatar" class="user-avatar" src="" alt="" style="display: none;">
+                            <span id="userName">👤</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </button>
+                        <div class="account-menu" id="accountMenu" style="display: none;">
+                            <div class="account-info">
+                                <div id="userEmail" class="user-email"></div>
+                                <div id="userRole" class="user-role"></div>
+                            </div>
+                            <div class="menu-divider"></div>
+                            <button class="menu-item" onclick="window.location.href='/account.html'">
+                                👤 Account Settings
+                            </button>
+                            <button class="menu-item" onclick="handleLogout()">
+                                🚪 Logout
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Login Button (shown when not authenticated) -->
+                    <button id="loginButton" class="button" onclick="window.location.href='/login.html'" style="display: none; padding: 8px 16px;">
+                        Sign In
                     </button>
                 </div>
             </div>
@@ -1729,6 +1754,88 @@
             </div>
         </div>
     </div>
+
+    <!-- Load auth utility -->
+    <script src="/js/auth.js"></script>
+
+    <!-- Account Management Script -->
+    <script>
+        // Initialize account dropdown
+        function initAccountDropdown() {
+            const accountDropdown = document.getElementById('accountDropdown');
+            const loginButton = document.getElementById('loginButton');
+            const userName = document.getElementById('userName');
+            const userEmail = document.getElementById('userEmail');
+            const userRole = document.getElementById('userRole');
+            const userAvatar = document.getElementById('userAvatar');
+
+            if (auth.isAuthenticated()) {
+                const user = auth.getUser();
+                
+                // Show account dropdown, hide login button
+                accountDropdown.style.display = 'block';
+                loginButton.style.display = 'none';
+
+                // Set user info
+                if (user.displayName) {
+                    userName.textContent = user.displayName.split(' ')[0]; // First name
+                } else {
+                    userName.textContent = user.email.split('@')[0];
+                }
+
+                userEmail.textContent = user.email;
+                userRole.textContent = user.isAdmin ? '👑 Admin' : '👤 User';
+
+                // Set avatar if Google user
+                if (user.profilePictureUrl) {
+                    userAvatar.src = user.profilePictureUrl;
+                    userAvatar.style.display = 'block';
+                    userName.style.display = 'none';
+                }
+            } else {
+                // Show login button, hide account dropdown
+                accountDropdown.style.display = 'none';
+                loginButton.style.display = 'block';
+            }
+        }
+
+        // Toggle account menu
+        function toggleAccountMenu() {
+            const accountMenu = document.getElementById('accountMenu');
+            const accountBtn = document.querySelector('.account-btn');
+            
+            if (accountMenu.style.display === 'none' || !accountMenu.style.display) {
+                accountMenu.style.display = 'block';
+                accountBtn.classList.add('active');
+            } else {
+                accountMenu.style.display = 'none';
+                accountBtn.classList.remove('active');
+            }
+        }
+
+        // Close account menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const accountDropdown = document.getElementById('accountDropdown');
+            const accountMenu = document.getElementById('accountMenu');
+            const accountBtn = document.querySelector('.account-btn');
+            
+            if (accountDropdown && !accountDropdown.contains(event.target)) {
+                accountMenu.style.display = 'none';
+                if (accountBtn) accountBtn.classList.remove('active');
+            }
+        });
+
+        // Handle logout
+        async function handleLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                await auth.logout();
+                window.location.href = '/login.html';
+            }
+        }
+
+        // Initialize on page load
+        initAccountDropdown();
+    </script>
 
     <!-- Load the main modular JavaScript -->
     <script type="module" src="/js/main.js"></script>

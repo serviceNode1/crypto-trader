@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Crypto AI Trading</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 48px;
+      width: 100%;
+      max-width: 440px;
+      animation: slideUp 0.4s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo h1 {
+      font-size: 28px;
+      color: #1a202c;
+      margin-bottom: 8px;
+    }
+
+    .logo p {
+      color: #718096;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 500;
+      color: #2d3748;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      margin-bottom: 16px;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 24px 0;
+      position: relative;
+    }
+
+    .divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #e2e8f0;
+    }
+
+    .divider span {
+      background: white;
+      padding: 0 16px;
+      color: #718096;
+      font-size: 13px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .google-btn-container {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .error-message {
+      background: #fed7d7;
+      color: #c53030;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .success-message {
+      background: #c6f6d5;
+      color: #2f855a;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .links {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 14px;
+      color: #718096;
+    }
+
+    .links a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .links a:hover {
+      text-decoration: underline;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .password-toggle {
+      position: relative;
+    }
+
+    .password-toggle button {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #718096;
+      cursor: pointer;
+      padding: 4px;
+      font-size: 12px;
+    }
+
+    .password-toggle button:hover {
+      color: #2d3748;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo">
+      <h1>🚀 Crypto AI Trading</h1>
+      <p>Sign in to your account</p>
+    </div>
+
+    <div id="errorMessage" class="error-message"></div>
+    <div id="successMessage" class="success-message"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" required autocomplete="email" placeholder="your@email.com">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="password-toggle">
+          <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+          <button type="button" id="togglePassword">Show</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="loginBtn">
+        Sign In
+      </button>
+    </form>
+
+    <div class="divider">
+      <span>OR</span>
+    </div>
+
+    <div class="google-btn-container">
+      <div id="g_id_onload"
+           data-client_id="GOOGLE_CLIENT_ID_PLACEHOLDER"
+           data-callback="handleGoogleSignIn"
+           data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin"
+           data-type="standard"
+           data-size="large"
+           data-theme="outline"
+           data-text="signin_with"
+           data-shape="rectangular"
+           data-logo_alignment="left"
+           data-width="344">
+      </div>
+    </div>
+
+    <div class="links">
+      Don't have an account? <a href="/signup.html">Sign up</a>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/google-init.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (auth.redirectIfAuthenticated()) {
+      // Will redirect, no need for further code
+    }
+
+    // Password toggle
+    document.getElementById('togglePassword').addEventListener('click', function() {
+      const passwordInput = document.getElementById('password');
+      const type = passwordInput.type === 'password' ? 'text' : 'password';
+      passwordInput.type = type;
+      this.textContent = type === 'password' ? 'Show' : 'Hide';
+    });
+
+    // Form submission
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const loginBtn = document.getElementById('loginBtn');
+      const errorDiv = document.getElementById('errorMessage');
+
+      // Clear previous errors
+      errorDiv.style.display = 'none';
+
+      // Disable button and show loading
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<span class="loading-spinner"></span>Signing in...';
+
+      try {
+        const result = await auth.login(email, password);
+
+        if (result.success) {
+          // Show success message
+          const successDiv = document.getElementById('successMessage');
+          successDiv.textContent = 'Login successful! Redirecting...';
+          successDiv.style.display = 'block';
+
+          // Redirect after short delay
+          setTimeout(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnUrl = urlParams.get('return') || '/';
+            window.location.href = decodeURIComponent(returnUrl);
+          }, 500);
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (error) {
+        errorDiv.textContent = error.message || 'Login failed. Please try again.';
+        errorDiv.style.display = 'block';
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Sign In';
+      }
+    });
+
+    // Google Sign-In callback
+    async function handleGoogleSignIn(response) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.style.display = 'none';
+
+      try {
+        const result = await auth.loginWithGoogle(response.credential);
+
+        if (result.success) {
+          const successDiv = document.getElementById('successMessage');
+          successDiv.textContent = 'Google sign-in successful! Redirecting...';
+          successDiv.style.display = 'block';
+
+          setTimeout(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnUrl = urlParams.get('return') || '/';
+            window.location.href = decodeURIComponent(returnUrl);
+          }, 500);
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (error) {
+        errorDiv.textContent = error.message || 'Google sign-in failed. Please try again.';
+        errorDiv.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>

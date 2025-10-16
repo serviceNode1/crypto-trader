@@ -204,6 +204,20 @@ router.get(
 );
 
 /**
+ * GET /api/auth/config
+ * Get public auth configuration (Google Client ID, etc.)
+ */
+router.get('/config', async (_req: Request, res: Response): Promise<void> => {
+  res.json({
+    success: true,
+    data: {
+      googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+      hasGoogleAuth: !!process.env.GOOGLE_CLIENT_ID,
+    },
+  });
+});
+
+/**
  * GET /api/auth/status
  * Check authentication status (no token required)
  */
