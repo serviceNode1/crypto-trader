@@ -96,16 +96,18 @@ export async function processRecommendation(job: Job<RecommendationJobData>): Pr
     await updateAIReviewLog(logId, {
       status: 'completed',
       phase: 'completed',
-      coinsAnalyzed: (result as any).metadata?.totalAnalyzed || 0,
+      coinsAnalyzed: result.metadata.totalAnalyzed,
       buyRecommendations: result.buyRecommendations.length,
       sellRecommendations: result.sellRecommendations.length,
-      skippedOpportunities: (result.skipped?.buy || 0) + (result.skipped?.sell || 0),
+      skippedOpportunities: (result.skipped.buy || 0) + (result.skipped.sell || 0),
       duration,
       metadata: {
         maxBuy,
         maxSell,
         skipped: result.skipped,
-        totalAnalyzed: (result as any).metadata?.totalAnalyzed || 0
+        totalAnalyzed: result.metadata.totalAnalyzed,
+        totalOpportunities: result.metadata.totalOpportunities,
+        aiRejected: result.metadata.aiRejected
       }
     });
     

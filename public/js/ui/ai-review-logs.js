@@ -131,12 +131,17 @@ function displayAIReviewLogs(logs, stats) {
                 </div>
                 
                 ${log.status === 'completed' ? `
-                    <div style="display: flex; gap: 20px; font-size: 13px; color: var(--text-muted);">
+                    <div style="display: flex; gap: 20px; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">
                         <span>📊 ${log.coinsAnalyzed || 0} coins analyzed</span>
                         <span style="color: #10b981;">📈 ${log.buyRecommendations || 0} BUY</span>
                         <span style="color: #ef4444;">📉 ${log.sellRecommendations || 0} SELL</span>
                         <span>⏭️ ${log.skippedOpportunities || 0} skipped</span>
                     </div>
+                    ${log.metadata?.aiRejected ? `
+                        <div style="font-size: 12px; color: var(--text-muted); padding: 8px; background: var(--bg); border-radius: 4px;">
+                            🤖 AI rejected: ${log.metadata.aiRejected.buy} BUY + ${log.metadata.aiRejected.sell} SELL (recommended HOLD instead)
+                        </div>
+                    ` : ''}
                 ` : ''}
                 
                 ${log.errorMessage ? `

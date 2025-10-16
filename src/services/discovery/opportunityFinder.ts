@@ -238,6 +238,11 @@ export async function generateActionableRecommendations(
   buyRecommendations: any[];
   sellRecommendations: any[];
   skipped: { buy: number; sell: number };
+  metadata: { 
+    totalAnalyzed: number; 
+    totalOpportunities: number;
+    aiRejected: { buy: number; sell: number };
+  };
 }> {
   try {
     if (debugMode) {
@@ -255,6 +260,8 @@ export async function generateActionableRecommendations(
 
     const buyRecommendations = [];
     const sellRecommendations = [];
+    let aiRejectedBuy = 0;
+    let aiRejectedSell = 0;
 
     // Generate AI recommendations for top buy opportunities
     for (const opp of topBuyOpportunities) {
@@ -293,7 +300,8 @@ export async function generateActionableRecommendations(
           
           logger.info(`✅ AI confirmed BUY for ${opp.symbol} (confidence: ${recommendation.confidence}%)`);
         } else {
-          logger.info(`⚠️  AI recommended ${recommendation.action} for ${opp.symbol}, skipping`);
+          aiRejectedBuy++;
+          logger.info(`⚠️  AI recommended ${recommendation.action} for ${opp.symbol}, not storing (rejected)`);
         }
       } catch (error) {
         logger.error(`Failed to generate recommendation for ${opp.symbol}`, { error });
@@ -337,7 +345,8 @@ export async function generateActionableRecommendations(
           
           logger.info(`✅ AI confirmed SELL for ${opp.symbol} (confidence: ${recommendation.confidence}%)`);
         } else {
-          logger.info(`⚠️  AI recommended ${recommendation.action} for ${opp.symbol}, skipping`);
+          aiRejectedSell++;
+          logger.info(`⚠️  AI recommended ${recommendation.action} for ${opp.symbol}, not storing (rejected)`);
         }
       } catch (error) {
         logger.error(`Failed to generate recommendation for ${opp.symbol}`, { error });
@@ -348,14 +357,25 @@ export async function generateActionableRecommendations(
       buy: opportunities.buyOpportunities.length - topBuyOpportunities.length,
       sell: opportunities.sellOpportunities.length - topSellOpportunities.length,
     };
+    
+    const totalAnalyzed = topBuyOpportunities.length + topSellOpportunities.length;
+    const totalOpportunities = opportunities.buyOpportunities.length + opportunities.sellOpportunities.length;
 
     logger.info(`📊 AI Analysis Complete: ${buyRecommendations.length} BUY, ${sellRecommendations.length} SELL confirmed`);
-    logger.info(`⏭️  Skipped: ${skipped.buy} buy opportunities, ${skipped.sell} sell opportunities (lower priority)`);
+    logger.info(`⏭️  Analyzed ${totalAnalyzed} coins, AI rejected ${aiRejectedBuy + aiRejectedSell}, skipped ${skipped.buy + skipped.sell} lower-priority`);
 
     return {
       buyRecommendations,
       sellRecommendations,
       skipped,
+      metadata: {
+        totalAnalyzed,
+        totalOpportunities,
+        aiRejected: {
+          buy: aiRejectedBuy,
+          sell: aiRejectedSell,
+        },
+      },
     };
   } catch (error) {
     logger.error('Failed to generate actionable recommendations', { error });
