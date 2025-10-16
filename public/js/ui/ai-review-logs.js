@@ -122,7 +122,6 @@ function displayAIReviewLogs(logs, stats) {
                         <span style="margin-left: 10px; font-size: 13px; padding: 3px 8px; background: ${statusColor}; color: white; border-radius: 4px; font-weight: 600;">
                             ${statusIcon} ${log.status.toUpperCase()}
                         </span>
-                        ${log.phase ? `<span style="margin-left: 8px; font-size: 12px; color: var(--text-muted);">Phase: ${log.phase}</span>` : ''}
                     </div>
                     <div style="text-align: right; font-size: 12px; color: var(--text-muted);">
                         ${timeAgo(log.timestamp)}<br>
@@ -136,27 +135,13 @@ function displayAIReviewLogs(logs, stats) {
                         <span style="color: #10b981;">📈 ${log.buyRecommendations || 0} BUY</span>
                         <span style="color: #ef4444;">📉 ${log.sellRecommendations || 0} SELL</span>
                         <span>⏭️ ${log.skippedOpportunities || 0} skipped</span>
-                    </div>
-                    ${log.metadata?.aiRejected ? `
-                        <div style="font-size: 12px; color: var(--text-muted); padding: 8px; background: var(--bg); border-radius: 4px;">
-                            🤖 AI rejected: ${log.metadata.aiRejected.buy} BUY + ${log.metadata.aiRejected.sell} SELL (recommended HOLD instead)
-                        </div>
-                    ` : ''}
+                    </div>   
                 ` : ''}
                 
                 ${log.errorMessage ? `
                     <div style="margin-top: 10px; padding: 10px; background: #fee2e2; border-radius: 4px; font-size: 13px; color: #991b1b;">
                         <strong>Error:</strong> ${log.errorMessage}
                     </div>
-                ` : ''}
-                
-                ${log.metadata && Object.keys(log.metadata).length > 0 ? `
-                    <details style="margin-top: 10px; font-size: 12px;">
-                        <summary style="cursor: pointer; color: var(--text-muted); user-select: none;">
-                            View Metadata
-                        </summary>
-                        <pre style="margin-top: 8px; padding: 10px; background: var(--bg-card); border-radius: 4px; overflow-x: auto; font-size: 11px;">${JSON.stringify(log.metadata, null, 2)}</pre>
-                    </details>
                 ` : ''}
             </div>
         `;
