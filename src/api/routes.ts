@@ -22,8 +22,12 @@ import { query } from '../config/database';
 import { testConnection } from '../config/database';
 import { testRedisConnection } from '../config/redis';
 import { apiLogger as logger } from '../utils/logger';
+import authRoutes from '../routes/auth';
 
 const router = Router();
+
+// Mount auth routes
+router.use('/auth', authRoutes);
 
 /**
  * GET /api/health - Health check endpoint
