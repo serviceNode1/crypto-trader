@@ -75,6 +75,9 @@ export async function analyzeCrypto() {
         requestAnimationFrame(() => {
             resultDiv.style.height = 'auto';
             resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Update parent card height to accommodate the analysis content
+            updateParentCardHeight();
         });
         
     } catch (error) {
@@ -94,6 +97,9 @@ export async function analyzeCrypto() {
         requestAnimationFrame(() => {
             resultDiv.style.height = 'auto';
             resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Update parent card height for error display
+            updateParentCardHeight();
         });
     }
 }
@@ -103,6 +109,9 @@ export async function analyzeCrypto() {
  */
 export function closeAnalysis() {
     document.getElementById('analysisResult').style.display = 'none';
+    
+    // Update parent card height after closing
+    setTimeout(() => updateParentCardHeight(), 50);
 }
 
 /**
@@ -416,4 +425,25 @@ function formatAnalysisResults(data) {
             ` : ''}
         </div>
     `;
+}
+
+/**
+ * Update the parent card's max-height to accommodate new content
+ */
+function updateParentCardHeight() {
+    const cardContent = document.getElementById('crypto-selector-content');
+    if (!cardContent) {
+        console.warn('crypto-selector-content not found');
+        return;
+    }
+    
+    // Don't update if card is collapsed
+    if (cardContent.classList.contains('collapsed')) {
+        return;
+    }
+    
+    // Update max-height to current scroll height
+    const newHeight = cardContent.scrollHeight + 'px';
+    cardContent.style.maxHeight = newHeight;
+    console.log('Updated crypto-selector-content max-height to:', newHeight);
 }

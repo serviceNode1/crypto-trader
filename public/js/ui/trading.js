@@ -41,6 +41,9 @@ export function toggleAdvancedOptions() {
     const checkbox = document.getElementById('addStopLoss');
     const options = document.getElementById('advancedOptions');
     options.style.display = checkbox.checked ? 'block' : 'none';
+    
+    // Update parent card height after toggling options
+    setTimeout(() => updateManualTradingCardHeight(), 50);
 }
 
 export function updateQuantityPlaceholder() {
@@ -77,6 +80,7 @@ export async function previewTrade() {
                 ⚠️ Please enter a valid symbol and quantity
             </div>
         `;
+        setTimeout(() => updateManualTradingCardHeight(), 50);
         return;
     }
 
@@ -89,6 +93,7 @@ export async function previewTrade() {
                 ⚠️ Unable to fetch portfolio data
             </div>
         `;
+        setTimeout(() => updateManualTradingCardHeight(), 50);
         return;
     }
 
@@ -126,6 +131,7 @@ export async function previewTrade() {
                     ⚠️ Insufficient funds! Trade cost: $${totalCost.toFixed(2)}, Portfolio value: $${totalValue.toFixed(2)}
                 </div>
             `;
+            setTimeout(() => updateManualTradingCardHeight(), 50);
             return;
         }
 
@@ -193,6 +199,9 @@ export async function previewTrade() {
                 </button>
             </div>
         `;
+        
+        // Update parent card height after preview is shown
+        setTimeout(() => updateManualTradingCardHeight(), 50);
 
     } catch (error) {
         console.error('Preview error:', error);
@@ -202,6 +211,9 @@ export async function previewTrade() {
                 ⚠️ Unable to fetch price for ${symbol}. Please check the symbol and try again.
             </div>
         `;
+        
+        // Update parent card height after error is shown
+        setTimeout(() => updateManualTradingCardHeight(), 50);
     }
 }
 
@@ -667,4 +679,29 @@ export async function saveProtection(symbol, type) {
         console.error('Failed to save protection:', error);
         await showError('Update Failed', error.message);
     }
+}
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Update the manual trading card's max-height to accommodate new content
+ */
+function updateManualTradingCardHeight() {
+    const cardContent = document.getElementById('manual-trading-content');
+    if (!cardContent) {
+        console.warn('manual-trading-content not found');
+        return;
+    }
+    
+    // Don't update if card is collapsed
+    if (cardContent.classList.contains('collapsed')) {
+        return;
+    }
+    
+    // Update max-height to current scroll height
+    const newHeight = cardContent.scrollHeight + 'px';
+    cardContent.style.maxHeight = newHeight;
+    console.log('Updated manual-trading-content max-height to:', newHeight);
 }
