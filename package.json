@@ -10,6 +10,8 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "migrate": "ts-node src/migrations/run.ts",
+    "migrate:cleanup": "ts-node src/scripts/cleanupMigrations.ts",
+    "verify-schema": "ts-node src/scripts/verifySchema.ts",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "analyze": "ts-node src/scripts/analyze.ts",
