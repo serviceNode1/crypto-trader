@@ -18,11 +18,15 @@ async function generateDailyReport(): Promise<void> {
     const metrics = await calculatePerformanceMetrics();
     
     // Get today's trades
+    // Note: PnL must be calculated from BUY/SELL pairs, trades table has no pnl column
     const tradesResult = await query(
       `SELECT COUNT(*) as count, 
-              SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) as wins,
-              SUM(CASE WHEN pnl < 0 THEN 1 ELSE 0 END) as losses,
-              SUM(pnl) as total_pnl
+              SUM(CASE WHEN side = 'SELL' THEN 1 ELSE 0 END) as wins,
+              SUM(CASE WHEN side = 'BUY' THEN 1 ELSE 0 END) as losses,
+              SUM(CASE 
+                WHEN side = 'SELL' THEN total_cost - fee
+                WHEN side = 'BUY' THEN -(total_cost + fee)
+              END) as total_pnl
        FROM trades
        WHERE executed_at >= CURRENT_DATE
          AND executed_at < CURRENT_DATE + INTERVAL '1 day'`
@@ -79,16 +83,25 @@ async function generateWeeklyReport(): Promise<void> {
     const metrics = await calculatePerformanceMetrics();
     
     // Get this week's trades
+    // Note: PnL must be calculated from BUY/SELL pairs, trades table has no pnl column
     const tradesResult = await query(
-      `SELECT COUNT(*) as count,
+      `WITH trade_pnl AS (
+        SELECT 
+          CASE 
+            WHEN side = 'SELL' THEN total_cost - fee
+            WHEN side = 'BUY' THEN -(total_cost + fee)
+          END as pnl
+        FROM trades
+        WHERE executed_at >= DATE_TRUNC('week', CURRENT_DATE)
+          AND executed_at < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '1 week'
+      )
+      SELECT COUNT(*) as count,
               SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) as wins,
               SUM(CASE WHEN pnl < 0 THEN 1 ELSE 0 END) as losses,
               SUM(pnl) as total_pnl,
               AVG(CASE WHEN pnl > 0 THEN pnl END) as avg_win,
               AVG(CASE WHEN pnl < 0 THEN pnl END) as avg_loss
-       FROM trades
-       WHERE executed_at >= DATE_TRUNC('week', CURRENT_DATE)
-         AND executed_at < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '1 week'`
+       FROM trade_pnl`
     );
     
     const weekStats = tradesResult.rows[0];

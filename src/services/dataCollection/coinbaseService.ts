@@ -7,6 +7,17 @@ import { dataLogger as logger } from '../../utils/logger';
 
 const BASE_URL = 'https://api.exchange.coinbase.com';
 
+// Symbols not available on Coinbase (exchange-specific coins)
+const COINBASE_UNSUPPORTED = [
+  'BNB',  // Binance Coin (exclusive to Binance)
+  'FTT',  // FTX Token (FTX exchange)
+  'HT',   // Huobi Token (Huobi exchange)
+  'OKB',  // OKEx Token (OKEx exchange)
+  'LEO',  // UNUS SED LEO (Bitfinex exchange)
+  'CRO',  // Crypto.com Coin (Crypto.com exchange)
+  'KCS',  // KuCoin Shares (KuCoin exchange)
+];
+
 // API Keys (optional - public endpoints work without auth)
 const API_KEY = process.env.COINBASE_API_KEY || '';
 const API_SECRET = process.env.COINBASE_API_SECRET || '';
@@ -79,7 +90,15 @@ export async function getCandlesticks(
   interval: string = '1h',
   limit: number = 100
 ): Promise<Candlestick[]> {
-  const productId = `${symbol.toUpperCase()}-USD`;
+  const symbolUpper = symbol.toUpperCase();
+  
+  // Check if symbol is supported on Coinbase
+  if (COINBASE_UNSUPPORTED.includes(symbolUpper)) {
+    logger.warn(`${symbolUpper} not available on Coinbase (exchange-specific token), returning empty data`);
+    return [];
+  }
+  
+  const productId = `${symbolUpper}-USD`;
   const cacheKey = `coinbase:candles:${productId}:${interval}:${limit}`;
 
   return cacheAside(cacheKey, CACHE_TTL.PRICE, async () => {

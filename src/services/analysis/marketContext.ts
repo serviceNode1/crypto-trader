@@ -193,8 +193,11 @@ async function storeMarketContext(context: MarketContext): Promise<void> {
         sp500_price,
         gold_price,
         vix_index,
-        risk_sentiment
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        vix_price,
+        dxy_price,
+        risk_sentiment,
+        market_timestamp
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
     `,
       [
         context.btcDominance,
@@ -203,9 +206,12 @@ async function storeMarketContext(context: MarketContext): Promise<void> {
         context.traditionalMarkets.sp500,
         context.traditionalMarkets.gold,
         context.traditionalMarkets.vix,
+        context.traditionalMarkets.vix,  // Store in both columns for compatibility
+        context.dxy || null,  // Optional field
         context.riskSentiment,
       ]
     );
+    logger.info('Market context stored successfully');
   } catch (error) {
     logger.error('Failed to store market context', { error });
   }

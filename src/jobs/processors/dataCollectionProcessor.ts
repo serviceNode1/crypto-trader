@@ -185,12 +185,12 @@ async function collectMarketContext(): Promise<void> {
         btc_dominance, total_market_cap, total_volume,
         eth_dominance, altcoin_market_cap, fear_greed_index,
         sp500_price, gold_price, dxy_price, vix_price,
-        risk_sentiment, timestamp
+        risk_sentiment, market_timestamp
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
       [
         context.btcDominance,
         context.totalMarketCap,
-        context.totalVolume,
+        context.totalVolume || null,
         context.ethDominance || null,
         context.altcoinMarketCap || null,
         context.fearGreedIndex || null,
