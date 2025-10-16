@@ -43,7 +43,7 @@ async function testAuth() {
   try {
     logger.info('\nTest 2: Login with default admin');
     const response = await axios.post(`${API_BASE}/auth/login`, {
-      email: 'admin@localhost',
+      email: 'admin@example.com',
       password: 'password123',
     });
 

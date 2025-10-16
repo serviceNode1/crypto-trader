@@ -23,11 +23,13 @@ import { testConnection } from '../config/database';
 import { testRedisConnection } from '../config/redis';
 import { apiLogger as logger } from '../utils/logger';
 import authRoutes from '../routes/auth';
+import googleAuthRoutes from '../routes/googleAuth';
 
 const router = Router();
 
 // Mount auth routes
 router.use('/auth', authRoutes);
+router.use('/auth', googleAuthRoutes);
 
 /**
  * GET /api/health - Health check endpoint

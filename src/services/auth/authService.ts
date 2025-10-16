@@ -4,7 +4,6 @@ import { query } from '../../config/database';
 import { logger } from '../../utils/logger';
 import {
   User,
-  UserSession,
   AuthCredentials,
   RegisterData,
   AuthResponse,
@@ -283,7 +282,7 @@ async function handleFailedLogin(userId: number): Promise<void> {
 /**
  * Create session
  */
-async function createSession(
+export async function createSession(
   userId: number,
   metadata?: { ipAddress?: string; userAgent?: string }
 ): Promise<{
