@@ -207,36 +207,67 @@ class AuthManager {
   }
 
   /**
-   * Make authenticated API request
+   * Get CSRF token from cookie
+   */
+  getCsrfToken() {
+    const match = document.cookie.match(/csrf_token=([^;]+)/);
+    return match ? match[1] : null;
+  }
+
+  /**
+   * Make authenticated fetch request
+   * Automatically includes auth token, CSRF token, and handles token refresh
    */
   async fetch(url, options = {}) {
+    const token = this.getToken();
+
+    // For cookie-based auth, we don't need to send token in header
+    // But we'll keep it for backwards compatibility
     const headers = {
       ...options.headers,
-      'Authorization': `Bearer ${this.token}`,
+      'Content-Type': 'application/json',
     };
 
-    try {
-      let response = await fetch(url, { ...options, headers });
-
-      // If token expired, try to refresh
-      if (response.status === 401 && this.refreshToken) {
-        const refreshResult = await this.refreshAccessToken();
-        if (refreshResult.success) {
-          // Retry request with new token
-          headers['Authorization'] = `Bearer ${this.token}`;
-          response = await fetch(url, { ...options, headers });
-        } else {
-          // Refresh failed, redirect to login
-          window.location.href = '/login.html';
-          return null;
-        }
+    // Add CSRF token for state-changing requests
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method?.toUpperCase())) {
+      const csrfToken = this.getCsrfToken();
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
       }
-
-      return response;
-    } catch (error) {
-      console.error('Fetch error:', error);
-      throw error;
     }
+
+    // Add Authorization header (backwards compatibility with old auth.js)
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: 'include', // Important: send cookies
+    });
+
+    // If token expired, try to refresh
+    if (response.status === 401) {
+      const refreshed = await this.refreshAccessToken();
+      if (refreshed.success) {
+        // Retry request
+        if (token) {
+          headers['Authorization'] = `Bearer ${this.getToken()}`;
+        }
+        return fetch(url, {
+          ...options,
+          headers,
+          credentials: 'include',
+        });
+      } else {
+        // Refresh failed, redirect to login
+        window.location.href = '/login.html';
+        return null;
+      }
+    }
+
+    return response;
   }
 
   /**

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSRF Token Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+        pre { background: #f4f4f4; padding: 15px; border-radius: 5px; }
+        .warning { background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; }
+        .info { background: #d1ecf1; padding: 15px; border-left: 4px solid #0c5460; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>CSRF Token Debug</h1>
+    
+    <div class="warning">
+        <strong>⚠️ Important:</strong> If you see "CSRF Token NOT found", clear your cookies:
+        <ol>
+            <li>Press F12 to open DevTools</li>
+            <li>Go to Application tab → Cookies → http://localhost:3000</li>
+            <li>Delete ALL cookies (especially csrf_token)</li>
+            <li>Refresh this page</li>
+        </ol>
+    </div>
+    
+    <div class="info">
+        <strong>ℹ️ What to expect:</strong>
+        <ul>
+            <li>✅ CSRF token should be found after page refresh</li>
+            <li>✅ Token should be readable by JavaScript</li>
+            <li>✅ Server should confirm the cookie exists</li>
+        </ul>
+    </div>
+    
+    <button onclick="checkCookie()">1. Check CSRF Cookie</button>
+    <button onclick="checkServer()">2. Check Server</button>
+    <button onclick="testLogin()">3. Test Login</button>
+    <button onclick="clearAndRefresh()">🗑️ Clear Cookies & Refresh</button>
+    
+    <pre id="output"></pre>
+
+    <script>
+        function checkCookie() {
+            const allCookies = document.cookie;
+            const csrfMatch = document.cookie.match(/csrf_token=([^;]+)/);
+            const output = document.getElementById('output');
+            
+            output.textContent = 'All cookies:\n' + allCookies + '\n\n';
+            
+            if (csrfMatch) {
+                output.textContent += 'CSRF Token found: ' + csrfMatch[1].substring(0, 20) + '...\n';
+            } else {
+                output.textContent += 'CSRF Token NOT found!\n';
+                output.textContent += '\nRefresh the page to get a CSRF token set.';
+            }
+        }
+
+        async function testLogin() {
+            const output = document.getElementById('output');
+            const csrfToken = document.cookie.match(/csrf_token=([^;]+)/)?.[1];
+            
+            output.textContent = 'Testing login with CSRF token: ' + (csrfToken ? csrfToken.substring(0, 20) + '...' : 'NONE') + '\n\n';
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken || '',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        email: 'test@test.com',
+                        password: 'test123'
+                    }),
+                });
+                
+                const data = await response.json();
+                output.textContent += 'Response status: ' + response.status + '\n';
+                output.textContent += 'Response: ' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                output.textContent += 'Error: ' + error.message;
+            }
+        }
+
+        async function checkServer() {
+            const output = document.getElementById('output');
+            output.textContent = 'Checking server...\n\n';
+            
+            try {
+                const response = await fetch('/api/auth/debug/csrf', { credentials: 'include' });
+                const data = await response.json();
+                output.textContent += 'Server response:\n' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                output.textContent += 'Error: ' + error.message;
+            }
+        }
+
+        function clearAndRefresh() {
+            // Clear all cookies
+            document.cookie.split(";").forEach(function(c) {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+            
+            alert('Cookies cleared! Page will refresh.');
+            window.location.reload();
+        }
+
+        // Check on page load
+        window.addEventListener('load', () => {
+            setTimeout(checkCookie, 100);
+        });
+    </script>
+</body>
+</html>

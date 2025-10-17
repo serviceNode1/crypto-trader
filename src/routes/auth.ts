@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticate } from '../middleware/auth';
+import { authenticate, requireAdmin } from '../middleware/auth';
 import {
   registerUser,
   loginUser,
@@ -14,6 +14,8 @@ import {
   refreshTokenSchema,
 } from '../validators/authValidators';
 import { logger } from '../utils/logger';
+import { setAuthCookies, clearAuthCookies, getRefreshTokenFromCookie } from '../services/auth/cookieAuthService';
+import { authRateLimit } from '../middleware/security';
 
 const router = Router();
 
@@ -23,6 +25,7 @@ const router = Router();
  */
 router.post(
   '/register',
+  authRateLimit,
   validate(registerSchema),
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -35,6 +38,9 @@ router.post(
       });
 
       logger.info('User registered via API', { email });
+
+      // Set httpOnly cookies (secure)
+      setAuthCookies(res, result.token, result.refreshToken);
 
       res.status(201).json({
         success: true,
@@ -63,6 +69,7 @@ router.post(
  */
 router.post(
   '/login',
+  authRateLimit,
   validate(loginSchema),
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -77,6 +84,9 @@ router.post(
       );
 
       logger.info('User logged in via API', { email });
+
+      // Set httpOnly cookies (secure)
+      setAuthCookies(res, result.token, result.refreshToken);
 
       res.json({
         success: true,
@@ -110,6 +120,9 @@ router.post(
 
       await logoutUser(token);
 
+      // Clear httpOnly cookies
+      clearAuthCookies(res);
+
       res.json({
         success: true,
         message: 'Logout successful',
@@ -135,9 +148,23 @@ router.post(
   validate(refreshTokenSchema),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { refreshToken } = req.body;
+      // Try cookie first, then body
+      const refreshToken = getRefreshTokenFromCookie(req) || req.body.refreshToken;
+
+      if (!refreshToken) {
+        res.status(400).json({
+          success: false,
+          error: 'Refresh token required',
+        });
+        return;
+      }
 
       const result = await refreshAccessToken(refreshToken);
+
+      // Set new access token cookie
+      if (result.token) {
+        setAuthCookies(res, result.token, refreshToken);
+      }
 
       res.json({
         success: true,

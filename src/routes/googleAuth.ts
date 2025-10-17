@@ -6,6 +6,8 @@ import {
   unlinkGoogleAccount,
 } from '../services/auth/googleOAuthService';
 import { logger } from '../utils/logger';
+import { setAuthCookies } from '../services/auth/cookieAuthService';
+import { authRateLimit } from '../middleware/security';
 
 const router = Router();
 
@@ -15,7 +17,7 @@ const router = Router();
  * 
  * Body: { credential: string } - Google ID token from Google Sign-In
  */
-router.post('/google', async (req: Request, res: Response): Promise<void> => {
+router.post('/google', authRateLimit, async (req: Request, res: Response): Promise<void> => {
   try {
     const { credential } = req.body;
 
@@ -47,6 +49,9 @@ router.post('/google', async (req: Request, res: Response): Promise<void> => {
     });
 
     logger.info('User authenticated via Google', { email: googleData.email });
+
+    // Set httpOnly cookies (secure)
+    setAuthCookies(res, result.token, result.refreshToken);
 
     res.json({
       success: true,

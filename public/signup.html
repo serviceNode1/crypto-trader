@@ -341,6 +341,12 @@
       }
     });
 
+    // Helper to get CSRF token from cookie
+    function getCsrfToken() {
+      const match = document.cookie.match(/csrf_token=([^;]+)/);
+      return match ? match[1] : null;
+    }
+
     // Form submission
     document.getElementById('signupForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -359,9 +365,34 @@
       signupBtn.innerHTML = '<span class="loading-spinner"></span>Creating account...';
 
       try {
-        const result = await auth.register(email, password, displayName);
+        // Get CSRF token
+        const csrfToken = getCsrfToken();
+        
+        // Make register request with CSRF token
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken || '',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ email, password, displayName }),
+        });
 
-        if (result.success) {
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // Store tokens for backwards compatibility
+          if (data.data.token) {
+            localStorage.setItem('auth_token', data.data.token);
+          }
+          if (data.data.refreshToken) {
+            localStorage.setItem('refresh_token', data.data.refreshToken);
+          }
+          if (data.data.user) {
+            localStorage.setItem('user', JSON.stringify(data.data.user));
+          }
+
           const successDiv = document.getElementById('successMessage');
           successDiv.textContent = 'Account created successfully! Redirecting...';
           successDiv.style.display = 'block';
@@ -370,7 +401,7 @@
             window.location.href = '/';
           }, 1000);
         } else {
-          throw new Error(result.error);
+          throw new Error(data.message || data.error || 'Registration failed');
         }
       } catch (error) {
         errorDiv.textContent = error.message || 'Registration failed. Please try again.';
@@ -386,9 +417,32 @@
       errorDiv.style.display = 'none';
 
       try {
-        const result = await auth.loginWithGoogle(response.credential);
+        const csrfToken = getCsrfToken();
+        
+        const apiResponse = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken || '',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ credential: response.credential }),
+        });
 
-        if (result.success) {
+        const data = await apiResponse.json();
+
+        if (apiResponse.ok && data.success) {
+          // Store tokens for backwards compatibility
+          if (data.data.token) {
+            localStorage.setItem('auth_token', data.data.token);
+          }
+          if (data.data.refreshToken) {
+            localStorage.setItem('refresh_token', data.data.refreshToken);
+          }
+          if (data.data.user) {
+            localStorage.setItem('user', JSON.stringify(data.data.user));
+          }
+
           const successDiv = document.getElementById('successMessage');
           successDiv.textContent = 'Google sign-up successful! Redirecting...';
           successDiv.style.display = 'block';
@@ -397,7 +451,7 @@
             window.location.href = '/';
           }, 1000);
         } else {
-          throw new Error(result.error);
+          throw new Error(data.message || data.error || 'Google sign-up failed');
         }
       } catch (error) {
         errorDiv.textContent = error.message || 'Google sign-up failed. Please try again.';

@@ -1758,6 +1758,15 @@
     <!-- Load auth utility -->
     <script src="/js/auth.js"></script>
 
+    <!-- Auth Guard - Redirect if not authenticated -->
+    <script>
+        // Protect dashboard - require authentication
+        if (!auth.isAuthenticated()) {
+            const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `/login.html?return=${returnUrl}`;
+        }
+    </script>
+
     <!-- Account Management Script -->
     <script>
         // Initialize account dropdown

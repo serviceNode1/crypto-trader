@@ -1,7 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 import path from 'path';
 import dotenv from 'dotenv';
 import { initRedis, closeRedis } from './config/redis';
@@ -12,6 +12,14 @@ import { logger } from './utils/logger';
 import { initializeJobSystem } from './jobs/scheduler';
 import { closeQueues } from './jobs';
 import { initializeCoinList } from './services/dataCollection/coinListService';
+import {
+  generalRateLimit,
+  generateCsrfToken,
+  verifyCsrfToken,
+  securityHeaders,
+  securityLogger,
+  sanitizeInput,
+} from './middleware/security';
 
 // Load environment variables
 dotenv.config();
@@ -23,7 +31,7 @@ const PORT = process.env.PORT || 3000;
  * Middleware Configuration
  */
 
-// Security headers with relaxed CSP for development
+// Security headers with relaxed CSP for development and Google Sign-In
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -32,19 +40,26 @@ app.use(
         scriptSrc: [
           "'self'",
           "'unsafe-inline'", // Allow inline scripts for dashboard
-          "https://cdn.jsdelivr.net", // Allow Chart.js CDN
+          "'unsafe-eval'", // Required for some libraries
+          "https://cdn.jsdelivr.net", // Chart.js CDN
+          "https://accounts.google.com", // Google Sign-In
         ],
         scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers (onclick, etc.)
         styleSrc: [
           "'self'",
           "'unsafe-inline'", // Allow inline styles
+          "https://accounts.google.com", // Google Sign-In
         ],
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "https://cdn.jsdelivr.net"], // Allow Chart.js source maps
-        fontSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:", "blob:"], // Allow profile images
+        connectSrc: [
+          "'self'",
+          "https://cdn.jsdelivr.net",
+          "https://accounts.google.com",
+        ],
+        fontSrc: ["'self'", "data:"],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
-        frameSrc: ["'none'"],
+        frameSrc: ["'self'", "https://accounts.google.com"], // Google Sign-In iframe
       },
     },
   })
@@ -58,20 +73,30 @@ app.use(
   })
 );
 
+// Cookie parser (required for httpOnly cookies)
+app.use(cookieParser());
+
 // Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Security headers
+app.use(securityHeaders);
 
-app.use('/api/', limiter);
+// Input sanitization
+app.use(sanitizeInput);
+
+// CSRF token generation (sets cookie)
+app.use(generateCsrfToken);
+
+// CSRF token verification (for state-changing requests)
+app.use(verifyCsrfToken);
+
+// General rate limiting
+app.use('/api/', generalRateLimit);
+
+// Security logging
+app.use(securityLogger);
 
 // Request logging middleware
 app.use((req: Request, _res: Response, next: NextFunction) => {

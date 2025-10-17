@@ -1,7 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { validateSession } from '../services/auth/authService';
+import jwt from 'jsonwebtoken';
+import { query } from '../config/database';
 import { JWTPayload } from '../types/auth';
 import { logger } from '../utils/logger';
+import { getAccessTokenFromCookie } from '../services/auth/cookieAuthService';
+import { validateSession } from '../services/auth/authService';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
 // Extend Express Request to include user
 declare global {
@@ -14,6 +19,7 @@ declare global {
 
 /**
  * Authenticate request - requires valid JWT token
+ * Checks httpOnly cookie first, then falls back to Authorization header
  */
 export async function authenticate(
   req: Request,
@@ -21,10 +27,18 @@ export async function authenticate(
   next: NextFunction
 ): Promise<void> {
   try {
-    // Get token from Authorization header
-    const authHeader = req.headers.authorization;
+    // Priority 1: Check httpOnly cookie (most secure)
+    let token = getAccessTokenFromCookie(req);
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Priority 2: Fall back to Authorization header (backwards compatibility)
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+    }
+
+    if (!token) {
       res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -32,8 +46,6 @@ export async function authenticate(
       });
       return;
     }
-
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
     // Validate session
     const payload = await validateSession(token);

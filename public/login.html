@@ -296,6 +296,34 @@
       this.textContent = type === 'password' ? 'Show' : 'Hide';
     });
 
+    // Helper to get CSRF token from cookie
+    function getCsrfToken() {
+      const match = document.cookie.match(/csrf_token=([^;]+)/);
+      return match ? match[1] : null;
+    }
+
+    // Debug: Check CSRF token on page load
+    window.addEventListener('load', async () => {
+      console.log('=== CSRF Debug ===');
+      console.log('All cookies:', document.cookie);
+      
+      const csrfToken = getCsrfToken();
+      console.log('CSRF token from cookie:', csrfToken ? csrfToken.substring(0, 20) + '...' : 'NOT FOUND');
+      
+      // Fetch from server to verify
+      try {
+        const response = await fetch('/api/auth/debug/csrf', { credentials: 'include' });
+        const data = await response.json();
+        console.log('Server CSRF check:', data);
+      } catch (error) {
+        console.error('Failed to check CSRF:', error);
+      }
+      
+      if (!csrfToken) {
+        console.warn('⚠️ CSRF token not found! Try refreshing the page.');
+      }
+    });
+
     // Form submission
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -313,9 +341,34 @@
       loginBtn.innerHTML = '<span class="loading-spinner"></span>Signing in...';
 
       try {
-        const result = await auth.login(email, password);
+        // Get CSRF token
+        const csrfToken = getCsrfToken();
+        
+        // Make login request with CSRF token
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken || '',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ email, password }),
+        });
 
-        if (result.success) {
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // Store tokens for backwards compatibility
+          if (data.data.token) {
+            localStorage.setItem('auth_token', data.data.token);
+          }
+          if (data.data.refreshToken) {
+            localStorage.setItem('refresh_token', data.data.refreshToken);
+          }
+          if (data.data.user) {
+            localStorage.setItem('user', JSON.stringify(data.data.user));
+          }
+
           // Show success message
           const successDiv = document.getElementById('successMessage');
           successDiv.textContent = 'Login successful! Redirecting...';
@@ -328,7 +381,7 @@
             window.location.href = decodeURIComponent(returnUrl);
           }, 500);
         } else {
-          throw new Error(result.error);
+          throw new Error(data.message || data.error || 'Login failed');
         }
       } catch (error) {
         errorDiv.textContent = error.message || 'Login failed. Please try again.';
@@ -344,9 +397,32 @@
       errorDiv.style.display = 'none';
 
       try {
-        const result = await auth.loginWithGoogle(response.credential);
+        const csrfToken = getCsrfToken();
+        
+        const apiResponse = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken || '',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ credential: response.credential }),
+        });
 
-        if (result.success) {
+        const data = await apiResponse.json();
+
+        if (apiResponse.ok && data.success) {
+          // Store tokens for backwards compatibility
+          if (data.data.token) {
+            localStorage.setItem('auth_token', data.data.token);
+          }
+          if (data.data.refreshToken) {
+            localStorage.setItem('refresh_token', data.data.refreshToken);
+          }
+          if (data.data.user) {
+            localStorage.setItem('user', JSON.stringify(data.data.user));
+          }
+
           const successDiv = document.getElementById('successMessage');
           successDiv.textContent = 'Google sign-in successful! Redirecting...';
           successDiv.style.display = 'block';
@@ -357,7 +433,7 @@
             window.location.href = decodeURIComponent(returnUrl);
           }, 500);
         } else {
-          throw new Error(result.error);
+          throw new Error(data.message || data.error || 'Google sign-in failed');
         }
       } catch (error) {
         errorDiv.textContent = error.message || 'Google sign-in failed. Please try again.';
