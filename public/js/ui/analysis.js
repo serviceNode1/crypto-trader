@@ -3,10 +3,11 @@
  * Handles cryptocurrency analysis display
  */
 
-/* global document, alert, fetch */
+/* global document, fetch */
 /* eslint-disable no-console */
 import { API_BASE } from '../config.js';
 import { formatPrice } from '../utils/formatters.js';
+import { showAlert } from '../utils/modal.js';
 
 /**
  * Select a crypto and trigger analysis
@@ -24,7 +25,7 @@ export async function analyzeCrypto() {
     const aiModel = document.getElementById('aiModelSelect').value;
     
     if (!symbol) {
-        alert('Please enter a cryptocurrency symbol');
+        await showAlert('Symbol Required', 'Please enter a cryptocurrency symbol', { icon: '⚠️' });
         return;
     }
 

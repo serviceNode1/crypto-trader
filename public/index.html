@@ -1834,7 +1834,21 @@
 
         // Handle logout
         async function handleLogout() {
-            if (confirm('Are you sure you want to logout?')) {
+            // Import modal utility
+            const { showConfirm } = await import('./js/utils/modal.js');
+            
+            const confirmed = await showConfirm(
+                'Logout Confirmation',
+                'Are you sure you want to logout?',
+                {
+                    icon: '👋',
+                    confirmText: 'Logout',
+                    cancelText: 'Stay Logged In',
+                    confirmColor: '#667eea'
+                }
+            );
+            
+            if (confirmed) {
                 await auth.logout();
                 window.location.href = '/login.html';
             }
@@ -1846,5 +1860,21 @@
 
     <!-- Load the main modular JavaScript -->
     <script type="module" src="/js/main.js"></script>
+
+    <!-- Custom Modal -->
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-content">
+            <div id="modalHeader" class="modal-header">
+                <h3>Notification</h3>
+            </div>
+            <div id="modalBody" class="modal-body">
+                Modal content goes here
+            </div>
+            <div id="modalFooter" class="modal-footer">
+                <button class="button">OK</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

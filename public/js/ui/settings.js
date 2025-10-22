@@ -3,10 +3,11 @@
  * Handles settings management functions
  */
 
-/* global document, alert, confirm */
+/* global document */
 /* eslint-disable no-console */
 import { loadSettings, saveSettings as saveToStorage } from '../utils/storage.js';
 import { loadThemeSettings, saveThemeSettings, applyTheme } from '../utils/theme.js';
+import { showError, showSuccess, showConfirm } from '../utils/modal.js';
 
 /**
  * Save settings to backend API
@@ -56,7 +57,7 @@ async function saveSettingsToBackend(settings) {
         return data;
     } catch (error) {
         console.error('❌ [SETTINGS] Error saving settings to backend:', error);
-        alert(`Failed to save settings: ${error.message}`);
+        await showError('Settings Error', `Failed to save settings: ${error.message}`);
         throw error;
     }
 }
@@ -300,10 +301,10 @@ export function updateMaxPositionValue(value) {
 /**
  * Save and close settings
  */
-export function saveAndCloseSettings() {
+export async function saveAndCloseSettings() {
     saveSettings();
     closeSettingsModal();
-    alert('✅ Settings saved successfully!');
+    await showSuccess('Settings Saved', 'Your settings have been saved successfully!');
 }
 
 /**
@@ -345,16 +346,20 @@ export async function changeVisualStyle(visualStyle) {
 /**
  * Toggle debug mode with confirmation
  */
-export function toggleDebugMode(isEnabled) {
+export async function toggleDebugMode(isEnabled) {
     if (isEnabled) {
-        const confirmed = confirm(
-            '⚠️ Enable Debug Mode?\n\n' +
-            'This will use EXTREMELY LIBERAL discovery filters.\n' +
-            'The system will find buy signals even in terrible market conditions.\n\n' +
-            '✅ Use this ONLY for testing automatic trading logic.\n' +
-            '❌ Do NOT use for making real investment decisions.\n\n' +
-            'Debug mode uses a 40/100 threshold instead of normal 60-70/100.\n\n' +
-            'Continue?'
+        const confirmed = await showConfirm(
+            'Enable Debug Mode?',
+            `<p style="margin-bottom: 12px;">This will use <strong>EXTREMELY LIBERAL</strong> discovery filters.</p>
+            <p style="margin-bottom: 12px;">The system will find buy signals even in terrible market conditions.</p>
+            <p style="margin-bottom: 12px;">This is useful for testing the system and finding edge cases.</p>
+            <p style="color: #ef4444; font-weight: 600;">⚠️ DO NOT use this mode with real money!</p>`,
+            {
+                icon: '⚠️',
+                confirmText: 'Enable Debug Mode',
+                cancelText: 'Cancel',
+                confirmColor: '#ef4444'
+            }
         );
         
         if (!confirmed) {
