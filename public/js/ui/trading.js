@@ -3,7 +3,7 @@
  * Handles manual trading, position management, and trade modals
  */
 
-/* global document, window, localStorage */
+/* global document, window, localStorage, auth */
 /* eslint-disable no-console */
 import { API_BASE } from '../config.js';
 import { formatPrice } from '../utils/formatters.js';
@@ -245,7 +245,7 @@ export async function executeTrade() {
         }
 
         // Execute trade
-        const response = await fetch(`${API_BASE}/trade`, {
+        const response = await auth.fetch(`${API_BASE}/trade`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -282,7 +282,7 @@ export async function executeTrade() {
             }
 
             // Re-submit with confirmWarnings flag
-            const confirmedResponse = await fetch(`${API_BASE}/trade`, {
+            const confirmedResponse = await auth.fetch(`${API_BASE}/trade`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -355,7 +355,7 @@ export async function sellPosition(symbol, quantity) {
         const currentPrice = priceData.price;
 
         // Execute the sell
-        const response = await fetch(`${API_BASE}/trade`, {
+        const response = await auth.fetch(`${API_BASE}/trade`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -655,7 +655,7 @@ export async function saveProtection(symbol, type) {
             payload[type] = null; // Remove protection
         }
 
-        const response = await fetch(`${API_BASE}/portfolio/${symbol}/protection`, {
+        const response = await auth.fetch(`${API_BASE}/portfolio/${symbol}/protection`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
