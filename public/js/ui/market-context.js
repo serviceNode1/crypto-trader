@@ -59,31 +59,31 @@ export async function loadMarketContext() {
         const modalHTML = `
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                 <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid ${regimeColor};">
-                    <div style="color: #6b7280; font-size: 13px; margin-bottom: 5px;">Market Regime</div>
+                    <div class="detail-item-label">Market Regime</div>
                     <div style="font-size: 20px; font-weight: 700; color: ${regimeColor};">
                         ${data.context.marketRegime.toUpperCase()}
                     </div>
                 </div>
                 <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid ${sentimentColor};">
-                    <div style="color: #6b7280; font-size: 13px; margin-bottom: 5px;">Risk Sentiment</div>
+                    <div class="detail-item-label">Risk Sentiment</div>
                     <div style="font-size: 20px; font-weight: 700; color: ${sentimentColor};">
                         ${data.context.riskSentiment.toUpperCase()}
                     </div>
                 </div>
                 <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #3b82f6;">
-                    <div style="color: #6b7280; font-size: 13px; margin-bottom: 5px;">BTC Dominance</div>
-                    <div style="font-size: 20px; font-weight: 700; color: #1f2937;">
+                    <div class="detail-item-label">BTC Dominance</div>
+                    <div style="font-size: 20px; font-weight: 700;">
                         ${data.context.btcDominance.toFixed(2)}%
                     </div>
                 </div>
                 <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid ${vixColor};">
-                    <div style="color: #6b7280; font-size: 13px; margin-bottom: 5px;">VIX (Fear Index)</div>
+                    <div class="detail-item-label">VIX (Fear Index)</div>
                     <div style="font-size: 20px; font-weight: 700; color: ${vixColor};">
                         ${data.context.traditionalMarkets.vix.toFixed(2)}
                     </div>
                 </div>
             </div>
-            <div style="margin-top: 15px; padding: 12px; background: white; border-radius: 6px; font-size: 13px; color: #6b7280;">
+            <div class="detail-box" style="margin-top: 15px; font-size: 13px;">
                 <strong>💡 Interpretation:</strong> 
                 ${data.context.marketRegime === 'bull' ? '📈 Bull market - favorable for long positions.' : ''}
                 ${data.context.marketRegime === 'bear' ? '📉 Bear market - consider defensive strategies.' : ''}
@@ -308,10 +308,10 @@ export async function runAIAnalysisNow(event) {
         
         // Show error
         document.getElementById('recommendations-list').innerHTML = `
-            <div style="padding: 20px; text-align: center; background: #fee2e2; border-radius: 6px; border: 1px solid #ef4444;">
+            <div class="alert alert-error" style="padding: 20px; text-align: center;">
                 <div style="font-size: 36px; margin-bottom: 10px;">❌</div>
-                <h4 style="color: #991b1b; margin-bottom: 8px; font-size: 16px;">Analysis Failed</h4>
-                <p style="color: #7f1d1d; margin-bottom: 15px; font-size: 13px;">
+                <h4 style="margin-bottom: 8px; font-size: 16px;">Analysis Failed</h4>
+                <p style="margin-bottom: 15px; font-size: 13px;">
                     ${error.message}
                 </p>
                 <button 

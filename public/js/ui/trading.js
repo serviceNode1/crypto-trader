@@ -76,7 +76,7 @@ export async function previewTrade() {
     if (!symbol || !quantity || quantity <= 0) {
         previewArea.style.display = 'block';
         previewArea.innerHTML = `
-            <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
+            <div class="alert alert-error">
                 ⚠️ Please enter a valid symbol and quantity
             </div>
         `;
@@ -89,7 +89,7 @@ export async function previewTrade() {
     if (!portfolioResponse.ok) {
         previewArea.style.display = 'block';
         previewArea.innerHTML = `
-            <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
+            <div class="alert alert-error">
                 ⚠️ Unable to fetch portfolio data
             </div>
         `;
@@ -127,7 +127,7 @@ export async function previewTrade() {
         if (totalCost > totalValue) {
             previewArea.style.display = 'block';
             previewArea.innerHTML = `
-                <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
+                <div class="alert alert-error">
                     ⚠️ Insufficient funds! Trade cost: $${totalCost.toFixed(2)}, Portfolio value: $${totalValue.toFixed(2)}
                 </div>
             `;
@@ -143,9 +143,9 @@ export async function previewTrade() {
             const stopLossAmount = (stopLossPrice - currentPrice) * actualQuantity;
             const stopLossPercent = ((stopLossPrice - currentPrice) / currentPrice) * 100;
             stopLossInfo = `
-                <div style="padding: 10px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px;">
+                <div class="info-box-error">
                     <strong>Stop Loss:</strong> $${stopLossPrice.toFixed(2)}<br>
-                    <span style="font-size: 13px; color: #991b1b;">
+                    <span class="protection-label-stop" style="font-size: 13px;">
                         Loss if triggered: $${Math.abs(stopLossAmount).toFixed(2)} (${stopLossPercent.toFixed(2)}%)
                     </span>
                 </div>
@@ -156,9 +156,9 @@ export async function previewTrade() {
             const takeProfitAmount = (takeProfitPrice - currentPrice) * actualQuantity;
             const takeProfitPercent = ((takeProfitPrice - currentPrice) / currentPrice) * 100;
             takeProfitInfo = `
-                <div style="padding: 10px; background: #d1fae5; border-left: 3px solid #10b981; border-radius: 4px;">
+                <div class="info-box-success">
                     <strong>Take Profit:</strong> $${takeProfitPrice.toFixed(2)}<br>
-                    <span style="font-size: 13px; color: #065f46;">
+                    <span class="protection-label-take" style="font-size: 13px;">
                         Gain if triggered: $${takeProfitAmount.toFixed(2)} (${takeProfitPercent.toFixed(2)}%)
                     </span>
                 </div>
@@ -168,8 +168,8 @@ export async function previewTrade() {
         // Show preview
         previewArea.style.display = 'block';
         previewArea.innerHTML = `
-            <div style="padding: 15px; background: #f0f9ff; border: 2px solid #3b82f6; border-radius: 8px;">
-                <h4 style="margin: 0 0 15px 0; color: #1e40af;">📋 Trade Preview</h4>
+            <div class="info-box-info">
+                <h4 style="margin: 0 0 15px 0;">📋 Trade Preview</h4>
                 <div style="display: grid; gap: 10px; margin-bottom: 15px;">
                     <div style="display: flex; justify-content: space-between;">
                         <span>Symbol:</span>
@@ -183,9 +183,9 @@ export async function previewTrade() {
                         <span>Quantity:</span>
                         <strong>${actualQuantity.toFixed(6)} ${symbol}</strong>
                     </div>
-                    <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid #bfdbfe;">
+                    <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border-color);">
                         <span>Total Cost:</span>
-                        <strong style="color: #1e40af;">$${totalCost.toFixed(2)}</strong>
+                        <strong>$${totalCost.toFixed(2)}</strong>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                         <span>% of Portfolio:</span>
@@ -207,7 +207,7 @@ export async function previewTrade() {
         console.error('Preview error:', error);
         previewArea.style.display = 'block';
         previewArea.innerHTML = `
-            <div style="padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; color: #991b1b;">
+            <div class="alert alert-error">
                 ⚠️ Unable to fetch price for ${symbol}. Please check the symbol and try again.
             </div>
         `;
@@ -503,53 +503,53 @@ export async function openPositionDetails(symbol) {
         const takeProfitPercent = position.takeProfit ? (((position.takeProfit - currentPrice) / currentPrice) * 100).toFixed(1) : null;
 
         const message = `
-            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="detail-box">
+                <div class="detail-grid">
                     <div>
-                        <div style="color: #6b7280; font-size: 13px;">Quantity</div>
+                        <div class="detail-item-label">Quantity</div>
                         <div style="font-weight: 600;">${position.quantity.toFixed(8)} ${symbol}</div>
                     </div>
                     <div>
-                        <div style="color: #6b7280; font-size: 13px;">Current Value</div>
+                        <div class="detail-item-label">Current Value</div>
                         <div style="font-weight: 600;">$${(position.quantity * currentPrice).toFixed(2)}</div>
                     </div>
                     <div>
-                        <div style="color: #6b7280; font-size: 13px;">Avg Buy Price</div>
+                        <div class="detail-item-label">Avg Buy Price</div>
                         <div style="font-weight: 600;">$${formatPrice(position.averagePrice)}</div>
                     </div>
                     <div>
-                        <div style="color: #6b7280; font-size: 13px;">Current Price</div>
+                        <div class="detail-item-label">Current Price</div>
                         <div style="font-weight: 600;">$${formatPrice(currentPrice)}</div>
                     </div>
                     <div>
-                        <div style="color: #6b7280; font-size: 13px;">Total P&L</div>
-                        <div style="font-weight: 600; color: ${position.unrealizedPnL >= 0 ? '#10b981' : '#ef4444'};">
+                        <div class="detail-item-label">Total P&L</div>
+                        <div class="detail-item-value ${position.unrealizedPnL >= 0 ? 'positive' : 'negative'}">
                             ${position.unrealizedPnL >= 0 ? '+' : ''}$${position.unrealizedPnL.toFixed(2)} (${priceChange.toFixed(2)}%)
                         </div>
                     </div>
                     <div>
-                        <div style="color: #6b7280; font-size: 13px;">Portfolio %</div>
+                        <div class="detail-item-label">Portfolio %</div>
                         <div style="font-weight: 600;">${((position.quantity * currentPrice) / portfolio.totalValue * 100).toFixed(1)}%</div>
                     </div>
                 </div>
             </div>
 
             ${position.stopLoss || position.takeProfit ? `
-            <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #10b981;">
-                <div style="font-weight: 600; margin-bottom: 10px; color: #065f46;">🛡️ Active Protections</div>
+            <div class="protection-box">
+                <div class="protection-box-header">🛡️ Active Protections</div>
                 <div style="display: grid; gap: 10px;">
                     ${position.stopLoss ? `
-                        <div style="padding: 10px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
-                            <div style="color: #92400e; font-weight: 600; margin-bottom: 4px;">🛑 Stop Loss</div>
-                            <div style="font-size: 14px; color: #6b7280;">
+                        <div class="protection-item">
+                            <div class="protection-label-stop">🛑 Stop Loss</div>
+                            <div class="protection-value">
                                 Price: <strong>$${formatPrice(position.stopLoss)}</strong> (-${stopLossPercent}%)
                             </div>
                         </div>
                     ` : ''}
                     ${position.takeProfit ? `
-                        <div style="padding: 10px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
-                            <div style="color: #065f46; font-weight: 600; margin-bottom: 4px;">🎯 Take Profit</div>
-                            <div style="font-size: 14px; color: #6b7280;">
+                        <div class="protection-item">
+                            <div class="protection-label-take">🎯 Take Profit</div>
+                            <div class="protection-value">
                                 Price: <strong>$${formatPrice(position.takeProfit)}</strong> (+${takeProfitPercent}%)
                             </div>
                         </div>
@@ -559,10 +559,10 @@ export async function openPositionDetails(symbol) {
             ` : ''}
 
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button onclick="sellPosition('${symbol}', ${position.quantity})" class="button" style="flex: 1; background: #ef4444;">
+                <button onclick="sellPosition('${symbol}', ${position.quantity})" class="button button-danger" style="flex: 1;">
                     💰 Sell Position
                 </button>
-                <button onclick="openProtectionManager('${symbol}')" class="button" style="flex: 1; background: #667eea;">
+                <button onclick="openProtectionManager('${symbol}')" class="button button-primary" style="flex: 1;">
                     🛡️ Manage Protections
                 </button>
             </div>
@@ -596,8 +596,8 @@ export async function openProtectionManager(symbol) {
 
         const message = `
             <div style="margin-bottom: 20px;">
-                <div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
-                    <div style="color: #6b7280; font-size: 13px;">Current Price</div>
+                <div class="detail-box" style="margin-bottom: 16px;">
+                    <div class="detail-item-label">Current Price</div>
                     <div style="font-size: 20px; font-weight: 600;">$${formatPrice(currentPrice)}</div>
                 </div>
 
@@ -606,7 +606,7 @@ export async function openProtectionManager(symbol) {
                     <input type="number" id="stopLossInput" value="${position.stopLoss || ''}" 
                         placeholder="Enter stop loss price" 
                         style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                    <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                    <div class="text-muted" style="font-size: 12px; margin-top: 4px;">
                         Auto-sell if price drops to this level
                     </div>
                 </div>
@@ -616,17 +616,17 @@ export async function openProtectionManager(symbol) {
                     <input type="number" id="takeProfitInput" value="${position.takeProfit || ''}" 
                         placeholder="Enter take profit price" 
                         style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                    <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                    <div class="text-muted" style="font-size: 12px; margin-top: 4px;">
                         Auto-sell if price rises to this level
                     </div>
                 </div>
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <button onclick="saveProtection('${symbol}', 'stopLoss')" class="button" style="flex: 1; background: #ef4444;">
+                <button onclick="saveProtection('${symbol}', 'stopLoss')" class="button button-danger" style="flex: 1;">
                     Save Stop Loss
                 </button>
-                <button onclick="saveProtection('${symbol}', 'takeProfit')" class="button" style="flex: 1; background: #10b981;">
+                <button onclick="saveProtection('${symbol}', 'takeProfit')" class="button button-success" style="flex: 1;">
                     Save Take Profit
                 </button>
             </div>

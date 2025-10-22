@@ -70,7 +70,7 @@ export function getScoreColor(score) {
  */
 export function renderSparkline(sparkline, priceChange) {
     if (!sparkline || sparkline.length === 0) {
-        return '<span style="color: #9ca3af; font-size: 12px;">No data</span>';
+        return '<span class="text-muted" style="font-size: 12px;">No data</span>';
     }
 
     // Take last 48 hours

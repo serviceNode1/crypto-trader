@@ -135,7 +135,7 @@ export async function runDiscovery() {
         status.style.display = 'none';
         btn.disabled = false;
         btn.textContent = '🚀 Run Discovery';
-        listDiv.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 20px;">❌ Discovery failed. Please try again.</p>';
+        listDiv.innerHTML = '<p class="text-muted" style="text-align: center; padding: 20px;">❌ Discovery failed. Please try again.</p>';
     }
 }
 
@@ -189,7 +189,7 @@ export async function loadCachedDiscoveries() {
         console.error('Failed to load cached discoveries:', error);
         // Show prompt to run discovery
         document.getElementById('discoveries-list').innerHTML = `
-            <p style="color: #6b7280; text-align: center; padding: 20px;">
+            <p class="text-muted" style="text-align: center; padding: 20px;">
                 No discoveries found. Click "Run Discovery" to find trading opportunities.
             </p>
         `;
@@ -316,8 +316,8 @@ function formatNoOpportunities(summary, _analysisLog) {
             </div>
 
             <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0; text-align: left;">
-                <strong style="color: #92400e;">💡 Suggestions:</strong>
-                <ul style="margin: 10px 0 0 20px; color: #78350f;">
+                <strong class="protection-label-stop">💡 Suggestions:</strong>
+                <ul style="margin: 10px 0 0 20px;" class="protection-label-stop">
                     <li>Market conditions may be unfavorable right now</li>
                     <li>Try expanding to "Top 100" in settings</li>
                     <li>Check back later when market activity increases</li>
@@ -353,13 +353,13 @@ function displayAnalysisLog(analysisLog, summary) {
                     <div style="padding: 6px 10px; border-bottom: ${index < analysisLog.length - 1 ? '1px solid #f3f4f6' : 'none'}; ${entry.passed ? 'background: #f0fdf4;' : 'background: #fafafa;'}">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div style="flex: 1;">
-                                <strong style="color: #1f2937; font-size: 12px;">${entry.symbol}</strong>
-                                <span style="color: #6b7280; font-size: 11px; margin-left: 6px;">#${entry.rank}</span>
-                                <span style="color: ${entry.passed ? '#059669' : '#6b7280'}; font-size: 11px; margin-left: 10px;">
+                                <strong style="font-size: 12px;">${entry.symbol}</strong>
+                                <span class="text-muted" style="font-size: 11px; margin-left: 6px;">#${entry.rank}</span>
+                                <span class="${entry.passed ? 'positive' : 'text-muted'}" style="font-size: 11px; margin-left: 10px;">
                                     ${entry.passed ? '✅' : '❌'} ${entry.reason}
                                 </span>
                             </div>
-                            <div style="font-size: 10px; color: #9ca3af; margin-left: 15px;">
+                            <div class="text-muted" style="font-size: 10px; margin-left: 15px;">
                                 ${entry.compositeScore !== undefined ? `Score: <strong style="color: ${getScoreColor(entry.compositeScore)};">${entry.compositeScore.toFixed(0)}</strong>` : ''}
                             </div>
                         </div>
@@ -394,17 +394,17 @@ function formatDiscoveries(discoveries) {
             // Recent (2-4 hours)
             badgeColor = '#f59e0b';
             badgeText = `⚠️ Recent (${ageHours}h ago)`;
-            warningHTML = '<div style="padding: 10px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; margin-bottom: 15px; color: #92400e; font-size: 13px;">⚠️ Discovery data is a few hours old. Consider running a fresh discovery for current opportunities.</div>';
+            warningHTML = '<div class="alert alert-warning" style="margin-bottom: 15px; font-size: 13px;">⚠️ Discovery data is a few hours old. Consider running a fresh discovery for current opportunities.</div>';
         } else if (ageHours < 6) {
             // Stale (4-6 hours)
             badgeColor = '#ef4444';
             badgeText = `🕐 Stale (${ageHours}h ago)`;
-            warningHTML = '<div style="padding: 10px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; margin-bottom: 15px; color: #991b1b; font-size: 13px;">🕐 <strong>Data is stale.</strong> Market conditions may have changed significantly. Run discovery for current opportunities.</div>';
+            warningHTML = '<div class="alert alert-error" style="margin-bottom: 15px; font-size: 13px;">🕐 <strong>Data is stale.</strong> Market conditions may have changed significantly. Run discovery for current opportunities.</div>';
         } else {
             // Very stale (6+ hours)
             badgeColor = '#6b7280';
             badgeText = `❌ Expired (${ageHours}h ago)`;
-            warningHTML = '<div style="padding: 10px; background: #f3f4f6; border: 1px solid #6b7280; border-radius: 6px; margin-bottom: 15px; color: #374151; font-size: 13px;">❌ <strong>Data has expired.</strong> These opportunities are outdated. Please run discovery to find current opportunities.</div>';
+            warningHTML = '<div class="alert alert-warning" style="margin-bottom: 15px; font-size: 13px;">❌ <strong>Data has expired.</strong> These opportunities are outdated. Please run discovery to find current opportunities.</div>';
         }
         
         freshnessHTML = `
@@ -442,13 +442,13 @@ function formatDiscoveries(discoveries) {
                             </span>
                         </td>
                         <td style="padding: 12px;">
-                            <strong style="color: #1f2937; font-size: 16px;">${coin.symbol}</strong>
+                            <strong style="font-size: 16px;">${coin.symbol}</strong>
                         </td>
-                        <td style="padding: 12px; color: #6b7280;">${coin.name}</td>
+                        <td class="text-muted" style="padding: 12px;">${coin.name}</td>
                         <td style="padding: 12px; text-align: right;">
                             <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                                <span style="font-weight: 600; color: #1f2937;">$${formatPrice(coin.currentPrice)}</span>
-                                <span style="font-size: 12px; color: ${coin.priceChange24h >= 0 ? '#10b981' : '#ef4444'};">
+                                <span style="font-weight: 600;">$${formatPrice(coin.currentPrice)}</span>
+                                <span class="${coin.priceChange24h >= 0 ? 'positive' : 'negative'}" style="font-size: 12px;">
                                     ${coin.priceChange24h >= 0 ? '▲' : '▼'} ${Math.abs(coin.priceChange24h).toFixed(2)}%
                                 </span>
                             </div>
@@ -464,10 +464,10 @@ function formatDiscoveries(discoveries) {
                                 <span style="font-weight: 600; color: ${getScoreColor(coin.compositeScore)};">${Math.round(coin.compositeScore)}</span>
                             </div>
                         </td>
-                        <td style="padding: 12px; text-align: right; color: #6b7280;">
+                        <td class="text-muted" style="padding: 12px; text-align: right;">
                             $${formatNumber(coin.volume24h)}
                         </td>
-                        <td style="padding: 12px; text-align: right; color: #6b7280;">
+                        <td class="text-muted" style="padding: 12px; text-align: right;">
                             $${formatNumber(coin.marketCap)}
                         </td>
                         <td style="padding: 12px; text-align: center;">
@@ -594,7 +594,7 @@ export async function generateAIRecommendations() {
         btn.textContent = '🤖 Generate AI Recommendations';
         
         results.innerHTML = `
-            <div style="color: #ef4444; text-align: center; padding: 40px 20px; background: #fee2e2; border: 2px solid #ef4444; border-radius: 8px;">
+            <div class="alert alert-error" style="text-align: center; padding: 40px 20px;">
                 <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
                 <h3 style="margin-bottom: 10px;">Failed to Generate Recommendations</h3>
                 <p style="margin-bottom: 15px;">${error.message}</p>
@@ -671,8 +671,8 @@ function displayRecommendations(data, maxAnalyzed) {
                     </ul>
                 </div>
                 <div style="margin-top: 20px; padding: 15px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px; text-align: left; max-width: 600px; margin: 20px auto 0;">
-                    <strong style="color: #92400e;">🔧 Try These:</strong>
-                    <ul style="margin: 10px 0 0 20px; color: #78350f; line-height: 1.8;">
+                    <strong class="protection-label-stop">🔧 Try These:</strong>
+                    <ul class="protection-label-stop" style="margin: 10px 0 0 20px; line-height: 1.8;">
                         <li>Enable <strong>Debug Mode</strong> in settings (lowers AI thresholds)</li>
                         <li>Try a different coin universe (Top 50 or Top 100)</li>
                         <li>Use <strong>Aggressive</strong> discovery strategy</li>
@@ -719,13 +719,13 @@ function displayRecommendations(data, maxAnalyzed) {
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
                         <div class="recommendation-info-box" style="background:#ffffff;">
                             <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 5px;">ENTRY</div>
-                            <div style="font-size: 16px; font-weight: 600; color: #3b82f6;">
+                            <div style="font-size: 16px; font-weight: 600;" class="text-primary-color">
                                 $${rec.entryPrice?.toFixed(4) || 'N/A'}
                             </div>
                         </div>
                         <div class="recommendation-info-box" style="background: #fef2f2;">
                             <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 5px;">STOP LOSS</div>
-                            <div style="font-size: 16px; font-weight: 600; color: #ef4444;">
+                            <div style="font-size: 16px; font-weight: 600;" class="negative">
                                 $${rec.stopLoss?.toFixed(4) || 'N/A'}
                             </div>
                         </div>

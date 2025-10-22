@@ -78,7 +78,7 @@ export async function loadPortfolio() {
                                 <td><strong>${pos.symbol}</strong></td>
                                 <td>${pos.quantity.toFixed(4)}</td>
                                 <td>$${formatPrice(pos.averagePrice)}</td>
-                                <td style="font-weight: 600; color: ${priceChange >= 0 ? '#10b981' : '#ef4444'};">
+                                <td class="${priceChange >= 0 ? 'positive' : 'negative'}" style="font-weight: 600;">
                                     $${formatPrice(currentPrice)}
                                     <span style="font-size: 11px;">(${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(1)}%)</span>
                                 </td>
@@ -87,23 +87,23 @@ export async function loadPortfolio() {
                                     ${pos.unrealizedPnL >= 0 ? '+' : ''}$${pos.unrealizedPnL.toFixed(2)}
                                     (${pos.unrealizedPnLPercent.toFixed(2)}%)
                                 </td>
-                                <td style="font-size: 13px; color: ${pos.stopLoss ? '#f59e0b' : '#9ca3af'};">
+                                <td class="${pos.stopLoss ? 'protection-label-stop' : 'text-muted'}" style="font-size: 13px;">
                                     ${pos.stopLoss ? '$' + pos.stopLoss.toFixed(2) : '—'}
                                 </td>
-                                <td style="font-size: 13px; color: ${pos.takeProfit ? '#10b981' : '#9ca3af'};">
+                                <td class="${pos.takeProfit ? 'protection-label-take' : 'text-muted'}" style="font-size: 13px;">
                                     ${pos.takeProfit ? '$' + pos.takeProfit.toFixed(2) : '—'}
                                 </td>
                                 <td>
                                     <button 
-                                        class="button" 
+                                        class="button button-primary" 
                                         onclick="window.openPositionDetails('${pos.symbol}')"
-                                        style="background: #667eea; padding: 6px 12px; font-size: 12px; white-space: nowrap; margin-right: 5px; min-width: 85px;">
+                                        style="padding: 6px 12px; font-size: 12px; white-space: nowrap; margin-right: 5px; min-width: 85px;">
                                         📋 Details
                                     </button>
                                     <button 
-                                        class="button" 
+                                        class="button button-danger" 
                                         onclick="window.sellPosition('${pos.symbol}', ${pos.quantity})"
-                                        style="background: #ef4444; padding: 6px 12px; font-size: 12px; white-space: nowrap; min-width: 85px;">
+                                        style="padding: 6px 12px; font-size: 12px; white-space: nowrap; min-width: 85px;">
                                         📉 Sell
                                     </button>
                                 </td>

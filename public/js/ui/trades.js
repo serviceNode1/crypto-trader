@@ -99,7 +99,7 @@ export async function loadTrades(page = 1) {
                             style="padding: 8px 16px; font-size: 14px;">
                             ← Previous
                         </button>
-                        <span style="color: #6b7280; font-size: 14px;">
+                        <span class="text-muted" style="font-size: 14px;">
                             Page ${page} of ${totalPages}
                         </span>
                         <button 

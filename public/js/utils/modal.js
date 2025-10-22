@@ -145,7 +145,7 @@ export async function showWarning(title, warnings, options = {}) {
                 ${warningList}
             </ol>
         </div>
-        <p style="margin-top: 16px; color: #6b7280;">
+        <p class="modal-description">
             ${options.description || 'These conditions exceed automated trading guidelines.'}
         </p>
     `;
