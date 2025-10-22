@@ -41,11 +41,12 @@ export interface Trade {
 /**
  * Get current portfolio state
  */
-export async function getPortfolio(): Promise<Portfolio> {
+export async function getPortfolio(userId: number = 1): Promise<Portfolio> {
   try {
     // Get cash balance
     const balanceResult = await query(
-      'SELECT cash FROM portfolio_balance ORDER BY id DESC LIMIT 1'
+      'SELECT cash FROM portfolio_balance WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
+      [userId]
     );
     const cash = balanceResult.rows[0]
       ? parseFloat(balanceResult.rows[0].cash)
@@ -53,7 +54,8 @@ export async function getPortfolio(): Promise<Portfolio> {
 
     // Get all holdings with protection levels
     const holdingsResult = await query(
-      'SELECT symbol, quantity, average_price, stop_loss, take_profit FROM holdings WHERE quantity > 0'
+      'SELECT symbol, quantity, average_price, stop_loss, take_profit FROM holdings WHERE user_id = $1 AND quantity > 0',
+      [userId]
     );
 
     const positions: Position[] = [];
@@ -90,6 +92,7 @@ export async function getPortfolio(): Promise<Portfolio> {
     const totalReturnPercent = (totalReturn / startingCapital) * 100;
 
     logger.debug('Portfolio retrieved', {
+      userId,
       cash: cash.toFixed(2),
       positions: positions.length,
       totalValue: totalValue.toFixed(2),
@@ -120,11 +123,12 @@ export async function executeTrade(
   stopLoss?: number,
   takeProfit?: number,
   tradeType?: 'manual' | 'automatic' | 'stop_loss' | 'take_profit',
-  triggeredBy?: string
+  triggeredBy?: string,
+  userId: number = 1
 ): Promise<Trade> {
   return transaction(async (client) => {
     try {
-      logger.info('Executing paper trade', { symbol, side, quantity });
+      logger.info('Executing paper trade', { userId, symbol, side, quantity });
 
       // Get current price
       const price = await getCurrentPrice(symbol);
@@ -150,7 +154,8 @@ export async function executeTrade(
 
       // Get current balance
       const balanceResult = await client.query(
-        'SELECT cash FROM portfolio_balance ORDER BY id DESC LIMIT 1'
+        'SELECT cash FROM portfolio_balance WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
+        [userId]
       );
       const currentCash = parseFloat(balanceResult.rows[0].cash);
 
@@ -165,14 +170,14 @@ export async function executeTrade(
         // Update cash balance
         const newCash = currentCash - totalCost;
         await client.query(
-          'UPDATE portfolio_balance SET cash = $1, updated_at = NOW()',
-          [newCash]
+          'UPDATE portfolio_balance SET cash = $1, updated_at = NOW() WHERE user_id = $2',
+          [newCash, userId]
         );
 
         // Update or create holding
         const holdingResult = await client.query(
-          'SELECT quantity, average_price FROM holdings WHERE symbol = $1',
-          [symbol]
+          'SELECT quantity, average_price FROM holdings WHERE symbol = $1 AND user_id = $2',
+          [symbol, userId]
         );
 
         if (holdingResult.rows.length > 0) {
@@ -191,20 +196,20 @@ export async function executeTrade(
                    stop_loss = COALESCE($3, stop_loss), 
                    take_profit = COALESCE($4, take_profit),
                    updated_at = NOW() 
-               WHERE symbol = $5`,
-              [newQty, newAvgPrice, stopLoss, takeProfit, symbol]
+               WHERE symbol = $5 AND user_id = $6`,
+              [newQty, newAvgPrice, stopLoss, takeProfit, symbol, userId]
             );
           } else {
             await client.query(
-              'UPDATE holdings SET quantity = $1, average_price = $2, updated_at = NOW() WHERE symbol = $3',
-              [newQty, newAvgPrice, symbol]
+              'UPDATE holdings SET quantity = $1, average_price = $2, updated_at = NOW() WHERE symbol = $3 AND user_id = $4',
+              [newQty, newAvgPrice, symbol, userId]
             );
           }
         } else {
           // Create new holding with optional stop_loss and take_profit
           await client.query(
-            'INSERT INTO holdings (symbol, quantity, average_price, stop_loss, take_profit) VALUES ($1, $2, $3, $4, $5)',
-            [symbol, quantity, executionPrice, stopLoss || null, takeProfit || null]
+            'INSERT INTO holdings (user_id, symbol, quantity, average_price, stop_loss, take_profit) VALUES ($1, $2, $3, $4, $5, $6)',
+            [userId, symbol, quantity, executionPrice, stopLoss || null, takeProfit || null]
           );
         }
 
@@ -218,8 +223,8 @@ export async function executeTrade(
         // SELL
         // Check if we have enough to sell
         const holdingResult = await client.query(
-          'SELECT quantity FROM holdings WHERE symbol = $1',
-          [symbol]
+          'SELECT quantity FROM holdings WHERE symbol = $1 AND user_id = $2',
+          [symbol, userId]
         );
 
         if (holdingResult.rows.length === 0) {
@@ -236,18 +241,18 @@ export async function executeTrade(
         // Update cash balance
         const newCash = currentCash + totalCost;
         await client.query(
-          'UPDATE portfolio_balance SET cash = $1, updated_at = NOW()',
-          [newCash]
+          'UPDATE portfolio_balance SET cash = $1, updated_at = NOW() WHERE user_id = $2',
+          [newCash, userId]
         );
 
         // Update holding
         const newQty = currentQty - quantity;
         if (newQty === 0) {
-          await client.query('DELETE FROM holdings WHERE symbol = $1', [symbol]);
+          await client.query('DELETE FROM holdings WHERE symbol = $1 AND user_id = $2', [symbol, userId]);
         } else {
           await client.query(
-            'UPDATE holdings SET quantity = $1, updated_at = NOW() WHERE symbol = $2',
-            [newQty, symbol]
+            'UPDATE holdings SET quantity = $1, updated_at = NOW() WHERE symbol = $2 AND user_id = $3',
+            [newQty, symbol, userId]
           );
         }
 
@@ -261,10 +266,11 @@ export async function executeTrade(
 
       // Record trade
       const tradeResult = await client.query(
-        `INSERT INTO trades (symbol, side, quantity, price, fee, slippage, total_cost, reasoning, recommendation_id, trade_type, triggered_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        `INSERT INTO trades (user_id, symbol, side, quantity, price, fee, slippage, total_cost, reasoning, recommendation_id, trade_type, triggered_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
          RETURNING id`,
         [
+          userId,
           symbol,
           side,
           quantity,
@@ -337,7 +343,7 @@ export async function getTradeHistory(
 /**
  * Calculate performance metrics
  */
-export async function calculatePerformanceMetrics(): Promise<{
+export async function calculatePerformanceMetrics(userId: number = 1): Promise<{
   portfolioValue: number;
   totalReturn: number;
   totalReturnPercent: number;
@@ -351,14 +357,16 @@ export async function calculatePerformanceMetrics(): Promise<{
   avgLoss: number;
 }> {
   try {
-    const portfolio = await getPortfolio();
+    const portfolio = await getPortfolio(userId);
     const startingCapital = parseFloat(process.env.STARTING_CAPITAL || '10000');
 
     // Get all completed trades (buy followed by sell)
     const tradesResult = await query(
       `SELECT symbol, side, quantity, price, total_cost, executed_at
        FROM trades
-       ORDER BY executed_at ASC`
+       WHERE user_id = $1
+       ORDER BY executed_at ASC`,
+      [userId]
     );
 
     const trades = tradesResult.rows;

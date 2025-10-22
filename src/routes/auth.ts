@@ -244,6 +244,22 @@ router.get('/config', async (_req: Request, res: Response): Promise<void> => {
   });
 });
 
+// Debug endpoint to check CSRF cookie
+router.get('/debug/csrf', async (req: Request, res: Response): Promise<void> => {
+  const csrfCookie = req.cookies?.['csrf_token'];
+  const allCookies = Object.keys(req.cookies || {});
+  
+  res.json({
+    success: true,
+    data: {
+      hasCsrfCookie: !!csrfCookie,
+      csrfToken: csrfCookie ? csrfCookie.substring(0, 20) + '...' : null,
+      allCookies: allCookies,
+      cookieCount: allCookies.length,
+    },
+  });
+});
+
 /**
  * GET /api/auth/status
  * Check authentication status (no token required)

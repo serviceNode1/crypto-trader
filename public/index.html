@@ -220,8 +220,7 @@
                 <div class="discovery-controls-left">
                     <select id="discoveryUniverseSelect" class="discovery-select" onchange="saveDiscoverySettings()">
                         <option value="top10">Top 10</option>
-                        <option value="top25">Top 25</option>
-                        <option value="top50">Top 50</option>
+                        <option value="top50" selected>Top 50</option>
                         <option value="top100">Top 100</option>
                     </select>
                     <select id="discoveryStrategySelect" class="discovery-select" onchange="saveDiscoverySettings()">
@@ -1615,8 +1614,7 @@
                         <div class="setting-control">
                             <select id="coinUniverse" class="setting-select" onchange="saveSettings()">
                                 <option value="top10">Top 10 - BTC, ETH, BNB, etc.</option>
-                                <option value="top25" selected>Top 25 - Quality coins (recommended)</option>
-                                <option value="top50">Top 50 - Major coins + large caps</option>
+                                <option value="top50" selected>Top 50 - Major coins + large caps (recommended)</option>
                                 <option value="top100">Top 100 - Include mid-caps</option>
                             </select>
                         </div>

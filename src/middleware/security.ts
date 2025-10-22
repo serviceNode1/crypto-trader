@@ -6,10 +6,11 @@ import { logger } from '../utils/logger';
 /**
  * Rate Limiting Middleware
  * Prevents abuse by limiting requests per IP
+ * More lenient in development for testing
  */
 export const generalRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 100 : 500, // 500 in dev, 100 in prod
   message: {
     success: false,
     error: 'Too many requests',
@@ -33,16 +34,55 @@ export const generalRateLimit = rateLimit({
 
 /**
  * Strict rate limiting for authentication endpoints
+ * More lenient in development for testing
  */
 export const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 login attempts per 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 10 : 100, // 100 in dev, 10 in prod
   message: {
     success: false,
     error: 'Too many login attempts',
     message: 'Too many login attempts. Please try again later.',
   },
   skipSuccessfulRequests: true, // Don't count successful logins
+  handler: (req: Request, res: Response) => {
+    logger.warn('Auth rate limit exceeded', {
+      ip: req.ip,
+      path: req.path,
+      method: req.method,
+    });
+    res.status(429).json({
+      success: false,
+      error: 'Too many login attempts',
+      message: 'Too many login attempts. Please try again later.',
+    });
+  },
+});
+
+/**
+ * Lenient rate limiting for settings endpoints
+ * Settings are read frequently (on page load, settings modal open, etc.)
+ */
+export const settingsRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 200 : 1000, // Very lenient in dev, reasonable in prod
+  message: {
+    success: false,
+    error: 'Too many requests',
+    message: 'Too many settings requests. Please try again later.',
+  },
+  handler: (req: Request, res: Response) => {
+    logger.warn('Settings rate limit exceeded', {
+      ip: req.ip,
+      path: req.path,
+      method: req.method,
+    });
+    res.status(429).json({
+      success: false,
+      error: 'Too many requests',
+      message: 'Too many settings requests. Please try again later.',
+    });
+  },
 });
 
 /**
@@ -71,9 +111,9 @@ export function generateCsrfToken(req: Request, res: Response, next: NextFunctio
   // Generate random token
   const token = crypto.randomBytes(32).toString('hex');
 
-  // Set as httpOnly cookie
+  // Set as cookie (NOT httpOnly - client needs to read it)
   res.cookie(CSRF_COOKIE_NAME, token, {
-    httpOnly: true,
+    httpOnly: false, // Client must read this for double-submit pattern
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
     maxAge: 24 * 60 * 60 * 1000, // 24 hours

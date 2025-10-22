@@ -81,8 +81,23 @@ async function loadInitialData() {
  */
 async function init() {
     
-    // Initialize theme
+    // Initialize theme from localStorage first (immediate visual feedback)
     initializeTheme();
+    
+    // Then load settings from backend (including theme) and apply
+    try {
+        const response = await auth.fetch('/api/settings');
+        if (response && response.ok) {
+            const settings = await response.json();
+            if (settings.colorMode && settings.visualStyle) {
+                const { applyTheme } = await import('./utils/theme.js');
+                applyTheme({ colorMode: settings.colorMode, visualStyle: settings.visualStyle });
+                console.log('✅ [THEME] Loaded theme from backend:', { colorMode: settings.colorMode, visualStyle: settings.visualStyle });
+            }
+        }
+    } catch (error) {
+        console.warn('⚠️ [THEME] Could not load theme from backend, using localStorage:', error);
+    }
     
     // Load initial data
     await loadAllData();

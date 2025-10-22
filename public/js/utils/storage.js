@@ -45,7 +45,7 @@ export function saveTheme(theme) {
 export function loadDiscoverySettings() {
     const settings = loadSettings();
     return {
-        universe: settings.coinUniverse || 'top25',
+        universe: settings.coinUniverse || 'top50',
         strategy: settings.discoveryStrategy || 'moderate',
     };
 }

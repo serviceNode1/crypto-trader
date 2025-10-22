@@ -83,9 +83,14 @@ class AuthManager {
    */
   async register(email, password, displayName) {
     try {
+      const csrfToken = this.getCsrfToken();
       const response = await fetch(`${AUTH_API}/register`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || '',
+        },
+        credentials: 'include',
         body: JSON.stringify({ email, password, displayName }),
       });
 
@@ -108,9 +113,14 @@ class AuthManager {
    */
   async login(email, password) {
     try {
+      const csrfToken = this.getCsrfToken();
       const response = await fetch(`${AUTH_API}/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || '',
+        },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -133,9 +143,14 @@ class AuthManager {
    */
   async loginWithGoogle(credential) {
     try {
+      const csrfToken = this.getCsrfToken();
       const response = await fetch(`${AUTH_API}/google`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || '',
+        },
+        credentials: 'include',
         body: JSON.stringify({ credential }),
       });
 
@@ -158,13 +173,16 @@ class AuthManager {
    */
   async logout() {
     try {
+      const csrfToken = this.getCsrfToken();
       if (this.token) {
         await fetch(`${AUTH_API}/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${this.token}`,
             'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken || '',
           },
+          credentials: 'include',
         });
       }
     } catch (error) {
@@ -183,9 +201,14 @@ class AuthManager {
         throw new Error('No refresh token available');
       }
 
+      const csrfToken = this.getCsrfToken();
       const response = await fetch(`${AUTH_API}/refresh`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || '',
+        },
+        credentials: 'include',
         body: JSON.stringify({ refreshToken: this.refreshToken }),
       });
 

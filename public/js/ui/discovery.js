@@ -27,8 +27,8 @@ export async function runDiscovery() {
     
     try {
         // Get coin universe from settings
-        const settings = window.getSettings ? window.getSettings() : { coinUniverse: 'top25', discoveryStrategy: 'moderate', debugMode: false };
-        const universe = settings.coinUniverse || 'top25';
+        const settings = window.getSettings ? window.getSettings() : { coinUniverse: 'top50', discoveryStrategy: 'moderate', debugMode: false };
+        const universe = settings.coinUniverse || 'top50';
         
         // Use debug strategy if debug mode is enabled, otherwise use selected strategy
         const strategy = settings.debugMode ? 'debug' : (settings.discoveryStrategy || 'moderate');
@@ -43,7 +43,7 @@ export async function runDiscovery() {
         btn.textContent = '⏳ Scanning...';
         status.style.display = 'block';
         const refreshText = forceRefresh ? ' (bypassing cache)' : '';
-        const universeText = universe === 'top10' ? 'top 10' : universe === 'top25' ? 'top 25' : universe === 'top50' ? 'top 50' : 'top 100';
+        const universeText = universe === 'top10' ? 'top 10' : universe === 'top50' ? 'top 50' : 'top 100';
         const strategyText = strategy === 'debug' ? '⚠️ DEBUG MODE' : strategy === 'conservative' ? '(Conservative)' : strategy === 'aggressive' ? '(Aggressive)' : '(Moderate)';
         message.textContent = `Scanning ${universeText} coins ${strategyText}${refreshText}...`;
         
@@ -214,14 +214,14 @@ export function refreshDiscoveryTimeDisplay() {
 export function loadDiscoverySettings() {
     // Load from localStorage
     const savedSettings = localStorage.getItem('tradingSettings');
-    const settings = savedSettings ? JSON.parse(savedSettings) : { coinUniverse: 'top25', discoveryStrategy: 'moderate' };
+    const settings = savedSettings ? JSON.parse(savedSettings) : { coinUniverse: 'top50', discoveryStrategy: 'moderate' };
     
     // Set dropdown values
     const universeSelect = document.getElementById('discoveryUniverseSelect');
     const strategySelect = document.getElementById('discoveryStrategySelect');
     
     if (universeSelect) {
-        universeSelect.value = settings.coinUniverse || 'top25';
+        universeSelect.value = settings.coinUniverse || 'top50';
     }
     if (strategySelect) {
         strategySelect.value = settings.discoveryStrategy || 'moderate';

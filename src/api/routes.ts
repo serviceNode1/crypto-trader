@@ -24,6 +24,7 @@ import { testRedisConnection } from '../config/redis';
 import { apiLogger as logger } from '../utils/logger';
 import authRoutes from '../routes/auth';
 import googleAuthRoutes from '../routes/googleAuth';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
@@ -58,9 +59,10 @@ router.get('/health', async (_req: Request, res: Response) => {
 /**
  * GET /api/portfolio - Get current portfolio state
  */
-router.get('/portfolio', async (_req: Request, res: Response) => {
+router.get('/portfolio', authenticate, async (req: Request, res: Response) => {
   try {
-    const portfolio = await getPortfolio();
+    const userId = req.user!.userId;
+    const portfolio = await getPortfolio(userId);
     res.json(portfolio);
   } catch (error) {
     logger.error('Failed to get portfolio', { error });
@@ -71,9 +73,10 @@ router.get('/portfolio', async (_req: Request, res: Response) => {
 /**
  * GET /api/portfolio/performance - Get performance metrics
  */
-router.get('/portfolio/performance', async (_req: Request, res: Response) => {
+router.get('/portfolio/performance', authenticate, async (req: Request, res: Response) => {
   try {
-    const metrics = await calculatePerformanceMetrics();
+    const userId = req.user!.userId;
+    const metrics = await calculatePerformanceMetrics(userId);
     res.json(metrics);
   } catch (error) {
     logger.error('Failed to get performance metrics', { error });
@@ -84,9 +87,10 @@ router.get('/portfolio/performance', async (_req: Request, res: Response) => {
 /**
  * GET /api/portfolio/risk - Get risk exposure
  */
-router.get('/portfolio/risk', async (_req: Request, res: Response) => {
+router.get('/portfolio/risk', authenticate, async (req: Request, res: Response) => {
   try {
-    const risk = await getRiskExposure();
+    const userId = req.user!.userId;
+    const risk = await getRiskExposure(userId);
     res.json(risk);
   } catch (error) {
     logger.error('Failed to get risk exposure', { error });
@@ -97,8 +101,9 @@ router.get('/portfolio/risk', async (_req: Request, res: Response) => {
 /**
  * GET /api/portfolio/history - Get portfolio value history
  */
-router.get('/portfolio/history', async (_req: Request, res: Response) => {
+router.get('/portfolio/history', authenticate, async (req: Request, res: Response) => {
   try {
+    const userId = req.user!.userId;
     const result = await query(`
       SELECT 
         DATE(executed_at) as date,
@@ -108,12 +113,15 @@ router.get('/portfolio/history', async (_req: Request, res: Response) => {
             WHEN t2.side = 'BUY' THEN -t2.total_cost
             WHEN t2.side = 'SELL' THEN t2.total_cost - t2.fee
           END
-        ) FROM trades t2 WHERE t2.executed_at <= MAX(t1.executed_at)
-        ) as cash_flow
+        )
+        FROM trades t2
+        WHERE t2.executed_at <= MAX(t1.executed_at) AND t2.user_id = $1
+        ) + 10000 as portfolio_value
       FROM trades t1
+      WHERE t1.user_id = $1
       GROUP BY DATE(executed_at)
-      ORDER BY date ASC
-    `);
+      ORDER BY DATE(executed_at) ASC
+    `, [userId]);
 
     // Calculate portfolio value at each point
     const portfolio = await getPortfolio();
@@ -169,8 +177,9 @@ router.get('/price/:symbol', async (req: Request, res: Response) => {
  * GET /api/trades - Get trade history with pagination
  * Returns trades + total count in one response for efficiency
  */
-router.get('/trades', async (req: Request, res: Response) => {
+router.get('/trades', authenticate, async (req: Request, res: Response) => {
   try {
+    const userId = req.user!.userId;
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
     
@@ -178,10 +187,11 @@ router.get('/trades', async (req: Request, res: Response) => {
     const [tradesResult, countResult] = await Promise.all([
       query(`
         SELECT * FROM trades 
+        WHERE user_id = $1
         ORDER BY executed_at DESC 
-        LIMIT $1 OFFSET $2
-      `, [limit, offset]),
-      query('SELECT COUNT(*) as count FROM trades')
+        LIMIT $2 OFFSET $3
+      `, [userId, limit, offset]),
+      query('SELECT COUNT(*) as count FROM trades WHERE user_id = $1', [userId])
     ]);
     
     res.json({
@@ -199,9 +209,10 @@ router.get('/trades', async (req: Request, res: Response) => {
 /**
  * GET /api/trades/count - Get total number of trades (legacy endpoint)
  */
-router.get('/trades/count', async (_req: Request, res: Response) => {
+router.get('/trades/count', authenticate, async (req: Request, res: Response) => {
   try {
-    const result = await query('SELECT COUNT(*) as count FROM trades');
+    const userId = req.user!.userId;
+    const result = await query('SELECT COUNT(*) as count FROM trades WHERE user_id = $1', [userId]);
     res.json({ count: parseInt(result.rows[0].count) });
   } catch (error) {
     logger.error('Failed to get trade count', { error });
@@ -212,8 +223,9 @@ router.get('/trades/count', async (_req: Request, res: Response) => {
 /**
  * POST /api/trades - Execute a trade
  */
-router.post('/trades', async (req: Request, res: Response) => {
+router.post('/trades', authenticate, async (req: Request, res: Response) => {
   try {
+    const userId = req.user!.userId;
     const { symbol, side, quantity, stopLoss, reasoning, recommendationId } = req.body;
 
     // Validate input
@@ -242,7 +254,12 @@ router.post('/trades', async (req: Request, res: Response) => {
       side,
       quantity,
       reasoning,
-      recommendationId
+      recommendationId,
+      stopLoss,
+      undefined,
+      'manual',
+      'user',
+      userId
     );
 
     logger.info('Trade executed via API', { symbol, side, quantity });
@@ -257,8 +274,9 @@ router.post('/trades', async (req: Request, res: Response) => {
  * POST /api/trade - Execute a trade (alias for /api/trades)
  * This endpoint is used for MANUAL trades and has relaxed risk limits
  */
-router.post('/trade', async (req: Request, res: Response) => {
+router.post('/trade', authenticate, async (req: Request, res: Response) => {
   try {
+    const userId = req.user!.userId;
     const { symbol, side, quantity, stopLoss, takeProfit, reasoning, recommendationId, confirmWarnings } = req.body;
 
     // Validate input
@@ -299,7 +317,10 @@ router.post('/trade', async (req: Request, res: Response) => {
       reasoning,
       recommendationId,
       stopLoss,
-      takeProfit
+      takeProfit,
+      'manual',
+      'user',
+      userId
     );
 
     logger.info('Manual trade executed via API', { symbol, side, quantity, stopLoss, takeProfit, hadWarnings: !!riskCheck.warnings });
@@ -790,9 +811,12 @@ router.get('/market-context', async (_req: Request, res: Response) => {
 /**
  * GET /api/settings - Get user settings
  */
-router.get('/settings', async (_req: Request, res: Response) => {
+router.get('/settings', authenticate, async (req: Request, res: Response) => {
   try {
-    const settings = await getUserSettings();
+    const userId = req.user!.userId;
+    logger.info('📲 [API] GET /api/settings request', { userId, userEmail: req.user!.email });
+    const settings = await getUserSettings(userId);
+    logger.info('✅ [API] GET /api/settings success', { userId, settingsId: settings.id });
     res.json(settings);
   } catch (error) {
     logger.error('Failed to get settings', { error });
@@ -803,14 +827,15 @@ router.get('/settings', async (_req: Request, res: Response) => {
 /**
  * PUT /api/settings - Update user settings
  */
-router.put('/settings', async (req: Request, res: Response) => {
+router.put('/settings', authenticate, async (req: Request, res: Response) => {
   try {
+    const userId = req.user!.userId;
     const settings = req.body;
-    logger.info('Updating settings', { settings });
+    logger.info('📲 [API] PUT /api/settings request', { userId, userEmail: req.user!.email, settings });
     
-    const updatedSettings = await updateUserSettings(settings);
+    const updatedSettings = await updateUserSettings(settings, userId);
     
-    logger.info('Settings updated successfully');
+    logger.info('✅ [API] PUT /api/settings success', { userId, settingsId: updatedSettings.id });
     res.json(updatedSettings);
   } catch (error) {
     logger.error('Failed to update settings', { error });
@@ -824,10 +849,12 @@ router.put('/settings', async (req: Request, res: Response) => {
 /**
  * POST /api/settings/reset - Reset settings to defaults
  */
-router.post('/settings/reset', async (_req: Request, res: Response) => {
+router.post('/settings/reset', authenticate, async (req: Request, res: Response) => {
   try {
-    const settings = await resetUserSettings();
-    logger.info('Settings reset to defaults');
+    const userId = req.user!.userId;
+    logger.info('📲 [API] POST /api/settings/reset request', { userId, userEmail: req.user!.email });
+    const settings = await resetUserSettings(userId);
+    logger.info('✅ [API] POST /api/settings/reset success', { userId });
     res.json(settings);
   } catch (error) {
     logger.error('Failed to reset settings', { error });

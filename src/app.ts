@@ -14,6 +14,7 @@ import { closeQueues } from './jobs';
 import { initializeCoinList } from './services/dataCollection/coinListService';
 import {
   generalRateLimit,
+  settingsRateLimit,
   generateCsrfToken,
   verifyCsrfToken,
   securityHeaders,
@@ -92,7 +93,10 @@ app.use(generateCsrfToken);
 // CSRF token verification (for state-changing requests)
 app.use(verifyCsrfToken);
 
-// General rate limiting
+// Settings endpoints get their own lenient rate limit (applied first)
+app.use('/api/settings', settingsRateLimit);
+
+// General rate limiting for all other API routes
 app.use('/api/', generalRateLimit);
 
 // Security logging

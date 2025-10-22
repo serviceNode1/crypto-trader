@@ -23,7 +23,7 @@ export const DEFAULT_SETTINGS = {
     maxPositionSize: 5,
     takeProfitStrategy: 'full',
     autoStopLoss: true,
-    coinUniverse: 'top25',
+    coinUniverse: 'top50',
     discoveryStrategy: 'moderate',
     // analysisFrequency removed - now fixed at 2 hours in backend
 };

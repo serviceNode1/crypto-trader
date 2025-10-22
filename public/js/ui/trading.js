@@ -22,7 +22,7 @@ export function loadSettings() {
         maxPositionSize: 5,
         takeProfitStrategy: 'full',
         autoStopLoss: true,
-        coinUniverse: 'top25',
+        coinUniverse: 'top50',
         discoveryStrategy: 'moderate',
         analysisFrequency: 4
     };

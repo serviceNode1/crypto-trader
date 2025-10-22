@@ -420,15 +420,15 @@ export async function shouldHaltTrading(): Promise<RiskCheck> {
 /**
  * Get current risk exposure summary
  */
-export async function getRiskExposure(): Promise<{
+export async function getRiskExposure(userId: number = 1): Promise<{
   portfolioRisk: number;
   dailyLoss: number;
   openPositions: number;
   utilizationPercent: number;
 }> {
-  const portfolio = await getPortfolio();
-  const portfolioRisk = await calculateTotalPortfolioRisk();
-  const dailyLoss = await calculateDailyLoss();
+  const portfolio = await getPortfolio(userId);
+  const portfolioRisk = await calculateTotalPortfolioRisk(userId);
+  const dailyLoss = await calculateDailyLoss(userId);
 
   const utilizationPercent =
     ((portfolio.totalValue - portfolio.cash) / portfolio.totalValue) * 100;

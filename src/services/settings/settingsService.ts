@@ -11,8 +11,11 @@ export interface UserSettings {
   maxPositionSize: number;
   takeProfitStrategy: 'full' | 'partial' | 'trailing';
   autoStopLoss: boolean;
-  coinUniverse: 'top10' | 'top25' | 'top50';
+  coinUniverse: 'top10' | 'top50' | 'top100';
   analysisFrequency: 1 | 4 | 8 | 24;
+  discoveryStrategy: 'conservative' | 'moderate' | 'aggressive';
+  colorMode: 'light' | 'dark' | 'auto';
+  visualStyle: 'default' | 'glass';
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -25,8 +28,11 @@ const DEFAULT_SETTINGS: Omit<UserSettings, 'id' | 'userId' | 'createdAt' | 'upda
   maxPositionSize: 5.0,
   takeProfitStrategy: 'partial',
   autoStopLoss: true,
-  coinUniverse: 'top25',
+  coinUniverse: 'top50',
   analysisFrequency: 4,
+  discoveryStrategy: 'moderate',
+  colorMode: 'auto',
+  visualStyle: 'default',
 };
 
 /**
@@ -34,6 +40,7 @@ const DEFAULT_SETTINGS: Omit<UserSettings, 'id' | 'userId' | 'createdAt' | 'upda
  */
 export async function getUserSettings(userId: number = 1): Promise<UserSettings> {
   try {
+    logger.info('🔍 [SETTINGS] Getting settings for user', { userId });
     const result = await query(
       'SELECT * FROM user_settings WHERE user_id = $1',
       [userId]
@@ -41,9 +48,11 @@ export async function getUserSettings(userId: number = 1): Promise<UserSettings>
 
     if (result.rows.length === 0) {
       // Create default settings
-      logger.info('Creating default settings for user', { userId });
+      logger.info('🆕 [SETTINGS] No settings found, creating default settings for user', { userId });
       return await createDefaultSettings(userId);
     }
+    
+    logger.info('✅ [SETTINGS] Found existing settings for user', { userId, settingsId: result.rows[0].id });
 
     const row = result.rows[0];
     return {
@@ -58,6 +67,9 @@ export async function getUserSettings(userId: number = 1): Promise<UserSettings>
       autoStopLoss: row.auto_stop_loss,
       coinUniverse: row.coin_universe,
       analysisFrequency: row.analysis_frequency,
+      discoveryStrategy: row.discovery_strategy || 'moderate',
+      colorMode: row.color_mode || 'auto',
+      visualStyle: row.visual_style || 'default',
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
@@ -75,7 +87,7 @@ export async function updateUserSettings(
   userId: number = 1
 ): Promise<UserSettings> {
   try {
-    logger.info('Updating user settings', { userId, settings });
+    logger.info('📝 [SETTINGS] Updating user settings', { userId, settings });
 
     // Validate settings
     validateSettings(settings);
@@ -121,6 +133,18 @@ export async function updateUserSettings(
       updates.push(`analysis_frequency = $${paramCount++}`);
       values.push(settings.analysisFrequency);
     }
+    if (settings.discoveryStrategy !== undefined) {
+      updates.push(`discovery_strategy = $${paramCount++}`);
+      values.push(settings.discoveryStrategy);
+    }
+    if (settings.colorMode !== undefined) {
+      updates.push(`color_mode = $${paramCount++}`);
+      values.push(settings.colorMode);
+    }
+    if (settings.visualStyle !== undefined) {
+      updates.push(`visual_style = $${paramCount++}`);
+      values.push(settings.visualStyle);
+    }
 
     if (updates.length === 0) {
       throw new Error('No settings to update');
@@ -141,7 +165,7 @@ export async function updateUserSettings(
       throw new Error('Failed to update settings');
     }
 
-    logger.info('Settings updated successfully', { userId });
+    logger.info('✅ [SETTINGS] Settings updated successfully', { userId, updates: updates.length });
 
     return await getUserSettings(userId);
   } catch (error) {
@@ -155,7 +179,7 @@ export async function updateUserSettings(
  */
 export async function resetUserSettings(userId: number = 1): Promise<UserSettings> {
   try {
-    logger.info('Resetting user settings to defaults', { userId });
+    logger.info('🔄 [SETTINGS] Resetting user settings to defaults', { userId });
 
     const result = await query(
       `UPDATE user_settings
@@ -167,8 +191,11 @@ export async function resetUserSettings(userId: number = 1): Promise<UserSetting
            take_profit_strategy = $6,
            auto_stop_loss = $7,
            coin_universe = $8,
-           analysis_frequency = $9
-       WHERE user_id = $10
+           analysis_frequency = $9,
+           discovery_strategy = $10,
+           color_mode = $11,
+           visual_style = $12
+       WHERE user_id = $13
        RETURNING *`,
       [
         DEFAULT_SETTINGS.autoExecute,
@@ -180,6 +207,9 @@ export async function resetUserSettings(userId: number = 1): Promise<UserSetting
         DEFAULT_SETTINGS.autoStopLoss,
         DEFAULT_SETTINGS.coinUniverse,
         DEFAULT_SETTINGS.analysisFrequency,
+        DEFAULT_SETTINGS.discoveryStrategy,
+        DEFAULT_SETTINGS.colorMode,
+        DEFAULT_SETTINGS.visualStyle,
         userId,
       ]
     );
@@ -188,7 +218,7 @@ export async function resetUserSettings(userId: number = 1): Promise<UserSetting
       throw new Error('Failed to reset settings');
     }
 
-    logger.info('Settings reset successfully', { userId });
+    logger.info('✅ [SETTINGS] Settings reset successfully', { userId });
 
     return await getUserSettings(userId);
   } catch (error) {
@@ -201,12 +231,15 @@ export async function resetUserSettings(userId: number = 1): Promise<UserSetting
  * Create default settings for new user
  */
 async function createDefaultSettings(userId: number): Promise<UserSettings> {
+  logger.info('🆕 [SETTINGS] Creating default settings row', { userId, defaults: DEFAULT_SETTINGS });
+  
   await query(
     `INSERT INTO user_settings (
       user_id, auto_execute, confidence_threshold, human_approval,
       position_sizing_strategy, max_position_size, take_profit_strategy,
-      auto_stop_loss, coin_universe, analysis_frequency
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      auto_stop_loss, coin_universe, analysis_frequency,
+      discovery_strategy, color_mode, visual_style
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     RETURNING *`,
     [
       userId,
@@ -219,6 +252,9 @@ async function createDefaultSettings(userId: number): Promise<UserSettings> {
       DEFAULT_SETTINGS.autoStopLoss,
       DEFAULT_SETTINGS.coinUniverse,
       DEFAULT_SETTINGS.analysisFrequency,
+      DEFAULT_SETTINGS.discoveryStrategy,
+      DEFAULT_SETTINGS.colorMode,
+      DEFAULT_SETTINGS.visualStyle,
     ]
   );
 
@@ -259,7 +295,7 @@ function validateSettings(settings: Partial<UserSettings>): void {
 
   if (
     settings.coinUniverse !== undefined &&
-    !['top10', 'top25', 'top50'].includes(settings.coinUniverse)
+    !['top10', 'top50', 'top100'].includes(settings.coinUniverse)
   ) {
     throw new Error('Invalid coin universe');
   }
@@ -269,6 +305,27 @@ function validateSettings(settings: Partial<UserSettings>): void {
     ![1, 4, 8, 24].includes(settings.analysisFrequency)
   ) {
     throw new Error('Invalid analysis frequency');
+  }
+
+  if (
+    settings.discoveryStrategy !== undefined &&
+    !['conservative', 'moderate', 'aggressive'].includes(settings.discoveryStrategy)
+  ) {
+    throw new Error('Invalid discovery strategy');
+  }
+
+  if (
+    settings.colorMode !== undefined &&
+    !['light', 'dark', 'auto'].includes(settings.colorMode)
+  ) {
+    throw new Error('Invalid color mode');
+  }
+
+  if (
+    settings.visualStyle !== undefined &&
+    !['default', 'glass', 'compact', 'comfortable'].includes(settings.visualStyle)
+  ) {
+    throw new Error('Invalid visual style');
   }
 }
 
