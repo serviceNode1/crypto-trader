@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { query } from '../../config/database';
 import { logger } from '../../utils/logger';
+import { initializeUserPortfolio } from '../trading/paperTrading';
 import {
   User,
   AuthCredentials,
@@ -127,6 +128,9 @@ export async function registerUser(data: RegisterData): Promise<AuthResponse> {
     );
 
     const user = userResult.rows[0];
+
+    // Initialize portfolio for new user
+    await initializeUserPortfolio(user.id);
 
     // Create session
     const sessionResult = await createSession(user.id, {

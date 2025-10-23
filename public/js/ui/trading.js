@@ -9,6 +9,72 @@ import { API_BASE } from '../config.js';
 import { formatPrice } from '../utils/formatters.js';
 
 // ============================================
+// ERROR HANDLING HELPERS
+// ============================================
+
+/**
+ * Format trade error with helpful suggestions
+ */
+function formatTradeError(errorMessage) {
+    const lowerMsg = errorMessage.toLowerCase();
+    
+    // Check for specific error patterns and provide helpful guidance
+    if (lowerMsg.includes('404') || lowerMsg.includes('not available') || lowerMsg.includes('not found on exchange')) {
+        return {
+            title: 'Token Not Available',
+            message: `<p><strong>${errorMessage}</strong></p>
+                <p style="margin-top: 12px;">This token is not available for trading on Coinbase.</p>
+                <div class="modal-warning-list" style="margin-top: 12px;">
+                    <strong>💡 Try These Instead:</strong>
+                    <ul style="margin: 8px 0 0 20px;">
+                        <li>Trade popular coins like BTC, ETH, SOL, or ADA</li>
+                        <li>Check the Discovery page for tradable coins</li>
+                        <li>Look for coins with high 24h volume</li>
+                    </ul>
+                </div>`
+        };
+    }
+    
+    if (lowerMsg.includes('order book') || lowerMsg.includes('insufficient') || lowerMsg.includes('liquidity')) {
+        return {
+            title: 'Low Liquidity',
+            message: `<p><strong>${errorMessage}</strong></p>
+                <p style="margin-top: 12px;">This token doesn't have enough buyers/sellers at the current price.</p>
+                <div class="modal-warning-list" style="margin-top: 12px;">
+                    <strong>💡 Solutions:</strong>
+                    <ul style="margin: 8px 0 0 20px;">
+                        <li>Try a <strong>smaller trade amount</strong> (e.g., $25-$100)</li>
+                        <li>Trade more liquid coins (higher 24h volume)</li>
+                        <li>Check the Discovery page for recommended coins</li>
+                    </ul>
+                </div>`
+        };
+    }
+    
+    if (lowerMsg.includes('portfolio not found')) {
+        return {
+            title: 'Portfolio Error',
+            message: `<p><strong>${errorMessage}</strong></p>
+                <p style="margin-top: 12px;">Your portfolio data couldn't be loaded.</p>
+                <div class="modal-warning-list" style="margin-top: 12px;">
+                    <strong>🔄 Quick Fix:</strong>
+                    <ul style="margin: 8px 0 0 20px;">
+                        <li>Refresh the page (F5 or Ctrl+R)</li>
+                        <li>Check your internet connection</li>
+                        <li>Contact support if the issue persists</li>
+                    </ul>
+                </div>`
+        };
+    }
+    
+    // Default error format
+    return {
+        title: 'Trade Failed',
+        message: errorMessage
+    };
+}
+
+// ============================================
 // SETTINGS HELPERS
 // ============================================
 
@@ -258,10 +324,16 @@ export async function executeTrade() {
             })
         });
 
-        const result = await response.json();
+        let result;
+        try {
+            result = await response.json();
+        } catch (parseError) {
+            console.error('Failed to parse trade response:', parseError);
+            throw new Error('Trade failed - invalid server response');
+        }
 
         if (!response.ok) {
-            throw new Error(result.message || 'Trade failed');
+            throw new Error(result?.message || result?.error || 'Trade failed');
         }
 
         // Check if trade requires confirmation due to warnings
@@ -296,10 +368,16 @@ export async function executeTrade() {
                 })
             });
 
-            const confirmedResult = await confirmedResponse.json();
+            let confirmedResult;
+            try {
+                confirmedResult = await confirmedResponse.json();
+            } catch (parseError) {
+                console.error('Failed to parse confirmation response:', parseError);
+                throw new Error('Trade failed - invalid server response');
+            }
             
             if (!confirmedResponse.ok) {
-                throw new Error(confirmedResult.message || 'Trade failed');
+                throw new Error(confirmedResult?.message || confirmedResult?.error || 'Trade failed');
             }
 
             await showSuccess(
@@ -325,7 +403,8 @@ export async function executeTrade() {
 
     } catch (error) {
         console.error('Trade error:', error);
-        await showError('Trade Failed', error.message);
+        const formattedError = formatTradeError(error.message);
+        await showError(formattedError.title, formattedError.message);
     }
 }
 
@@ -366,10 +445,16 @@ export async function sellPosition(symbol, quantity) {
             })
         });
 
-        const result = await response.json();
+        let result;
+        try {
+            result = await response.json();
+        } catch (parseError) {
+            console.error('Failed to parse sell response:', parseError);
+            throw new Error('Sale failed - invalid server response');
+        }
 
         if (!response.ok) {
-            throw new Error(result.message || 'Sale failed');
+            throw new Error(result?.message || result?.error || 'Sale failed');
         }
 
         await showSuccess(
@@ -383,7 +468,8 @@ export async function sellPosition(symbol, quantity) {
 
     } catch (error) {
         console.error('Sell error:', error);
-        await showError('Sale Failed', error.message);
+        const formattedError = formatTradeError(error.message);
+        await showError(formattedError.title, formattedError.message);
     }
 }
 
@@ -661,10 +747,16 @@ export async function saveProtection(symbol, type) {
             body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
+        let result;
+        try {
+            result = await response.json();
+        } catch (parseError) {
+            console.error('Failed to parse protection response:', parseError);
+            throw new Error('Failed to update protection - invalid server response');
+        }
 
         if (!response.ok) {
-            throw new Error(result.message || 'Failed to update protection');
+            throw new Error(result?.message || result?.error || 'Failed to update protection');
         }
 
         await showSuccess(

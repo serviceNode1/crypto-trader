@@ -2,6 +2,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { query } from '../../config/database';
 import { logger } from '../../utils/logger';
 import { GoogleAuthData, AuthResponse } from '../../types/auth';
+import { initializeUserPortfolio } from '../trading/paperTrading';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -99,6 +100,9 @@ export async function loginWithGoogle(
         );
 
         user = newUserResult.rows[0];
+
+        // Initialize portfolio for new user
+        await initializeUserPortfolio(user.id);
 
         logger.info('Created new user via Google OAuth', {
           userId: user.id,

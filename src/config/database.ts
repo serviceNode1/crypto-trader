@@ -68,7 +68,12 @@ export async function transaction<T>(
     return result;
   } catch (error) {
     await client.query('ROLLBACK');
-    logger.error('Transaction failed', { error });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    logger.error('Transaction failed', { 
+      error: errorMessage,
+      stack: errorStack 
+    });
     throw error;
   } finally {
     client.release();

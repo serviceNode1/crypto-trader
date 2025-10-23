@@ -39,6 +39,38 @@ export interface Trade {
 }
 
 /**
+ * Initialize portfolio for a new user
+ */
+export async function initializeUserPortfolio(userId: number): Promise<void> {
+  try {
+    const startingCapital = parseFloat(process.env.STARTING_CAPITAL || '10000');
+    
+    // Check if portfolio already exists
+    const existing = await query(
+      'SELECT id FROM portfolio_balance WHERE user_id = $1',
+      [userId]
+    );
+    
+    if (existing.rows.length > 0) {
+      logger.info('Portfolio already exists for user', { userId });
+      return;
+    }
+    
+    // Create initial portfolio balance
+    await query(
+      `INSERT INTO portfolio_balance (user_id, cash)
+       VALUES ($1, $2)`,
+      [userId, startingCapital]
+    );
+    
+    logger.info('Portfolio initialized for user', { userId, startingCapital });
+  } catch (error) {
+    logger.error('Failed to initialize user portfolio', { userId, error });
+    throw error;
+  }
+}
+
+/**
  * Get current portfolio state
  */
 export async function getPortfolio(userId: number = 1): Promise<Portfolio> {
@@ -157,6 +189,11 @@ export async function executeTrade(
         'SELECT cash FROM portfolio_balance WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
         [userId]
       );
+      
+      if (!balanceResult.rows[0]) {
+        throw new Error('Portfolio not found. Please refresh the page and try again.');
+      }
+      
       const currentCash = parseFloat(balanceResult.rows[0].cash);
 
       if (side === 'BUY') {
@@ -170,7 +207,7 @@ export async function executeTrade(
         // Update cash balance
         const newCash = currentCash - totalCost;
         await client.query(
-          'UPDATE portfolio_balance SET cash = $1, updated_at = NOW() WHERE user_id = $2',
+          'UPDATE portfolio_balance SET cash = $1 WHERE user_id = $2',
           [newCash, userId]
         );
 
@@ -241,7 +278,7 @@ export async function executeTrade(
         // Update cash balance
         const newCash = currentCash + totalCost;
         await client.query(
-          'UPDATE portfolio_balance SET cash = $1, updated_at = NOW() WHERE user_id = $2',
+          'UPDATE portfolio_balance SET cash = $1 WHERE user_id = $2',
           [newCash, userId]
         );
 
@@ -300,7 +337,15 @@ export async function executeTrade(
 
       return trade;
     } catch (error) {
-      logger.error('Trade execution failed', { symbol, side, quantity, error });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      logger.error('Trade execution failed', { 
+        symbol, 
+        side, 
+        quantity, 
+        error: errorMessage,
+        stack: errorStack 
+      });
       throw error;
     }
   });

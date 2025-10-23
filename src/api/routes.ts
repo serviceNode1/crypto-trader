@@ -3,6 +3,7 @@ import {
   getPortfolio,
   executeTrade,
   calculatePerformanceMetrics,
+  initializeUserPortfolio,
 } from '../services/trading/paperTrading';
 import { validateTrade, getRiskExposure } from '../services/trading/riskManagement';
 import { getCryptoNews } from '../services/dataCollection/cryptoPanicService';
@@ -62,6 +63,10 @@ router.get('/health', async (_req: Request, res: Response) => {
 router.get('/portfolio', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
+    
+    // Auto-initialize portfolio if it doesn't exist (for existing users)
+    await initializeUserPortfolio(userId);
+    
     const portfolio = await getPortfolio(userId);
     res.json(portfolio);
   } catch (error) {
@@ -326,10 +331,17 @@ router.post('/trade', authenticate, async (req: Request, res: Response) => {
     logger.info('Manual trade executed via API', { symbol, side, quantity, stopLoss, takeProfit, hadWarnings: !!riskCheck.warnings });
     return res.status(201).json(trade);
   } catch (error: any) {
-    logger.error('Failed to execute trade', { error });
+    const errorMessage = error?.message || 'An unexpected error occurred while executing the trade.';
+    logger.error('Failed to execute trade', { 
+      error: errorMessage,
+      stack: error?.stack,
+      symbol: req.body?.symbol,
+      side: req.body?.side,
+      quantity: req.body?.quantity
+    });
     return res.status(500).json({ 
       error: 'Trade execution failed',
-      message: error.message || 'An unexpected error occurred while executing the trade.',
+      message: errorMessage,
     });
   }
 });
