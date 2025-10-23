@@ -11,7 +11,7 @@ import { loadPortfolio, loadPerformance, loadRisk, loadPortfolioChart } from './
 import { loadTrades } from './ui/trades.js';
 import { loadRecommendations, refreshAnalysisTimeDisplay } from './ui/recommendations.js';
 import { loadAIReviewLogs, toggleAIReviewLogs } from './ui/ai-review-logs.js';
-import { toggleCardCollapse, initializeCardStates } from './ui/cards.js';
+import { toggleCardCollapse, initializeCardStates, updateCardHeight } from './ui/cards.js';
 import { openInfoModal, closeInfoModal, switchTab } from './ui/modals.js';
 import { 
     openSettingsModal, 
@@ -122,6 +122,7 @@ async function init() {
 window.changeColorMode = changeColorMode;
 window.changeVisualStyle = changeVisualStyle;
 window.toggleCardCollapse = toggleCardCollapse;
+window.updateCardHeight = updateCardHeight;
 window.openInfoModal = openInfoModal;
 window.closeInfoModal = closeInfoModal;
 window.openSettingsModal = openSettingsModal;

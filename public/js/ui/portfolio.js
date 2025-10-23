@@ -3,9 +3,11 @@
  * Handles displaying portfolio data, performance, risk, and charts
  */
 
-/* global document, Chart */
+/* global document, window */
 /* eslint-disable no-console */
+import { API_BASE } from '../config.js';
 import { fetchPortfolio, fetchPerformance, fetchRisk, fetchPortfolioHistory } from '../api/portfolio.js';
+import { updateCardHeight } from './cards.js';
 
 // Chart instance
 let portfolioChart = null;
@@ -116,6 +118,9 @@ export async function loadPortfolio() {
         } else {
             document.getElementById('holdings-list').innerHTML = '<p>No open positions</p>';
         }
+        
+        // Update card max-height to accommodate new content
+        updateCardHeight('holdings-content');
     } catch (error) {
         console.error('Failed to load portfolio:', error);
         document.getElementById('portfolio-metrics').innerHTML = '<p class="negative">Failed to load data</p>';

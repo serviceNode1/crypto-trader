@@ -9,6 +9,7 @@ import { fetchTrades } from '../api/trades.js';
 import { PAGINATION } from '../config.js';
 import { formatNumber } from '../utils/formatters.js';
 import { formatPrice } from '../utils/formatters.js';
+import { updateCardHeight } from './cards.js';
 
 let currentTradePage = 1;
 
@@ -116,6 +117,9 @@ export async function loadTrades(page = 1) {
         } else {
             document.getElementById('trades-list').innerHTML = '<p>No trades yet</p>';
         }
+        
+        // Update card max-height to accommodate new content
+        updateCardHeight('trades-content');
     } catch (error) {
         console.error('Failed to load trades:', error);
     }

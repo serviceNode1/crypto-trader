@@ -35,6 +35,16 @@ export function toggleCardCollapse(cardId) {
 }
 
 /**
+ * Update card max-height to fit content (for dynamic content updates)
+ */
+export function updateCardHeight(cardId) {
+    const content = document.getElementById(cardId);
+    if (content && !content.classList.contains('collapsed')) {
+        content.style.maxHeight = content.scrollHeight + 'px';
+    }
+}
+
+/**
  * Initialize card collapse states from localStorage
  */
 export function initializeCardStates() {
