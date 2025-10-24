@@ -60,7 +60,7 @@ export async function analyzeCrypto() {
 
     try {
         // Call the analysis endpoint with model parameter
-        const response = await fetch(`${API_BASE}/analyze/${symbol}?model=${aiModel}`);
+        const response = await window.auth.fetch(`${API_BASE}/analyze/${symbol}?model=${aiModel}`);
         
         if (!response.ok) {
             throw new Error(`Analysis failed: ${response.statusText}`);

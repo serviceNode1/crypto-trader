@@ -144,7 +144,7 @@ export async function runDiscovery() {
  */
 export async function loadCachedDiscoveries() {
     try {
-        const response = await fetch(`${API_BASE}/discover/top?limit=10`);
+        const response = await window.auth.fetch(`${API_BASE}/discover/top?limit=10`);
         if (!response.ok) {
             throw new Error('Failed to load cached discoveries');
         }
@@ -549,7 +549,7 @@ export async function generateAIRecommendations() {
         console.log(`[AI Recommendations] Request body:`, { maxBuy: maxRecs, maxSell: 0, debugMode });
         
         // Call API
-        const response = await fetch(`${API_BASE}/recommendations/generate`, {
+        const response = await window.auth.fetch(`${API_BASE}/recommendations/generate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 

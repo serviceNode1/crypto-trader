@@ -151,7 +151,7 @@ export async function previewTrade() {
     }
 
     // Get current portfolio
-    const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
+    const portfolioResponse = await window.auth.fetch(`${API_BASE}/portfolio`);
     if (!portfolioResponse.ok) {
         previewArea.style.display = 'block';
         previewArea.innerHTML = `
@@ -168,7 +168,7 @@ export async function previewTrade() {
 
     // Get current price for the symbol
     try {
-        const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+        const priceResponse = await window.auth.fetch(`${API_BASE}/price/${symbol}`);
         if (!priceResponse.ok) throw new Error('Price fetch failed');
 
         const priceData = await priceResponse.json();
@@ -292,13 +292,13 @@ export async function executeTrade() {
     const takeProfitPrice = addStopLoss ? parseFloat(document.getElementById('takeProfitPrice').value) : null;
 
     try {
-        const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+        const priceResponse = await window.auth.fetch(`${API_BASE}/price/${symbol}`);
         if (!priceResponse.ok) throw new Error('Price fetch failed');
         const priceData = await priceResponse.json();
         const currentPrice = priceData.price;
 
         // Get portfolio value for percent calculation
-        const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
+        const portfolioResponse = await window.auth.fetch(`${API_BASE}/portfolio`);
         const portfolio = await portfolioResponse.json();
         const totalValue = portfolio.totalValue || 10000;
 
@@ -427,7 +427,7 @@ export async function sellPosition(symbol, quantity) {
 
     try {
         // Get current price
-        const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+        const priceResponse = await window.auth.fetch(`${API_BASE}/price/${symbol}`);
         if (!priceResponse.ok) throw new Error('Failed to get price');
 
         const priceData = await priceResponse.json();
@@ -569,7 +569,7 @@ export function showError(title, message) {
 export async function openPositionDetails(symbol) {
     try {
         // Fetch current portfolio and position data
-        const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
+        const portfolioResponse = await window.auth.fetch(`${API_BASE}/portfolio`);
         const portfolio = await portfolioResponse.json();
         const position = portfolio.positions.find(p => p.symbol === symbol);
 
@@ -579,7 +579,7 @@ export async function openPositionDetails(symbol) {
         }
 
         // Get current price
-        const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+        const priceResponse = await window.auth.fetch(`${API_BASE}/price/${symbol}`);
         const priceData = await priceResponse.json();
         const currentPrice = priceData.price;
 
@@ -667,7 +667,7 @@ export async function openPositionDetails(symbol) {
 
 export async function openProtectionManager(symbol) {
     try {
-        const portfolioResponse = await fetch(`${API_BASE}/portfolio`);
+        const portfolioResponse = await window.auth.fetch(`${API_BASE}/portfolio`);
         const portfolio = await portfolioResponse.json();
         const position = portfolio.positions.find(p => p.symbol === symbol);
 
@@ -676,7 +676,7 @@ export async function openProtectionManager(symbol) {
             return;
         }
 
-        const priceResponse = await fetch(`${API_BASE}/price/${symbol}`);
+        const priceResponse = await window.auth.fetch(`${API_BASE}/price/${symbol}`);
         const priceData = await priceResponse.json();
         const currentPrice = priceData.price;
 

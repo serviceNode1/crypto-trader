@@ -24,7 +24,7 @@ export async function loadAIReviewLogs() {
     
     try {
         console.log('Fetching AI review logs from:', `${API_BASE}/ai-review-logs?limit=50`);
-        const response = await fetch(`${API_BASE}/ai-review-logs?limit=50`);
+        const response = await window.auth.fetch(`${API_BASE}/ai-review-logs?limit=50`);
         
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);

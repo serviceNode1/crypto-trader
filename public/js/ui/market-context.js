@@ -48,7 +48,7 @@ function getVIXColor(vix) {
  */
 export async function loadMarketContext() {
     try {
-        const response = await fetch(`${API_BASE}/market-context`);
+        const response = await window.auth.fetch(`${API_BASE}/market-context`);
         const data = await response.json();
 
         const regimeColor = getMarketRegimeColor(data.context.marketRegime);
@@ -206,7 +206,7 @@ export async function runAIAnalysisNow(event) {
         const stopProgress = showAnalysisProgress();
         
         // Trigger recommendation job via API
-        const response = await fetch(`${API_BASE}/recommendations/generate`, {
+        const response = await window.auth.fetch(`${API_BASE}/recommendations/generate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ maxBuy: 5, maxSell: 5 })

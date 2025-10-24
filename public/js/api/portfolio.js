@@ -9,6 +9,7 @@ import { API_BASE } from '../config.js';
  * Handle API response with rate limiting
  */
 async function handleResponse(response, resourceName) {
+    if (!response) return null; // Auth redirect happened
     if (!response.ok) {
         if (response.status === 429) {
             console.warn(`Rate limited - ${resourceName} will refresh on next interval`);
@@ -23,7 +24,7 @@ async function handleResponse(response, resourceName) {
  * Fetch portfolio overview data
  */
 export async function fetchPortfolio() {
-    const response = await fetch(`${API_BASE}/portfolio`);
+    const response = await window.auth.fetch(`${API_BASE}/portfolio`);
     return handleResponse(response, 'portfolio');
 }
 
@@ -31,7 +32,7 @@ export async function fetchPortfolio() {
  * Fetch portfolio performance metrics
  */
 export async function fetchPerformance() {
-    const response = await fetch(`${API_BASE}/portfolio/performance`);
+    const response = await window.auth.fetch(`${API_BASE}/portfolio/performance`);
     return handleResponse(response, 'performance');
 }
 
@@ -39,7 +40,7 @@ export async function fetchPerformance() {
  * Fetch portfolio risk metrics
  */
 export async function fetchRisk() {
-    const response = await fetch(`${API_BASE}/portfolio/risk`);
+    const response = await window.auth.fetch(`${API_BASE}/portfolio/risk`);
     return handleResponse(response, 'risk');
 }
 
@@ -47,6 +48,6 @@ export async function fetchRisk() {
  * Fetch portfolio history for charting
  */
 export async function fetchPortfolioHistory() {
-    const response = await fetch(`${API_BASE}/portfolio/history`);
+    const response = await window.auth.fetch(`${API_BASE}/portfolio/history`);
     return handleResponse(response, 'portfolio chart');
 }
