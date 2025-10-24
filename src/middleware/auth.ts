@@ -1,12 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { query } from '../config/database';
 import { JWTPayload } from '../types/auth';
 import { logger } from '../utils/logger';
 import { getAccessTokenFromCookie } from '../services/auth/cookieAuthService';
 import { validateSession } from '../services/auth/authService';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
 // Extend Express Request to include user
 declare global {
@@ -106,7 +102,7 @@ export function requireAdmin(
  */
 export async function optionalAuth(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): Promise<void> {
   try {

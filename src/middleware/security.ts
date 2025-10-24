@@ -175,7 +175,7 @@ export function verifyCsrfToken(req: Request, res: Response, next: NextFunction)
  * Security Headers Middleware
  * Sets various security headers to protect against common attacks
  */
-export function securityHeaders(req: Request, res: Response, next: NextFunction): void {
+export function securityHeaders(_req: Request, res: Response, next: NextFunction): void {
   // Prevent clickjacking
   res.setHeader('X-Frame-Options', 'DENY');
 
@@ -213,7 +213,7 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
 /**
  * Log security-relevant events
  */
-export function securityLogger(req: Request, res: Response, next: NextFunction): void {
+export function securityLogger(req: Request, _res: Response, next: NextFunction): void {
   // Log authentication attempts
   if (req.path.includes('/auth/login') || req.path.includes('/auth/register')) {
     logger.info('Auth attempt', {
@@ -241,7 +241,7 @@ export function securityLogger(req: Request, res: Response, next: NextFunction):
  * Sanitize user input to prevent XSS
  * Basic sanitization - for production, use a library like DOMPurify or validator
  */
-export function sanitizeInput(req: Request, res: Response, next: NextFunction): void {
+export function sanitizeInput(req: Request, _res: Response, next: NextFunction): void {
   const sanitize = (obj: any): any => {
     if (typeof obj === 'string') {
       // Remove potentially dangerous HTML/script tags

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticate, requireAdmin } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 import {
   registerUser,
   loginUser,

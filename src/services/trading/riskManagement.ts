@@ -427,8 +427,8 @@ export async function getRiskExposure(userId: number = 1): Promise<{
   utilizationPercent: number;
 }> {
   const portfolio = await getPortfolio(userId);
-  const portfolioRisk = await calculateTotalPortfolioRisk(userId);
-  const dailyLoss = await calculateDailyLoss(userId);
+  const portfolioRisk = await calculateTotalPortfolioRisk();
+  const dailyLoss = await calculateDailyLoss();
 
   const utilizationPercent =
     ((portfolio.totalValue - portfolio.cash) / portfolio.totalValue) * 100;
