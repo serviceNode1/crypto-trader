@@ -378,6 +378,42 @@ npm run dev
 open http://localhost:3000
 ```
 
+**📚 For detailed setup:** See [QUICKSTART.md](./QUICKSTART.md) for a 10-minute guided setup.
+
+---
+
+## 📚 Documentation
+
+### **Core Documentation**
+
+| Document | Description | Use Case |
+|----------|-------------|----------|
+| **[README.md](./README.md)** | Project overview, goals, disclaimers | Start here |
+| **[QUICKSTART.md](./QUICKSTART.md)** | 10-minute setup guide | First-time setup |
+| **[ARCHITECTURE.md](./ARCHITECTURE.md)** | System architecture & design | Understanding the system |
+| **[API_REFERENCE.md](./API_REFERENCE.md)** | Complete API documentation | Building integrations |
+| **[DISCOVERY_AND_AI.md](./DISCOVERY_AND_AI.md)** | Discovery pipeline & AI tuning | Optimizing strategies |
+| **[DEPLOYMENT.md](./DEPLOYMENT.md)** | Production deployment guide | Going to production |
+
+### **Reference Guides**
+
+| Document | Description |
+|----------|-------------|
+| **[SETUP.md](./SETUP.md)** | Detailed development setup |
+| **[COMMANDS.md](./COMMANDS.md)** | Quick command reference |
+| **[DISCOVERY_VS_RECOMMENDATIONS.md](./DISCOVERY_VS_RECOMMENDATIONS.md)** | User-friendly explainer |
+| **[GOOGLE_OAUTH_SETUP.md](./GOOGLE_OAUTH_SETUP.md)** | Google OAuth configuration |
+| **[MULTI_USER_ARCHITECTURE_PLAN.md](./MULTI_USER_ARCHITECTURE_PLAN.md)** | Multi-user system design |
+
+### **Quick Links**
+
+- **New to the project?** → Start with [README.md](./README.md), then [QUICKSTART.md](./QUICKSTART.md)
+- **Setting up development?** → [SETUP.md](./SETUP.md)
+- **Need API details?** → [API_REFERENCE.md](./API_REFERENCE.md)
+- **Want to optimize performance?** → [DISCOVERY_AND_AI.md](./DISCOVERY_AND_AI.md)
+- **Deploying to production?** → [DEPLOYMENT.md](./DEPLOYMENT.md)
+- **Understanding the system?** → [ARCHITECTURE.md](./ARCHITECTURE.md)
+
 ---
 
 ## Usage
@@ -936,10 +972,17 @@ By using this system, you acknowledge:
 
 ## Support & Community
 
-- **Documentation**: [Link to full docs]
-- **Issues**: [GitHub Issues]
-- **Discussions**: [GitHub Discussions or Discord]
-- **Email**: [Contact email]
+### **Documentation**
+- **[Complete Documentation Index](#-documentation)** - All available guides
+- **[Architecture Guide](./ARCHITECTURE.md)** - System design and data flow
+- **[API Reference](./API_REFERENCE.md)** - Complete endpoint documentation
+- **[Tuning Guide](./DISCOVERY_AND_AI.md)** - Optimize discovery and AI systems
+- **[Deployment Guide](./DEPLOYMENT.md)** - Production deployment
+
+### **Getting Help**
+- **Issues**: [GitHub Issues] - Bug reports and feature requests
+- **Discussions**: [GitHub Discussions or Discord] - Questions and community
+- **Email**: [Contact email] - Direct support
 
 **Remember**: The goal is to learn and experiment responsibly, not to make a fortune. Approach crypto trading with extreme caution and humility about market complexity.
 
