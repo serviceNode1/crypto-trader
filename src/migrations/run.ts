@@ -19,22 +19,24 @@ async function runMigrations() {
       throw new Error('Database connection failed');
     }
 
+    // Ensure we're using the public schema
+    await query(`SET search_path TO public`);
+
     // Create migrations tracking table if it doesn't exist
     await query(`
-      CREATE TABLE IF NOT EXISTS migrations (
+      CREATE TABLE IF NOT EXISTS public.migrations (
         id SERIAL PRIMARY KEY,
         filename VARCHAR(255) UNIQUE NOT NULL,
         executed_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
     
-    // Initialize AI review log table
-    const { initAIReviewLogTable } = await import('../services/logging/aiReviewLogger');
-    await initAIReviewLogTable();
+    // Note: ai_review_logs table is created by the migration SQL file
+    // to ensure schema consistency
 
     // Get list of executed migrations
     const executedResult = await query(
-      'SELECT filename FROM migrations ORDER BY id'
+      'SELECT filename FROM public.migrations ORDER BY id'
     );
     const executedMigrations = new Set(
       executedResult.rows.map((row) => row.filename)
@@ -69,12 +71,78 @@ async function runMigrations() {
       logger.info(`Executing migration: ${migration.filename}`);
 
       try {
-        // Execute migration SQL
-        await query(migration.sql);
+        // Split SQL into individual statements, respecting $$ delimiters
+        const statements: string[] = [];
+        let currentStatement = '';
+        let inDollarQuote = false;
+        let dollarTag = '';
+        
+        const lines = migration.sql.split('\n');
+        
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          
+          // Skip comment-only lines
+          if (trimmedLine.startsWith('--') && !inDollarQuote) {
+            continue;
+          }
+          
+          currentStatement += line + '\n';
+          
+          // Check for dollar quote delimiters ($$, $tag$, etc.)
+          const dollarMatches = line.match(/\$[a-zA-Z0-9_]*\$/g);
+          if (dollarMatches) {
+            for (const match of dollarMatches) {
+              if (!inDollarQuote) {
+                inDollarQuote = true;
+                dollarTag = match;
+              } else if (match === dollarTag) {
+                inDollarQuote = false;
+                dollarTag = '';
+              }
+            }
+          }
+          
+          // Split on semicolons only when not inside dollar quotes
+          if (!inDollarQuote && line.includes(';')) {
+            const stmt = currentStatement.trim();
+            if (stmt.length > 0) {
+              statements.push(stmt);
+            }
+            currentStatement = '';
+          }
+        }
+        
+        // Add any remaining statement
+        if (currentStatement.trim().length > 0) {
+          statements.push(currentStatement.trim());
+        }
+
+        // Execute each statement individually
+        for (const statement of statements) {
+          if (statement && statement.length > 0) {
+            try {
+              await query(statement);
+            } catch (error: any) {
+              // Skip errors for objects that already exist
+              // 42P07: relation already exists (tables, indexes, constraints)
+              // 42723: function already exists
+              // This allows IF NOT EXISTS to work and handles partial migrations
+              if (error.code === '42P07' || error.code === '42723') {
+                logger.debug('Skipping duplicate object creation', { 
+                  code: error.code,
+                  statement: statement.substring(0, 100) 
+                });
+                continue;
+              }
+              throw error;
+            }
+          }
+        }
 
         // Record migration
         await query(
-          'INSERT INTO migrations (filename) VALUES ($1)',
+          'INSERT INTO public.migrations (filename) VALUES ($1)',
           [migration.filename]
         );
 
