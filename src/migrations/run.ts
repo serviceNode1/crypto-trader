@@ -165,9 +165,9 @@ async function runMigrations() {
   }
 }
 
-// Run migrations if this script is executed directly
+/* Run migrations if this script is executed directly
 if (require.main === module) {
-  runMigrations()
+  //runMigrations()
     .then(() => {
       logger.info('Migration process completed successfully');
       process.exit(0);
@@ -177,5 +177,5 @@ if (require.main === module) {
       process.exit(1);
     });
 }
-
+*/
 export { runMigrations };
