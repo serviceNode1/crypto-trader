@@ -7,6 +7,11 @@
 /* eslint-disable no-console */
 import { API_BASE } from '../config.js';
 import { formatPrice } from '../utils/formatters.js';
+import { createCoinAutocomplete } from '../components/coinAutocomplete.js';
+
+// Track autocomplete instance
+let tradeAutocomplete = null;
+let selectedTradeCoin = null;
 
 // ============================================
 // ERROR HANDLING HELPERS
@@ -168,11 +173,17 @@ export async function previewTrade() {
 
     // Get current price for the symbol
     try {
-        const priceResponse = await window.auth.fetch(`${API_BASE}/price/${symbol}`);
-        if (!priceResponse.ok) throw new Error('Price fetch failed');
-
-        const priceData = await priceResponse.json();
-        const currentPrice = priceData.price;
+        // Use selected coin's price if available, otherwise fetch
+        let currentPrice;
+        if (selectedTradeCoin && selectedTradeCoin.symbol === symbol) {
+            currentPrice = selectedTradeCoin.price;
+            console.log('Using selected coin price:', currentPrice);
+        } else {
+            const priceResponse = await window.auth.fetch(`${API_BASE}/price/${symbol}`);
+            if (!priceResponse.ok) throw new Error('Price fetch failed');
+            const priceData = await priceResponse.json();
+            currentPrice = priceData.price;
+        }
 
         // Calculate actual quantity based on type
         let actualQuantity = quantity;
@@ -292,10 +303,19 @@ export async function executeTrade() {
     const takeProfitPrice = addStopLoss ? parseFloat(document.getElementById('takeProfitPrice').value) : null;
 
     try {
-        const priceResponse = await window.auth.fetch(`${API_BASE}/price/${symbol}`);
-        if (!priceResponse.ok) throw new Error('Price fetch failed');
-        const priceData = await priceResponse.json();
-        const currentPrice = priceData.price;
+        // Use selected coin's price if available
+        let currentPrice;
+        let coinId = null;
+        if (selectedTradeCoin && selectedTradeCoin.symbol === symbol) {
+            currentPrice = selectedTradeCoin.price;
+            coinId = selectedTradeCoin.coinId;
+            console.log('Using selected coin for trade:', { coinId, price: currentPrice });
+        } else {
+            const priceResponse = await window.auth.fetch(`${API_BASE}/price/${symbol}`);
+            if (!priceResponse.ok) throw new Error('Price fetch failed');
+            const priceData = await priceResponse.json();
+            currentPrice = priceData.price;
+        }
 
         // Get portfolio value for percent calculation
         const portfolioResponse = await window.auth.fetch(`${API_BASE}/portfolio`);
@@ -311,17 +331,24 @@ export async function executeTrade() {
         }
 
         // Execute trade
+        const tradePayload = {
+            symbol,
+            quantity: actualQuantity,
+            side: 'BUY',
+            tradeType: 'manual',
+            stopLoss: stopLossPrice,
+            takeProfit: takeProfitPrice
+        };
+        
+        // Include coinId if available (prevents symbol collision)
+        if (coinId) {
+            tradePayload.coinId = coinId;
+        }
+        
         const response = await auth.fetch(`${API_BASE}/trade`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                symbol,
-                quantity: actualQuantity,
-                side: 'BUY',
-                tradeType: 'manual',
-                stopLoss: stopLossPrice,
-                takeProfit: takeProfitPrice
-            })
+            body: JSON.stringify(tradePayload)
         });
 
         let result;
@@ -354,18 +381,25 @@ export async function executeTrade() {
             }
 
             // Re-submit with confirmWarnings flag
+            const confirmedPayload = {
+                symbol,
+                quantity: actualQuantity,
+                side: 'BUY',
+                tradeType: 'manual',
+                stopLoss: stopLossPrice,
+                takeProfit: takeProfitPrice,
+                confirmWarnings: true
+            };
+            
+            // Include coinId if available
+            if (coinId) {
+                confirmedPayload.coinId = coinId;
+            }
+            
             const confirmedResponse = await auth.fetch(`${API_BASE}/trade`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    symbol,
-                    quantity: actualQuantity,
-                    side: 'BUY',
-                    tradeType: 'manual',
-                    stopLoss: stopLossPrice,
-                    takeProfit: takeProfitPrice,
-                    confirmWarnings: true
-                })
+                body: JSON.stringify(confirmedPayload)
             });
 
             let confirmedResult;
@@ -796,4 +830,42 @@ function updateManualTradingCardHeight() {
     const newHeight = cardContent.scrollHeight + 'px';
     cardContent.style.maxHeight = newHeight;
     console.log('Updated manual-trading-content max-height to:', newHeight);
+}
+
+/**
+ * Initialize coin autocomplete for manual trading
+ */
+export function initializeTradeAutocomplete() {
+    console.log('[Trading] initializeTradeAutocomplete called');
+    const input = document.getElementById('manualTradeSymbol');
+    console.log('[Trading] Input element:', input);
+    if (!input) {
+        console.error('[Trading] manualTradeSymbol input not found!');
+        return;
+    }
+
+    // Destroy old instance if exists
+    if (tradeAutocomplete) {
+        console.log('[Trading] Destroying old autocomplete instance');
+        tradeAutocomplete.destroy();
+    }
+
+    console.log('[Trading] Creating new autocomplete...');
+    try {
+        // Create new autocomplete
+        tradeAutocomplete = createCoinAutocomplete(input, (coinId, symbol, name, price) => {
+            console.log('Coin selected for trade:', { coinId, symbol, name, price });
+            selectedTradeCoin = { coinId, symbol, name, price };
+            
+            // Auto-trigger preview if quantity is set
+            const quantity = document.getElementById('manualTradeQuantity').value;
+            if (quantity && parseFloat(quantity) > 0) {
+                previewTrade();
+            }
+        });
+
+        console.log('[Trading] ✅ Trade autocomplete initialized successfully');
+    } catch (error) {
+        console.error('[Trading] ❌ Failed to initialize trade autocomplete:', error);
+    }
 }

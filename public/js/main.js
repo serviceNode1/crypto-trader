@@ -25,7 +25,7 @@ import {
     toggleDebugMode,
     handleTradingModeChange
 } from './ui/settings.js';
-import { analyzeCrypto, selectCrypto, closeAnalysis } from './ui/analysis.js';
+import { analyzeCrypto, selectCrypto, closeAnalysis, initializeAnalysisAutocomplete } from './ui/analysis.js';
 import { 
     runDiscovery, 
     loadCachedDiscoveries, 
@@ -47,7 +47,8 @@ import {
     openPositionDetails,
     openProtectionManager,
     saveProtection,
-    getSettings
+    getSettings,
+    initializeTradeAutocomplete
 } from './ui/trading.js';
 import { formatPrice, formatNumber, renderSparkline, getScoreColor } from './utils/formatters.js';
 
@@ -80,11 +81,14 @@ async function loadInitialData() {
  * Initialize the application
  */
 async function init() {
+    console.log('[Main] 🚀 Application initialization started');
     
     // Initialize theme from localStorage first (immediate visual feedback)
+    console.log('[Main] Step 1: Initializing theme...');
     initializeTheme();
     
     // Then load settings from backend (including theme) and apply
+    console.log('[Main] Step 2: Loading backend settings...');
     try {
         const response = await auth.fetch('/api/settings');
         if (response && response.ok) {
@@ -95,27 +99,54 @@ async function init() {
                 console.log('✅ [THEME] Loaded theme from backend:', { colorMode: settings.colorMode, visualStyle: settings.visualStyle });
             }
         }
+        console.log('[Main] Step 2 complete');
     } catch (error) {
         console.warn('⚠️ [THEME] Could not load theme from backend, using localStorage:', error);
     }
     
     // Load initial data
+    console.log('[Main] Step 3: Loading dashboard data...');
     await loadAllData();
+    console.log('[Main] Step 3a: Dashboard data loaded');
+    
+    console.log('[Main] Step 3b: Loading initial data...');
     await loadInitialData();
+    console.log('[Main] Step 3 complete: All data loaded');
     
     // Initialize card states
-    setTimeout(() => initializeCardStates(), 100);
+    console.log('[Main] Step 4: Initializing card states...');
+    setTimeout(() => {
+        console.log('[Main] Card states timeout fired');
+        initializeCardStates();
+    }, 100);
+    
+    // Initialize coin autocomplete
+    console.log('[Main] Step 5: Setting up autocomplete initialization...');
+    setTimeout(() => {
+        console.log('[Main] Autocomplete timeout fired - starting initialization...');
+        try {
+            initializeTradeAutocomplete();
+            initializeAnalysisAutocomplete();
+            console.log('[Main] ✅ Coin autocomplete initialization complete');
+        } catch (error) {
+            console.error('[Main] ❌ Failed to initialize autocomplete:', error);
+        }
+    }, 200);
     
     // Apply saved settings
+    console.log('[Main] Step 6: Applying settings...');
     applySettings();
     
     // Setup auto-refresh
+    console.log('[Main] Step 7: Setting up auto-refresh...');
     setInterval(loadAllData, REFRESH_INTERVALS.PORTFOLIO);
     
     // Update time displays
+    console.log('[Main] Step 8: Setting up time display updates...');
     setInterval(refreshAnalysisTimeDisplay, REFRESH_INTERVALS.TIME_DISPLAY);
     setInterval(refreshDiscoveryTimeDisplay, REFRESH_INTERVALS.TIME_DISPLAY);
     
+    console.log('[Main] ✅ Application initialization complete!');
 }
 
 // Expose functions globally for onclick handlers in HTML

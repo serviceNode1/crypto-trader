@@ -179,6 +179,30 @@ router.get('/price/:symbol', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/coins/search/:symbol - Search for coins by symbol (for disambiguation)
+ * Returns all coins with exact symbol match, sorted by market cap rank
+ * Used for disambiguating symbols like TRUMP that have multiple coins
+ */
+router.get('/coins/search/:symbol', async (req: Request, res: Response) => {
+  try {
+    const symbol = req.params.symbol.toUpperCase();
+    logger.info('Searching for coins by symbol', { symbol });
+    
+    const { searchCoinsBySymbol } = await import('../services/dataCollection/coinGeckoService');
+    const matches = await searchCoinsBySymbol(symbol);
+    
+    res.json({ 
+      symbol, 
+      count: matches.length,
+      coins: matches 
+    });
+  } catch (error) {
+    logger.error('Failed to search coins', { symbol: req.params.symbol, error });
+    res.status(500).json({ error: `Failed to search for ${req.params.symbol}` });
+  }
+});
+
+/**
  * GET /api/trades - Get trade history with pagination
  * Returns trades + total count in one response for efficiency
  */

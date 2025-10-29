@@ -4,6 +4,7 @@ import { logger } from '../../utils/logger';
 import axios from 'axios';
 
 export interface CoinCandidate {
+  coinId: string;  // CoinGecko coin ID to prevent symbol collisions
   symbol: string;
   name: string;
   marketCapRank: number;
@@ -256,6 +257,7 @@ export async function discoverCoins(
           logEntry.reason = `✅ Passed screening (score: ${compositeScore.toFixed(0)})`;
           
           candidates.push({
+            coinId: coin.id,  // CoinGecko coin ID
             symbol: coin.symbol.toUpperCase(),
             name: coin.name,
             marketCapRank: coin.market_cap_rank,
@@ -471,11 +473,12 @@ async function storeDiscoveredCoins(candidates: CoinCandidate[]): Promise<void> 
     for (const coin of candidates) {
       await query(
         `INSERT INTO discovered_coins (
-          symbol, name, market_cap_rank, market_cap, current_price,
+          coin_id, symbol, name, market_cap_rank, market_cap, current_price,
           volume_24h, volume_score, price_momentum_score, sentiment_score, composite_score,
           sparkline_data, sparkline_fetched_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
         ON CONFLICT (symbol) DO UPDATE SET
+          coin_id = EXCLUDED.coin_id,
           market_cap = EXCLUDED.market_cap,
           current_price = EXCLUDED.current_price,
           volume_24h = EXCLUDED.volume_24h,
@@ -487,6 +490,7 @@ async function storeDiscoveredCoins(candidates: CoinCandidate[]): Promise<void> 
           sparkline_fetched_at = NOW(),
           discovered_at = NOW()`,
         [
+          coin.coinId,
           coin.symbol,
           coin.name,
           coin.marketCapRank,
@@ -536,6 +540,7 @@ export async function getTopDiscoveries(limit: number = 10): Promise<CoinCandida
       }
 
       return {
+        coinId: row.coin_id || row.symbol.toLowerCase(), // Fallback for legacy data
         symbol: row.symbol,
         name: row.name,
         marketCapRank: row.market_cap_rank,

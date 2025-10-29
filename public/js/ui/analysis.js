@@ -8,6 +8,11 @@
 import { API_BASE } from '../config.js';
 import { formatPrice } from '../utils/formatters.js';
 import { showAlert } from '../utils/modal.js';
+import { createCoinAutocomplete } from '../components/coinAutocomplete.js';
+
+// Track autocomplete instance
+let analysisAutocomplete = null;
+let selectedAnalysisCoin = null;
 
 /**
  * Select a crypto and trigger analysis
@@ -28,6 +33,10 @@ export async function analyzeCrypto() {
         await showAlert('Symbol Required', 'Please enter a cryptocurrency symbol', { icon: '⚠️' });
         return;
     }
+    
+    // Use selected coin's coinId if available (prevents symbol collision)
+    const coinId = selectedAnalysisCoin?.coinId;
+    console.log('[Analysis] Starting analysis for:', { symbol, coinId });
 
     const resultDiv = document.getElementById('analysisResult');
     const contentDiv = document.getElementById('analysisContent');
@@ -447,4 +456,38 @@ function updateParentCardHeight() {
     const newHeight = cardContent.scrollHeight + 'px';
     cardContent.style.maxHeight = newHeight;
     console.log('Updated crypto-selector-content max-height to:', newHeight);
+}
+
+/**
+ * Initialize coin autocomplete for analysis search
+ */
+export function initializeAnalysisAutocomplete() {
+    console.log('[Analysis] initializeAnalysisAutocomplete called');
+    const input = document.getElementById('cryptoSearch');
+    console.log('[Analysis] Input element:', input);
+    if (!input) {
+        console.error('[Analysis] cryptoSearch input not found!');
+        return;
+    }
+
+    // Destroy old instance if exists
+    if (analysisAutocomplete) {
+        console.log('[Analysis] Destroying old autocomplete instance');
+        analysisAutocomplete.destroy();
+    }
+
+    console.log('[Analysis] Creating new autocomplete...');
+    try {
+        // Create new autocomplete
+        analysisAutocomplete = createCoinAutocomplete(input, (coinId, symbol, name, price) => {
+            console.log('Coin selected for analysis:', { coinId, symbol, name, price });
+            selectedAnalysisCoin = { coinId, symbol, name, price };
+            
+            // Don't auto-trigger - wait for user to click Analyze button
+        });
+
+        console.log('[Analysis] ✅ Analysis autocomplete initialized successfully');
+    } catch (error) {
+        console.error('[Analysis] ❌ Failed to initialize analysis autocomplete:', error);
+    }
 }

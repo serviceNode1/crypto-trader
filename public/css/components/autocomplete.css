@@ -1,0 +1,232 @@
+/* ====================================
+   Coin Autocomplete Component
+   Theme-aware dropdown for coin selection
+   ==================================== */
+
+/* Dropdown Container */
+.coin-autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    box-shadow: var(--shadow-md);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: var(--z-popover); /* Use theme z-index variable (1060) */
+    display: none;
+}
+
+/* Dropdown Header */
+.coin-autocomplete-dropdown .dropdown-header {
+    padding: 10px 12px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Loading State */
+.coin-autocomplete-dropdown .dropdown-loading {
+    padding: 12px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+/* Empty State */
+.coin-autocomplete-dropdown .dropdown-empty {
+    padding: 12px;
+    text-align: center;
+    color: var(--color-danger);
+}
+
+/* Coin Option Item */
+.coin-option {
+    padding: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+}
+
+.coin-option:last-child {
+    border-bottom: none;
+}
+
+.coin-option:hover {
+    background: var(--bg-primary);
+}
+
+/* Coin Option Content */
+.coin-option-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.coin-option-left {
+    flex: 1;
+}
+
+.coin-option-symbol {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.coin-option-name {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.coin-option-right {
+    text-align: right;
+    margin-left: 15px;
+}
+
+.coin-option-price {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--color-success);
+}
+
+.coin-option-rank {
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+.coin-rank-badge {
+    background: var(--bg-primary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--text-secondary);
+}
+
+.coin-rank-unranked {
+    color: var(--text-muted);
+}
+
+/* Confirmation Badge */
+.coin-confirmation-badge {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: var(--success-bg);
+    border: 1px solid var(--color-success);
+    border-radius: 6px;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.coin-confirmation-symbol {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.coin-confirmation-arrow {
+    color: var(--text-secondary);
+    margin: 0 8px;
+}
+
+.coin-confirmation-name {
+    color: var(--text-primary);
+}
+
+.coin-confirmation-price {
+    color: var(--color-success);
+    margin-left: 8px;
+    font-weight: 600;
+}
+
+.change-coin-btn {
+    padding: 4px 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--color-success);
+    border-radius: 4px;
+    color: var(--color-success);
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.change-coin-btn:hover {
+    background: var(--color-success);
+    color: white;
+}
+
+/* Fix for container overflow issues */
+.coin-autocomplete-wrapper {
+    position: relative;
+    z-index: 100; /* Higher than cards but lower than modals */
+}
+
+/* Ensure parent containers don't clip the dropdown */
+.card-content:has(.coin-autocomplete-wrapper) {
+    overflow: visible !important;
+}
+
+/* More specific rules for nested containers */
+.form-group:has(.coin-autocomplete-wrapper),
+.input-wrapper:has(.coin-autocomplete-wrapper),
+div:has(.coin-autocomplete-wrapper) {
+    overflow: visible !important;
+}
+
+/* Ensure the manual trading card specifically allows overflow */
+#manual-trading-content:has(.coin-autocomplete-wrapper),
+#crypto-selector-content:has(.coin-autocomplete-wrapper) {
+    overflow: visible !important;
+}
+
+/* Ensure cards with autocomplete have proper stacking context */
+.card:has(.coin-autocomplete-wrapper) {
+    position: relative;
+    z-index: 100;
+}
+
+/* Ensure sibling cards don't overlap the dropdown */
+.dashboard-grid > .card {
+    position: relative;
+    z-index: 1;
+}
+
+/* But the card with autocomplete should be higher */
+.dashboard-grid > .card:has(.coin-autocomplete-wrapper) {
+    z-index: 100;
+}
+
+/* Scrollbar styling for dropdown */
+.coin-autocomplete-dropdown::-webkit-scrollbar {
+    width: 8px;
+}
+
+.coin-autocomplete-dropdown::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+    border-radius: 0 0 6px 0;
+}
+
+.coin-autocomplete-dropdown::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.coin-autocomplete-dropdown::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* Theme-specific adjustments */
+[data-theme="dark"] .coin-autocomplete-dropdown {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="glass-light"] .coin-autocomplete-dropdown,
+[data-theme="glass-dark"] .coin-autocomplete-dropdown {
+    backdrop-filter: blur(10px);
+    background: var(--glass-bg);
+}

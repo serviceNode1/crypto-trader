@@ -76,9 +76,11 @@ interface SearchResult {
 
 /**
  * Get current price for a cryptocurrency
+ * @param symbol - Cryptocurrency symbol (e.g., 'BTC', 'TRUMP')
+ * @param coinId - Optional CoinGecko coin ID to prevent symbol collisions
  */
-export async function getCurrentPrice(symbol: string): Promise<number> {
-  const cacheKey = `price:${symbol.toUpperCase()}`;
+export async function getCurrentPrice(symbol: string, coinId?: string): Promise<number> {
+  const cacheKey = coinId ? `price:${coinId}` : `price:${symbol.toUpperCase()}`;
 
   return cacheAside(cacheKey, CACHE_TTL.PRICE, async () => {
     return withRateLimit(
@@ -86,17 +88,17 @@ export async function getCurrentPrice(symbol: string): Promise<number> {
       async () => {
         return withRetryJitter(
           async () => {
-            const coinId = await symbolToCoinId(symbol);
+            const resolvedCoinId = coinId || await symbolToCoinId(symbol);
             const url = `${BASE_URL}/simple/price`;
 
             logger.debug('Fetching current price from CoinGecko', {
               symbol,
-              coinId,
+              coinId: resolvedCoinId,
             });
 
             const response = await axios.get(url, {
               params: {
-                ids: coinId,
+                ids: resolvedCoinId,
                 vs_currencies: 'usd',
               },
               headers: {
@@ -104,12 +106,12 @@ export async function getCurrentPrice(symbol: string): Promise<number> {
               },
             });
 
-            const price = response.data[coinId]?.usd;
+            const price = response.data[resolvedCoinId]?.usd;
             if (!price) {
-              throw new Error(`Price not found for ${symbol}`);
+              throw new Error(`Price not found for ${symbol} (${resolvedCoinId})`);
             }
 
-            logger.info('Current price fetched', { symbol, price });
+            logger.info('Current price fetched', { symbol, coinId: resolvedCoinId, price });
             return price;
           },
           { shouldRetry: isRetryableError }
@@ -381,6 +383,87 @@ export async function searchCoins(query: string): Promise<SearchResult[]> {
     },
     'CoinGecko'
   );
+}
+
+/**
+ * Search for all coins matching a symbol (for disambiguation)
+ * Returns all matches with name, price, and market cap rank
+ */
+export async function searchCoinsBySymbol(symbol: string): Promise<Array<{
+  coinId: string;
+  symbol: string;
+  name: string;
+  price: number;
+  marketCapRank: number | null;
+}>> {
+  const cacheKey = `coin-search:${symbol.toUpperCase()}`;
+  
+  return cacheAside(cacheKey, 300, async () => { // 5 min cache
+    return withRateLimit(
+      rateLimiters.coinGecko,
+      async () => {
+        return withRetryJitter(
+          async () => {
+            logger.info('Searching for coins by symbol', { symbol });
+            
+            // Use CoinGecko search API
+            const searchUrl = `${BASE_URL}/search`;
+            const searchResponse = await axios.get(searchUrl, {
+              params: { query: symbol },
+              headers: {
+                'x-cg-demo-api-key': process.env.COINGECKO_API_KEY || '',
+              },
+            });
+
+            const searchResults: SearchResult[] = searchResponse.data.coins || [];
+            
+            // Filter for exact symbol matches
+            const exactMatches = searchResults.filter(
+              (coin) => coin.symbol.toUpperCase() === symbol.toUpperCase()
+            );
+
+            if (exactMatches.length === 0) {
+              return [];
+            }
+
+            // Get prices for all matches (batch request)
+            const coinIds = exactMatches.map(c => c.id).join(',');
+            const priceUrl = `${BASE_URL}/simple/price`;
+            const priceResponse = await axios.get(priceUrl, {
+              params: {
+                ids: coinIds,
+                vs_currencies: 'usd',
+              },
+              headers: {
+                'x-cg-demo-api-key': process.env.COINGECKO_API_KEY || '',
+              },
+            });
+
+            // Combine search results with prices
+            const results = exactMatches.map(coin => ({
+              coinId: coin.id,
+              symbol: coin.symbol.toUpperCase(),
+              name: coin.name,
+              price: priceResponse.data[coin.id]?.usd || 0,
+              marketCapRank: coin.market_cap_rank,
+            }));
+
+            // Sort by market cap rank (lower = more popular)
+            results.sort((a, b) => {
+              if (a.marketCapRank === null) return 1;
+              if (b.marketCapRank === null) return -1;
+              return a.marketCapRank - b.marketCapRank;
+            });
+
+            logger.info('Found coin matches', { symbol, count: results.length });
+            return results;
+          },
+          { shouldRetry: isRetryableError }
+        );
+      },
+      'CoinGecko'
+    );
+  });
 }
 
 // Old hardcoded mapping functions removed - now using scalable coinListService

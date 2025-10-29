@@ -77,7 +77,9 @@
                         id="cryptoSearch" 
                         placeholder="Enter symbol (e.g., BTC, ETH, SOL, ADA)..." 
                         style="flex: 1; padding: 12px 16px; font-size: 16px; border: 2px solid var(--border-color); border-radius: 8px; outline: none; transition: border 0.3s;"
+                        onkeyup="this.value = this.value.toUpperCase()"
                         onkeypress="if(event.key === 'Enter') analyzeCrypto()"
+                        
                     />
                     <button class="button" onclick="analyzeCrypto()" style="margin-left: 10px; padding: 12px 24px;">
                         🔍 Analyze
