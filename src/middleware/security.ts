@@ -10,7 +10,7 @@ import { logger } from '../utils/logger';
  */
 export const generalRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 100 : 500, // 500 in dev, 100 in prod
+  max: process.env.NODE_ENV === 'production' ? 300 : 500, // 500 in dev, 100 in prod
   message: {
     success: false,
     error: 'Too many requests',
