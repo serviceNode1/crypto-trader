@@ -1,0 +1,371 @@
+/* ====================================
+   Mobile Responsive Styles
+   Optimized for phones and tablets
+   ==================================== */
+
+/* Mobile: 0-767px */
+@media (max-width: 767px) {
+    
+    /* ===== BASE & BODY ===== */
+    body {
+        padding: 10px;
+        font-size: 16px; /* Larger base font for readability */
+    }
+    
+    /* ===== CONTAINER ===== */
+    .container {
+        padding: 10px;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+    }
+    
+    /* ===== HEADER ===== */
+    header {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+    
+    header h1 {
+        font-size: 20px !important;
+        line-height: 1.2;
+    }
+    
+    header .subtitle {
+        font-size: 12px;
+        line-height: 1.3;
+    }
+    
+    /* Stack header items vertically on very small screens */
+    header > div {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+    }
+    
+    /* Header buttons container */
+    header > div > div:last-child {
+        width: 100%;
+        justify-content: flex-start !important;
+        flex-wrap: wrap;
+    }
+    
+    .paper-trading-badge {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+    
+    /* ===== CARDS ===== */
+    .card {
+        margin-bottom: 15px;
+        padding: 12px;
+    }
+    
+    .card h2 {
+        font-size: 16px !important;
+        padding: 10px 12px;
+    }
+    
+    .card-content {
+        padding: 12px;
+        font-size: 14px;
+    }
+    
+    /* ===== GRIDS ===== */
+    .grid,
+    .dashboard-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px;
+    }
+    
+    /* ===== BUTTONS ===== */
+    .button,
+    button {
+        font-size: 14px !important;
+        padding: 10px 16px !important;
+        min-height: 44px; /* Touch-friendly size */
+    }
+    
+    .collapse-btn {
+        font-size: 16px !important;
+    }
+    
+    /* ===== FORMS & INPUTS ===== */
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="password"],
+    select,
+    textarea {
+        font-size: 16px !important; /* Prevents zoom on iOS */
+        padding: 12px !important;
+        min-height: 44px; /* Touch-friendly */
+    }
+    
+    /* Search containers */
+    .search-container {
+        flex-direction: column !important;
+        gap: 10px;
+    }
+    
+    .search-container input {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    
+    .search-container button {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    
+    /* ===== TABLES ===== */
+    table {
+        font-size: 13px;
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    table th,
+    table td {
+        padding: 8px 6px !important;
+        font-size: 12px;
+    }
+    
+    /* ===== PORTFOLIO STATS ===== */
+    .portfolio-stats {
+        grid-template-columns: 1fr !important;
+        gap: 10px;
+    }
+    
+    .stat-card {
+        padding: 12px;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+    }
+    
+    .stat-value {
+        font-size: 18px !important;
+    }
+    
+    /* ===== TRADING FORM ===== */
+    .trade-form {
+        gap: 12px;
+    }
+    
+    .form-group {
+        margin-bottom: 12px;
+    }
+    
+    .form-group label {
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+    
+    /* ===== RECOMMENDATIONS ===== */
+    .recommendation-card {
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+    
+    .recommendation-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px;
+    }
+    
+    .recommendation-symbol {
+        font-size: 16px;
+    }
+    
+    .recommendation-action {
+        font-size: 12px;
+        padding: 4px 10px;
+    }
+    
+    /* ===== AI RECOMMENDATIONS HEADER ===== */
+    .ai-recommendations-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+    
+    .ai-recommendations-header button {
+        width: 100%;
+    }
+    
+    /* ===== DISCOVERY ===== */
+    .discovery-controls {
+        flex-direction: column !important;
+        gap: 10px;
+    }
+    
+    .discovery-controls button {
+        width: 100%;
+    }
+    
+    /* ===== MODALS ===== */
+    .modal-content {
+        width: 95% !important;
+        max-width: 95% !important;
+        margin: 20px auto;
+        max-height: 90vh;
+    }
+    
+    .modal-header h2 {
+        font-size: 18px;
+    }
+    
+    .modal-body {
+        padding: 15px;
+        font-size: 14px;
+    }
+    
+    /* ===== TABS ===== */
+    .tabs {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .tab {
+        font-size: 13px;
+        padding: 8px 12px;
+        flex: 1 1 auto;
+        min-width: 100px;
+    }
+    
+    /* ===== AUTOCOMPLETE ===== */
+    .coin-autocomplete-dropdown {
+        max-height: 250px;
+        font-size: 14px;
+    }
+    
+    .coin-option {
+        padding: 10px;
+    }
+    
+    .coin-option-symbol {
+        font-size: 13px;
+    }
+    
+    .coin-option-name {
+        font-size: 11px;
+    }
+    
+    .coin-option-price {
+        font-size: 13px;
+    }
+    
+    .coin-confirmation-badge {
+        font-size: 12px;
+        padding: 8px 10px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    /* ===== ANALYSIS RESULTS ===== */
+    #analysisResult {
+        font-size: 14px;
+    }
+    
+    .analysis-section {
+        padding: 12px;
+    }
+    
+    .analysis-section h3 {
+        font-size: 15px;
+    }
+    
+    /* ===== CHARTS ===== */
+    canvas {
+        max-height: 250px !important;
+    }
+    
+    /* ===== UTILITY OVERRIDES ===== */
+    .text-sm {
+        font-size: 13px !important;
+    }
+    
+    .text-xs {
+        font-size: 11px !important;
+    }
+    
+    /* ===== SPACING ===== */
+    .mb-4 {
+        margin-bottom: 15px !important;
+    }
+    
+    .mt-4 {
+        margin-top: 15px !important;
+    }
+    
+    .p-4 {
+        padding: 12px !important;
+    }
+    
+    /* ===== OVERFLOW FIXES ===== */
+    /* Prevent horizontal scroll */
+    html, body {
+        overflow-x: hidden;
+        width: 100%;
+    }
+    
+    .container {
+        overflow-x: hidden;
+    }
+    
+    /* Fix elements that might overflow */
+    * {
+        max-width: 100%;
+    }
+    
+    /* Allow specific elements to scroll */
+    table,
+    .scrollable {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+}
+
+/* Tablet: 768px - 1024px */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .container {
+        padding: 20px;
+    }
+    
+    header h1 {
+        font-size: 24px;
+    }
+    
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    input,
+    select,
+    button {
+        font-size: 15px;
+    }
+}
+
+/* Small phones: 0-375px */
+@media (max-width: 375px) {
+    body {
+        font-size: 15px;
+    }
+    
+    header h1 {
+        font-size: 18px !important;
+    }
+    
+    .card h2 {
+        font-size: 15px !important;
+    }
+    
+    .button {
+        font-size: 13px !important;
+        padding: 8px 12px !important;
+    }
+}

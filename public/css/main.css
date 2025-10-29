@@ -25,3 +25,6 @@
 @import url('components/account.css');
 @import url('components/alerts.css');
 @import url('components/autocomplete.css');
+
+/* 4. Mobile Responsive (must be last) */
+@import url('mobile.css');
