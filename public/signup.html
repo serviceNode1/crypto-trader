@@ -323,7 +323,7 @@
       const hasMinLength = password.length >= 8;
       const hasUpperCase = /[A-Z]/.test(password);
       const hasNumber = /[0-9]/.test(password);
-      const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+      const hasSpecial = /[!@#$%^&*(),.?":{}|<>[\]\-_+=~`';/\\]/.test(password);
       
       const isValid = hasMinLength && hasUpperCase && hasNumber && hasSpecial;
       
