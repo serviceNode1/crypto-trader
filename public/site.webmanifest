@@ -1,0 +1,38 @@
+{
+  "name": "TradeTycoon - AI Crypto Paper Trading",
+  "short_name": "TradeTycoon",
+  "description": "AI-powered cryptocurrency paper trading platform for educational purposes",
+  "version": "1.0.0",
+  "icons": [
+    {
+      "src": "/favicon/favicon.ico?v=1.0.0",
+      "sizes": "16x16",
+      "type": "image/ico"
+    },
+    {
+      "src": "/favicon/favicon-32x32.png?v=1.0.0",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon/favicon-16x16.png?v=1.0.0",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon/android-chrome-192x192.png?v=1.0.0",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon/android-chrome-512x512.png?v=1.0.0",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#667eea",
+  "background_color": "#2e0197",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}

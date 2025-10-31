@@ -130,6 +130,28 @@ app.get('/', (_req: Request, res: Response) => {
 });
 
 /**
+ * Auth pages
+ */
+app.get('/login', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
+app.get('/signup', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/signup.html'));
+});
+
+/**
+ * Legal pages
+ */
+app.get('/privacy', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/privacy.html'));
+});
+
+app.get('/terms', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/terms.html'));
+});
+
+/**
  * Error Handling Middleware
  */
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
