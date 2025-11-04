@@ -42,23 +42,27 @@ export interface OpportunityResult {
  * This runs the complete discovery → filter → opportunity pipeline
  */
 export async function findOpportunities(
-  forceRefresh: boolean = false
+  forceRefresh: boolean = false,
+  strategy?: DiscoveryStrategy,
+  coinUniverse?: 'top10' | 'top50' | 'top100',
+  skipPortfolioFilter: boolean = false
 ): Promise<OpportunityResult> {
   try {
     logger.info('🔍 Finding trading opportunities...');
 
-    // Get user settings to determine discovery parameters
+    // Get user settings to determine discovery parameters (if not provided)
     const settings = await getUserSettings();
     
-    // Determine discovery strategy (default to moderate if not set)
-    const discoveryStrategy: DiscoveryStrategy = 'moderate'; // Could be made configurable in settings
+    // Use provided strategy or fall back to user settings
+    const discoveryStrategy: DiscoveryStrategy = strategy || settings.discoveryStrategy || 'moderate';
+    const universe = coinUniverse || settings.coinUniverse || 'top50';
     
     // Run discovery if forced or if cache is old
     let discoveries: CoinCandidate[] = [];
     if (forceRefresh) {
       logger.info('Running fresh discovery scan...');
       const discoveryResult = await discoverCoins(
-        settings.coinUniverse,
+        universe,
         discoveryStrategy,
         true
       );
@@ -70,8 +74,8 @@ export async function findOpportunities(
 
     logger.info(`Found ${discoveries.length} discovered coins`);
 
-    // Find buy opportunities (coins NOT in portfolio)
-    const buyOpportunities = await findBuyOpportunities(discoveries);
+    // Find buy opportunities (global or portfolio-filtered)
+    const buyOpportunities = await findBuyOpportunities(discoveries, skipPortfolioFilter);
     
     // Find sell opportunities (coins IN portfolio)
     const sellOpportunities = await findSellOpportunities();
@@ -91,14 +95,20 @@ export async function findOpportunities(
 
 /**
  * Find buy opportunities from discovered coins
- * Filters for coins NOT already in portfolio
+ * @param discoveries - Discovered coin candidates
+ * @param skipPortfolioFilter - If true, don't filter by portfolio (for global recommendations)
  */
 async function findBuyOpportunities(
-  discoveries: CoinCandidate[]
+  discoveries: CoinCandidate[],
+  skipPortfolioFilter: boolean = false
 ): Promise<BuyOpportunity[]> {
   try {
-    const portfolio = await getPortfolio();
-    const existingSymbols = new Set(portfolio.positions.map(p => p.symbol));
+    // For global recommendations, skip portfolio filtering
+    let existingSymbols = new Set<string>();
+    if (!skipPortfolioFilter) {
+      const portfolio = await getPortfolio();
+      existingSymbols = new Set(portfolio.positions.map(p => p.symbol));
+    }
 
     const opportunities: BuyOpportunity[] = [];
 
@@ -233,7 +243,10 @@ async function findSellOpportunities(): Promise<SellOpportunity[]> {
 export async function generateActionableRecommendations(
   maxBuyRecommendations: number = 3,
   maxSellRecommendations: number = 3,
-  debugMode: boolean = false
+  debugMode: boolean = false,
+  strategy?: DiscoveryStrategy,
+  coinUniverse?: 'top10' | 'top50' | 'top100',
+  skipPortfolioFilter: boolean = false
 ): Promise<{
   buyRecommendations: any[];
   sellRecommendations: any[];
@@ -250,7 +263,7 @@ export async function generateActionableRecommendations(
     }
     logger.info('🤖 Generating AI recommendations for top opportunities...');
 
-    const opportunities = await findOpportunities(false);
+    const opportunities = await findOpportunities(false, strategy, coinUniverse, skipPortfolioFilter);
 
     // Take top N buy opportunities
     const topBuyOpportunities = opportunities.buyOpportunities.slice(0, maxBuyRecommendations);

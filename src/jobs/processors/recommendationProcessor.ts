@@ -3,27 +3,35 @@ import { generateActionableRecommendations } from '../../services/discovery/oppo
 import { query } from '../../config/database';
 import { logger } from '../../utils/logger';
 import { logAIReview, updateAIReviewLog } from '../../services/logging/aiReviewLogger';
+import type { DiscoveryStrategy, CoinUniverse } from '../../types/recommendations';
 
 interface RecommendationJobData {
   symbol?: string;
   maxBuy?: number;
   maxSell?: number;
+  strategy?: DiscoveryStrategy;
+  coinUniverse?: CoinUniverse;
 }
 
 /**
- * Store recommendation in database
+ * Store BUY recommendation in discovery_recommendations table (global, strategy-based)
  */
-async function storeRecommendation(recommendation: any): Promise<void> {
+async function storeDiscoveryRecommendation(
+  recommendation: any,
+  strategy: DiscoveryStrategy,
+  coinUniverse: CoinUniverse
+): Promise<void> {
   try {
     await query(
-      `INSERT INTO recommendations (
-        symbol, action, confidence, entry_price, stop_loss,
+      `INSERT INTO discovery_recommendations (
+        symbol, strategy, coin_universe, confidence, entry_price, stop_loss,
         take_profit_1, take_profit_2, position_size, risk_level,
-        reasoning, sources, expires_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW() + INTERVAL '24 hours')`,
+        reasoning, sources, discovery_score
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
       [
         recommendation.symbol,
-        recommendation.action,
+        strategy,
+        coinUniverse,
         recommendation.confidence,
         recommendation.entryPrice,
         recommendation.stopLoss,
@@ -33,25 +41,78 @@ async function storeRecommendation(recommendation: any): Promise<void> {
         recommendation.riskLevel,
         JSON.stringify(recommendation.reasoning || recommendation.keyFactors),
         JSON.stringify(recommendation.sources || []),
+        recommendation.discoveryScore || null,
       ]
     );
     
-    logger.info(`Stored ${recommendation.action} recommendation for ${recommendation.symbol}`);
+    logger.info(`Stored discovery BUY recommendation for ${recommendation.symbol}`, {
+      strategy,
+      coinUniverse,
+      confidence: recommendation.confidence,
+    });
   } catch (error) {
-    logger.error(`Failed to store recommendation for ${recommendation.symbol}`, { error });
+    logger.error(`Failed to store discovery recommendation for ${recommendation.symbol}`, { error });
+    throw error;
+  }
+}
+
+/**
+ * Store SELL recommendation in portfolio_recommendations table (user-specific)
+ * Note: This function is exported for use by portfolio monitoring service
+ * Not used in scheduled global jobs
+ */
+export async function storePortfolioRecommendation(
+  recommendation: any,
+  userId: number
+): Promise<void> {
+  try {
+    await query(
+      `INSERT INTO portfolio_recommendations (
+        user_id, symbol, confidence, current_price, entry_price,
+        stop_loss, take_profit_1, take_profit_2,
+        unrealized_pnl, percent_gain, sell_reason, risk_level, reasoning
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      [
+        userId,
+        recommendation.symbol,
+        recommendation.confidence,
+        recommendation.currentPrice || recommendation.entryPrice,
+        recommendation.entryPrice,
+        recommendation.stopLoss,
+        recommendation.takeProfitLevels?.[0] || null,
+        recommendation.takeProfitLevels?.[1] || null,
+        recommendation.unrealizedPnL || 0,
+        recommendation.percentGain || 0,
+        recommendation.sellReason || 'risk_management',
+        recommendation.riskLevel,
+        JSON.stringify(recommendation.reasoning || recommendation.keyFactors),
+      ]
+    );
+    
+    logger.info(`Stored portfolio SELL recommendation for ${recommendation.symbol}`, {
+      userId,
+      confidence: recommendation.confidence,
+    });
+  } catch (error) {
+    logger.error(`Failed to store portfolio recommendation for ${recommendation.symbol}`, { error });
     throw error;
   }
 }
 
 /**
  * Process recommendation generation jobs
- * New workflow: Discovery → Filter → Opportunities → AI Analysis → Actionable Recommendations
+ * Phase 1: Generate global BUY recommendations for all strategies
+ * SELL recommendations are handled separately via portfolio monitoring
  */
 export async function processRecommendation(job: Job<RecommendationJobData>): Promise<void> {
-  const { maxBuy = 3, maxSell = 3 } = job.data;
+  const { maxBuy = 3, maxSell = 0 } = job.data; // maxSell = 0 for global jobs
   const startTime = Date.now();
   
-  logger.info('🚀 Processing recommendation job with new opportunity-based workflow');
+  // Define strategies to run
+  const strategies: DiscoveryStrategy[] = ['conservative', 'moderate', 'aggressive'];
+  const coinUniverses: CoinUniverse[] = ['top50']; // Can be expanded to ['top10', 'top50', 'top100']
+  
+  logger.info('🚀 Processing global recommendation job for all strategies');
   
   // Create initial log entry
   const logId = await logAIReview({
@@ -62,31 +123,48 @@ export async function processRecommendation(job: Job<RecommendationJobData>): Pr
   });
   
   try {
-    // Phase 1: Discovery
-    await updateAIReviewLog(logId, { phase: 'discovery', status: 'started' });
+    let totalBuyRecommendations = 0;
+    let totalAnalyzed = 0;
+    let totalSkipped = 0;
     
-    // Use the new intelligent opportunity finder
-    // This will:
-    // 1. Run discovery (or use cached results)
-    // 2. Filter for buy opportunities (not in portfolio)
-    // 3. Filter for sell opportunities (in portfolio)
-    // 4. Send only top candidates to AI
-    // 5. Only return BUY/SELL recommendations (no HOLD)
-    
-    await updateAIReviewLog(logId, { phase: 'ai_analysis' });
-    const result = await generateActionableRecommendations(maxBuy, maxSell);
-    
-    // Phase 2: Storing recommendations
-    await updateAIReviewLog(logId, { phase: 'storing' });
-    
-    // Store buy recommendations
-    for (const rec of result.buyRecommendations) {
-      await storeRecommendation(rec);
-    }
-    
-    // Store sell recommendations
-    for (const rec of result.sellRecommendations) {
-      await storeRecommendation(rec);
+    // Run for each strategy
+    for (const strategy of strategies) {
+      for (const coinUniverse of coinUniverses) {
+        logger.info(`🔍 Generating recommendations for ${strategy} strategy, ${coinUniverse} universe`);
+        
+        await updateAIReviewLog(logId, { 
+          phase: 'discovery',
+          status: 'started',
+          metadata: { strategy, coinUniverse }
+        });
+        
+        // Generate recommendations for this strategy
+        // skipPortfolioFilter = true for global BUY recommendations
+        const result = await generateActionableRecommendations(
+          maxBuy,
+          0, // 0 sell for global jobs
+          false, // debugMode
+          strategy,
+          coinUniverse,
+          true // skipPortfolioFilter - don't filter by portfolio for global recommendations
+        );
+        
+        await updateAIReviewLog(logId, { phase: 'ai_analysis' });
+        
+        // Phase 2: Storing BUY recommendations only
+        await updateAIReviewLog(logId, { phase: 'storing' });
+        
+        // Store buy recommendations with strategy tag
+        for (const rec of result.buyRecommendations) {
+          await storeDiscoveryRecommendation(rec, strategy, coinUniverse);
+          totalBuyRecommendations++;
+        }
+        
+        totalAnalyzed += result.metadata.totalAnalyzed;
+        totalSkipped += result.skipped.buy;
+        
+        logger.info(`✅ Stored ${result.buyRecommendations.length} BUY recommendations for ${strategy}/${coinUniverse}`);
+      }
     }
     
     // Calculate duration
@@ -96,23 +174,23 @@ export async function processRecommendation(job: Job<RecommendationJobData>): Pr
     await updateAIReviewLog(logId, {
       status: 'completed',
       phase: 'completed',
-      coinsAnalyzed: result.metadata.totalAnalyzed,
-      buyRecommendations: result.buyRecommendations.length,
-      sellRecommendations: result.sellRecommendations.length,
-      skippedOpportunities: (result.skipped.buy || 0) + (result.skipped.sell || 0),
+      coinsAnalyzed: totalAnalyzed,
+      buyRecommendations: totalBuyRecommendations,
+      sellRecommendations: 0, // SELL handled separately
+      skippedOpportunities: totalSkipped,
       duration,
       metadata: {
+        strategies,
+        coinUniverses,
         maxBuy,
-        maxSell,
-        skipped: result.skipped,
-        totalAnalyzed: result.metadata.totalAnalyzed,
-        totalOpportunities: result.metadata.totalOpportunities,
-        aiRejected: result.metadata.aiRejected
+        totalBuyRecommendations,
+        totalAnalyzed,
+        totalSkipped,
       }
     });
     
-    logger.info(`✅ Recommendation job completed: ${result.buyRecommendations.length} BUY, ${result.sellRecommendations.length} SELL (${duration}ms)`);
-    logger.info(`⏭️  Skipped ${result.skipped.buy} lower-priority buy opportunities, ${result.skipped.sell} sell opportunities`);
+    logger.info(`✅ Global recommendation job completed: ${totalBuyRecommendations} BUY across ${strategies.length} strategies (${duration}ms)`);
+    logger.info(`⏭️  Analyzed ${totalAnalyzed} coins, skipped ${totalSkipped} lower-priority opportunities`);
     
   } catch (error) {
     const duration = Date.now() - startTime;

@@ -371,28 +371,39 @@ router.post('/trade', authenticate, async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/recommendations - Get current trade recommendations (BUY/SELL only, no HOLD)
+ * GET /api/recommendations - Get current BUY recommendations filtered by user's strategy
+ * Now reads from discovery_recommendations table (global, strategy-based)
  */
-router.get('/recommendations', async (req: Request, res: Response) => {
+router.get('/recommendations', authenticate, async (req: Request, res: Response) => {
   try {
+    const userId = req.user!.userId;
     const limit = parseInt(req.query.limit as string) || 10;
 
+    // Get user's strategy preference from settings
+    const userSettings = await getUserSettings(userId);
+    const strategy = userSettings.discoveryStrategy || 'moderate';
+    const coinUniverse = userSettings.coinUniverse || 'top50';
+
+    // Get global BUY recommendations filtered by user's strategy
     const result = await query(
-      `SELECT id, symbol, action, confidence, entry_price, stop_loss,
+      `SELECT id, symbol, strategy, coin_universe, confidence, entry_price, stop_loss,
               take_profit_1, take_profit_2, position_size, risk_level,
-              reasoning, sources, created_at, expires_at
-       FROM recommendations
-       WHERE (expires_at > NOW() OR expires_at IS NULL)
-         AND action IN ('BUY', 'SELL')
-       ORDER BY created_at DESC
-       LIMIT $1`,
-      [limit]
+              reasoning, sources, discovery_score, created_at, expires_at
+       FROM discovery_recommendations
+       WHERE expires_at > NOW()
+         AND strategy = $1
+         AND coin_universe = $2
+       ORDER BY confidence DESC, created_at DESC
+       LIMIT $3`,
+      [strategy, coinUniverse, limit]
     );
 
     const recommendations = result.rows.map((row: any) => ({
       id: row.id,
       symbol: row.symbol,
-      action: row.action,
+      action: 'BUY',
+      strategy: row.strategy,
+      coinUniverse: row.coin_universe,
       confidence: parseFloat(row.confidence),
       entryPrice: row.entry_price ? parseFloat(row.entry_price) : null,
       stopLoss: row.stop_loss ? parseFloat(row.stop_loss) : null,
@@ -404,14 +415,79 @@ router.get('/recommendations', async (req: Request, res: Response) => {
       riskLevel: row.risk_level,
       reasoning: row.reasoning,
       sources: row.sources,
+      discoveryScore: row.discovery_score ? parseFloat(row.discovery_score) : null,
       createdAt: row.created_at,
       expiresAt: row.expires_at,
     }));
 
+    logger.info(`Retrieved ${recommendations.length} BUY recommendations for user`, {
+      userId,
+      strategy,
+      coinUniverse,
+    });
+
     res.json(recommendations);
   } catch (error) {
-    logger.error('Failed to get recommendations', { error });
-    res.status(500).json({ error: 'Failed to retrieve recommendations' });
+    logger.error('Failed to get recommendations', { error, userId: req.user?.userId });
+    res.status(500).json({ 
+      error: 'Failed to retrieve recommendations',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * GET /api/recommendations/sell - Get user-specific SELL recommendations
+ * Reads from portfolio_recommendations table (user-specific)
+ */
+router.get('/recommendations/sell', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const result = await query(
+      `SELECT id, symbol, confidence, current_price, entry_price,
+              stop_loss, take_profit_1, take_profit_2,
+              unrealized_pnl, percent_gain, sell_reason, risk_level,
+              reasoning, created_at, expires_at
+       FROM portfolio_recommendations
+       WHERE user_id = $1
+         AND expires_at > NOW()
+       ORDER BY confidence DESC, created_at DESC
+       LIMIT $2`,
+      [userId, limit]
+    );
+
+    const recommendations = result.rows.map((row: any) => ({
+      id: row.id,
+      symbol: row.symbol,
+      action: 'SELL',
+      confidence: parseFloat(row.confidence),
+      currentPrice: row.current_price ? parseFloat(row.current_price) : null,
+      entryPrice: row.entry_price ? parseFloat(row.entry_price) : null,
+      stopLoss: row.stop_loss ? parseFloat(row.stop_loss) : null,
+      takeProfitLevels: [
+        row.take_profit_1 ? parseFloat(row.take_profit_1) : null,
+        row.take_profit_2 ? parseFloat(row.take_profit_2) : null,
+      ].filter((tp) => tp !== null),
+      unrealizedPnL: row.unrealized_pnl ? parseFloat(row.unrealized_pnl) : null,
+      percentGain: row.percent_gain ? parseFloat(row.percent_gain) : null,
+      sellReason: row.sell_reason,
+      riskLevel: row.risk_level,
+      reasoning: row.reasoning,
+      createdAt: row.created_at,
+      expiresAt: row.expires_at,
+    }));
+
+    logger.info(`Retrieved ${recommendations.length} SELL recommendations for user`, { userId });
+
+    res.json(recommendations);
+  } catch (error) {
+    logger.error('Failed to get sell recommendations', { error, userId: req.user?.userId });
+    res.status(500).json({ 
+      error: 'Failed to retrieve sell recommendations',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
