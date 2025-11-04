@@ -4,10 +4,17 @@
 
 import { processRecommendation } from '../src/jobs/processors/recommendationProcessor';
 import { logger } from '../src/utils/logger';
+import { initRedis } from '../src/config/redis';
 
 async function triggerRecommendationJob() {
   try {
     console.log('\n🚀 Triggering recommendation job...\n');
+    console.log('Initializing Redis...');
+    
+    // Initialize Redis first
+    await initRedis();
+    console.log('✅ Redis initialized\n');
+    
     console.log('This will:');
     console.log('  1. Run discovery for all 3 strategies (Conservative, Moderate, Aggressive)');
     console.log('  2. Generate AI recommendations for top opportunities');

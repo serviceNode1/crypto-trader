@@ -39,11 +39,29 @@ export interface RegimeAnalysis {
  */
 export async function getMarketContext(): Promise<MarketContext> {
   try {
+    logger.info('getMarketContext: Starting...');
+    
     // Fetch crypto market data
-    const globalData = await getGlobalMarketData() as {
-      market_cap_percentage?: { btc?: number };
-      total_market_cap?: { usd?: number };
-    };
+    logger.info('getMarketContext: Fetching global market data...');
+    let globalData: { market_cap_percentage?: { btc?: number }; total_market_cap?: { usd?: number } };
+    
+    try {
+      globalData = await getGlobalMarketData() as {
+        market_cap_percentage?: { btc?: number };
+        total_market_cap?: { usd?: number };
+      };
+      logger.info('getMarketContext: Global data fetched', { btcDominance: globalData.market_cap_percentage?.btc });
+    } catch (error) {
+      logger.error('getMarketContext: Failed to fetch global market data, using defaults', { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      // Use default values if API fails
+      globalData = {
+        market_cap_percentage: { btc: 50 },
+        total_market_cap: { usd: 0 }
+      };
+    }
 
     // Fetch traditional markets data (with error handling for rate limits)
     let traditionalData;
@@ -68,8 +86,10 @@ export async function getMarketContext(): Promise<MarketContext> {
     const btcDominance = globalData.market_cap_percentage?.btc || 0;
     const totalMarketCap = globalData.total_market_cap?.usd || 0;
 
+    logger.info('getMarketContext: Determining market regime...');
     // Determine market regime
     const marketRegime = await determineMarketRegime(btcDominance);
+    logger.info('getMarketContext: Market regime determined', { marketRegime });
 
     // Calculate risk sentiment
     const riskSentiment = traditionalData.sp500.price > 0
@@ -116,6 +136,8 @@ async function determineMarketRegime(
   _btcDominance: number
 ): Promise<'bull' | 'bear' | 'sideways' | 'high_volatility'> {
   try {
+    logger.info('determineMarketRegime: Querying prices table for BTC data...');
+    
     // Get recent BTC price data
     const result = await query(`
       SELECT 
@@ -131,8 +153,13 @@ async function determineMarketRegime(
       LIMIT 30
     `);
 
-    if (result.rows.length < 10) {
-      logger.warn('Insufficient historical data for regime detection');
+    logger.info('determineMarketRegime: Query completed', { rowCount: result?.rows?.length || 0 });
+
+    if (!result || !result.rows || result.rows.length < 10) {
+      logger.warn('Insufficient historical data for regime detection, using default', { 
+        rowCount: result?.rows?.length || 0,
+        required: 10 
+      });
       return MARKET_REGIMES.SIDEWAYS;
     }
 

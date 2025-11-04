@@ -287,7 +287,17 @@ export async function generateActionableRecommendations(
           getCandlesticks(opp.symbol, '1h', 100).catch(() => []),
           getCryptoNews(opp.symbol, 20),
           getCryptoMentions(opp.symbol, 50),
-          getMarketContext(),
+          getMarketContext().catch((err) => {
+            logger.warn('Using default market context due to error', { error: err });
+            return {
+              btcDominance: 50,
+              totalMarketCap: 0,
+              marketRegime: 'sideways' as const,
+              traditionalMarkets: { sp500: 0, sp500Change: 0, gold: 0, vix: 20 },
+              riskSentiment: 'neutral' as const,
+              volatilityIndex: 0.5,
+            };
+          }),
         ]);
 
         const technicalIndicators = calculateAllIndicators(candlesticks);
@@ -332,7 +342,17 @@ export async function generateActionableRecommendations(
           getCandlesticks(opp.symbol, '1h', 100).catch(() => []),
           getCryptoNews(opp.symbol, 20),
           getCryptoMentions(opp.symbol, 50),
-          getMarketContext(),
+          getMarketContext().catch((err) => {
+            logger.warn('Using default market context due to error', { error: err });
+            return {
+              btcDominance: 50,
+              totalMarketCap: 0,
+              marketRegime: 'sideways' as const,
+              traditionalMarkets: { sp500: 0, sp500Change: 0, gold: 0, vix: 20 },
+              riskSentiment: 'neutral' as const,
+              volatilityIndex: 0.5,
+            };
+          }),
         ]);
 
         const technicalIndicators = calculateAllIndicators(candlesticks);
