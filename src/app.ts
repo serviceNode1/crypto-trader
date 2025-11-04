@@ -114,17 +114,12 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 });
 
 /**
- * Static Files - Serve dashboard
- */
-app.use(express.static(path.join(__dirname, '../public')));
-
-/**
- * API Routes
+ * API Routes - Must come BEFORE static files to avoid conflicts
  */
 app.use('/api', routes);
 
 /**
- * Root route - Serve dashboard
+ * Root route - Serve dashboard (explicit route for root)
  */
 app.get('/', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
@@ -153,6 +148,12 @@ app.get('/terms', (_req: Request, res: Response) => {
 });
 
 /**
+ * Static Files - Serve dashboard assets (CSS, JS, images)
+ * This comes AFTER specific routes to avoid conflicts
+ */
+app.use(express.static(path.join(__dirname, '../public')));
+
+/**
  * Error Handling Middleware
  */
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
@@ -169,7 +170,7 @@ app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
 });
 
 /**
- * 404 Handler
+ * 404 Handler - Must be LAST
  */
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Route not found' });
