@@ -147,7 +147,7 @@ export function verifyCsrfToken(req: Request, res: Response, next: NextFunction)
     res.status(403).json({
       success: false,
       error: 'CSRF token missing',
-      message: 'CSRF token is required for this operation',
+      message: 'CSRF token is required for this operation. Please try again.',
     });
     return;
   }

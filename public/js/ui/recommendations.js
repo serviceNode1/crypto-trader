@@ -202,7 +202,7 @@ export async function loadRecommendations() {
                 <div style="padding: 30px; text-align: center; border-radius: 6px; border: 1px solid var(--border-color);">
                     <div style="font-size: 48px; margin-bottom: 15px;">🤖</div>
                     <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
-                        ${hasRunBefore ? 'No Active Recommendations' : 'Waiting for First AI Review'}
+                        ${hasRunBefore ? 'No Active Recommendations' : 'Waiting for AI Review'}
                     </div>
                     <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">
                         ${hasRunBefore ? 'All recommendations have expired or no opportunities found' : 'Automated AI analysis will run on schedule'}
