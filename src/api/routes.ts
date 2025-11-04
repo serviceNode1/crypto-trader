@@ -1288,43 +1288,51 @@ router.get('/ai-review-logs', authenticate, async (req: Request, res: Response) 
       getAIReviewStats()
     ]);
     
-    // Filter logs to show user's perspective
-    // Backend runs all strategies on top100, but we show counts for user's settings
-    const filteredLogs = logs.map((log: any) => {
-      // If this is a completed review with metadata, filter the counts
+    // Enhance logs with user-specific recommendation counts
+    // Backend runs all strategies on top100, but we show counts for user's strategy
+    const enhancedLogs = await Promise.all(logs.map(async (log: any) => {
+      // If this is a completed review, get actual counts for user's strategy
       if (log.status === 'completed' && log.metadata && !log.metadata.skipped) {
-        // Calculate what portion of results match user's settings
-        // Since we run 3 strategies, user sees 1/3 of the results (their strategy)
-        // Since we analyze top100, user sees their universe portion
-        const strategyMultiplier = 1 / 3; // User sees 1 of 3 strategies
-        const universeMap: { [key: string]: number } = {
-          'top10': 0.1,   // 10% of top100
-          'top50': 0.5,   // 50% of top100
-          'top100': 1.0   // 100% of top100
-        };
-        const universeMultiplier = universeMap[userUniverse] || 0.5;
-        const totalMultiplier = strategyMultiplier * universeMultiplier;
-        
-        return {
-          ...log,
-          // Adjust displayed counts to reflect user's settings
-          coinsAnalyzed: Math.round((log.coinsAnalyzed || 0) * totalMultiplier),
-          buyRecommendations: Math.round((log.buyRecommendations || 0) * strategyMultiplier),
-          skippedOpportunities: Math.round((log.skippedOpportunities || 0) * totalMultiplier),
-          // Add user context to metadata
-          metadata: {
-            ...log.metadata,
-            userStrategy,
-            userUniverse,
-            displayFiltered: true
-          }
-        };
+        try {
+          // Get actual BUY recommendations for user's strategy from this review time
+          const buyCountResult = await query(
+            `SELECT COUNT(*) as count 
+             FROM discovery_recommendations 
+             WHERE strategy = $1 
+               AND coin_universe = $2
+               AND created_at >= $3 - INTERVAL '2 minutes'
+               AND created_at <= $3 + INTERVAL '2 minutes'`,
+            [userStrategy, userUniverse, log.timestamp]
+          );
+          
+          const userBuyCount = parseInt(buyCountResult.rows[0]?.count || 0);
+          
+          // For display: show that this strategy's recommendations are available
+          // Note: Total coins analyzed and skipped are across all strategies (can't separate retroactively)
+          return {
+            ...log,
+            // Show actual buy recommendations for user's strategy
+            buyRecommendations: userBuyCount,
+            // Keep original totals for coins analyzed and skipped (cross-strategy)
+            // Add note in metadata
+            metadata: {
+              ...log.metadata,
+              userStrategy,
+              userUniverse,
+              userBuyCount,
+              note: `Showing ${userBuyCount} BUY recommendations for ${userStrategy} strategy. Total analysis was across all strategies.`
+            }
+          };
+        } catch (error) {
+          logger.error('Failed to get user-specific counts for log', { error, logId: log.id });
+          return log;
+        }
       }
       return log;
-    });
+    }));
     
     res.json({
-      logs: filteredLogs,
+      logs: enhancedLogs,
       stats: {
         totalReviews: parseInt(stats.total_reviews) || 0,
         successfulReviews: parseInt(stats.successful_reviews) || 0,
