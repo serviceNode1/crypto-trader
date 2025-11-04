@@ -126,6 +126,13 @@ app.get('/', (_req: Request, res: Response) => {
 });
 
 /**
+ * Cloudways compatibility - redirect index.php to root
+ */
+app.get('/index.php', (_req: Request, res: Response) => {
+  res.redirect(301, '/');
+});
+
+/**
  * Auth pages
  */
 app.get('/login', (_req: Request, res: Response) => {
