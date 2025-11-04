@@ -9,7 +9,7 @@ import { REFRESH_INTERVALS } from './config.js';
 import { initializeTheme } from './utils/theme.js';
 import { loadPortfolio, loadPerformance, loadRisk, loadPortfolioChart } from './ui/portfolio.js';
 import { loadTrades } from './ui/trades.js';
-import { loadRecommendations, refreshAnalysisTimeDisplay } from './ui/recommendations.js';
+import { loadRecommendations, refreshAnalysisTimeDisplay, loadMarketConditions } from './ui/recommendations.js';
 import { loadAIReviewLogs, toggleAIReviewLogs } from './ui/ai-review-logs.js';
 import { toggleCardCollapse, initializeCardStates, updateCardHeight } from './ui/cards.js';
 import { openInfoModal, closeInfoModal, switchTab } from './ui/modals.js';
@@ -63,6 +63,7 @@ async function loadAllData() {
         loadPortfolioChart(),
         loadTrades(),
         loadRecommendations(),
+        loadMarketConditions(),
     ]);
 }
 
@@ -168,6 +169,7 @@ window.handleTradingModeChange = handleTradingModeChange;
 window.loadTrades = loadTrades;
 window.loadPortfolio = loadPortfolio;
 window.loadRecommendations = loadRecommendations;
+window.loadMarketConditions = loadMarketConditions;
 window.analyzeCrypto = analyzeCrypto;
 window.selectCrypto = selectCrypto;
 window.closeAnalysis = closeAnalysis;

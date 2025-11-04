@@ -13,6 +13,7 @@ import { getCurrentPrice } from '../services/dataCollection/coinGeckoService';
 import { calculateAllIndicators, analyzeTrend } from '../services/analysis/technicalAnalysis';
 import { aggregateSentiment } from '../services/analysis/sentimentAnalysis';
 import { getMarketContext, analyzeRegime } from '../services/analysis/marketContext';
+import { calculateMarketConditions, logMarketConditions, getLatestMarketConditions } from '../services/analysis/marketConditionsService';
 import { getAIRecommendation, getLocalRecommendation } from '../services/ai/aiService';
 import { getUserSettings, updateUserSettings, resetUserSettings } from '../services/settings/settingsService';
 import { discoverCoins, getTopDiscoveries } from '../services/discovery/coinDiscovery';
@@ -917,6 +918,35 @@ router.get('/market-context', async (_req: Request, res: Response) => {
   } catch (error) {
     logger.error('Failed to get market context', { error });
     res.status(500).json({ error: 'Failed to retrieve market context' });
+  }
+});
+
+/**
+ * GET /api/market/conditions - Get detailed market conditions with recommended intervals
+ */
+router.get('/market/conditions', async (_req: Request, res: Response): Promise<void> => {
+  try {
+    // Try to get cached conditions first (< 5 minutes old)
+    const cached = await getLatestMarketConditions();
+    const now = new Date();
+    
+    if (cached && (now.getTime() - cached.timestamp.getTime()) < 5 * 60 * 1000) {
+      logger.info('Returning cached market conditions', { age: now.getTime() - cached.timestamp.getTime() });
+      res.json(cached);
+      return;
+    }
+
+    // Calculate fresh conditions
+    logger.info('Calculating fresh market conditions');
+    const conditions = await calculateMarketConditions();
+    
+    // Log to database for historical tracking
+    await logMarketConditions(conditions);
+
+    res.json(conditions);
+  } catch (error) {
+    logger.error('Failed to get market conditions', { error });
+    res.status(500).json({ error: 'Failed to retrieve market conditions' });
   }
 });
 

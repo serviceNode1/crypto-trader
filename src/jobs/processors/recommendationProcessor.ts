@@ -3,6 +3,7 @@ import { generateActionableRecommendations } from '../../services/discovery/oppo
 import { query } from '../../config/database';
 import { logger } from '../../utils/logger';
 import { logAIReview, updateAIReviewLog } from '../../services/logging/aiReviewLogger';
+import { calculateMarketConditions } from '../../services/analysis/marketConditionsService';
 import type { DiscoveryStrategy, CoinUniverse } from '../../types/recommendations';
 
 interface RecommendationJobData {
@@ -100,19 +101,91 @@ export async function storePortfolioRecommendation(
 }
 
 /**
+ * Check if we should run based on market conditions and last run time
+ */
+async function shouldRunRecommendationJob(): Promise<{ shouldRun: boolean; reason: string; interval: number }> {
+  try {
+    // Get market conditions
+    const conditions = await calculateMarketConditions();
+    const recommendedIntervalHours = conditions.recommendedInterval;
+    
+    // Get last successful run time from ai_review_log
+    const lastRunResult = await query(`
+      SELECT MAX(timestamp) as last_run
+      FROM ai_review_log
+      WHERE review_type = 'scheduled'
+        AND status = 'completed'
+    `);
+    
+    const lastRun = lastRunResult.rows[0]?.last_run;
+    
+    if (!lastRun) {
+      // First run ever
+      return {
+        shouldRun: true,
+        reason: 'First recommendation run',
+        interval: recommendedIntervalHours
+      };
+    }
+    
+    // Calculate hours since last run
+    const hoursSinceLastRun = (Date.now() - new Date(lastRun).getTime()) / (1000 * 60 * 60);
+    
+    // Decision logic
+    if (hoursSinceLastRun >= recommendedIntervalHours) {
+      return {
+        shouldRun: true,
+        reason: `${hoursSinceLastRun.toFixed(1)}h since last run (interval: ${recommendedIntervalHours}h)`,
+        interval: recommendedIntervalHours
+      };
+    } else {
+      return {
+        shouldRun: false,
+        reason: `Only ${hoursSinceLastRun.toFixed(1)}h since last run (interval: ${recommendedIntervalHours}h) - skipping`,
+        interval: recommendedIntervalHours
+      };
+    }
+  } catch (error) {
+    logger.error('Error checking if should run recommendation job', { error });
+    // On error, default to running (safer than skipping)
+    return {
+      shouldRun: true,
+      reason: 'Error checking conditions - defaulting to run',
+      interval: 2
+    };
+  }
+}
+
+/**
  * Process recommendation generation jobs
  * Phase 1: Generate global BUY recommendations for all strategies
  * SELL recommendations are handled separately via portfolio monitoring
+ * 
+ * Smart Execution: Checks market conditions and last run time to decide if should execute
  */
 export async function processRecommendation(job: Job<RecommendationJobData>): Promise<void> {
   const { maxBuy = 3, maxSell = 0 } = job.data; // maxSell = 0 for global jobs
   const startTime = Date.now();
   
+  // Smart execution check
+  const { shouldRun, reason, interval } = await shouldRunRecommendationJob();
+  
+  logger.info('🔍 Recommendation job triggered by cron', {
+    shouldRun,
+    reason,
+    recommendedInterval: `${interval}h`
+  });
+  
+  if (!shouldRun) {
+    logger.info(`⏭️  Skipping recommendation job: ${reason}`);
+    return; // Exit early - don't run
+  }
+  
   // Define strategies to run
   const strategies: DiscoveryStrategy[] = ['conservative', 'moderate', 'aggressive'];
   const coinUniverses: CoinUniverse[] = ['top50']; // Can be expanded to ['top10', 'top50', 'top100']
   
-  logger.info('🚀 Processing global recommendation job for all strategies');
+  logger.info(`🚀 Running recommendation job: ${reason}`);
   
   // Create initial log entry
   const logId = await logAIReview({

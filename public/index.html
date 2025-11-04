@@ -70,6 +70,19 @@
             </div>
         </header>
 
+        <!-- Market Conditions Banner (Top of Page) -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0; font-size: 18px; color: var(--text-primary);">📊 Market Conditions</h2>
+                    <span id="market-conditions-timestamp-top" style="font-size: 12px; color: var(--text-muted);"></span>
+                </div>
+                <div id="market-conditions-content-top" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; font-size: 13px;">
+                    <div class="loading">Loading market conditions...</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Crypto Selector -->
         <div class="card" style="margin-bottom: 30px;">
             <h2 onclick="toggleCardCollapse('crypto-selector-content')">
@@ -203,6 +216,7 @@
                 </div>
             </h2>
             <div id="recommendations-content" class="card-content">
+                
                 <div id="recommendations-list" class="loading">Loading...</div>
                 
                 <!-- AI Review Logs Panel -->

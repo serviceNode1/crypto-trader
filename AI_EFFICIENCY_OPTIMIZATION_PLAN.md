@@ -508,24 +508,48 @@ WHERE action = 'BUY' AND user_id IS NOT NULL;
 
 #### Tasks
 
-- [ ] Create `marketConditionsService.ts`:
-  - [ ] `calculateMarketConditions()` function
-  - [ ] `calculateReviewInterval()` function
-  - [ ] `logMarketConditions()` to database
-- [ ] Create API endpoint `GET /api/market/conditions`
-- [ ] Update `recommendations.js`:
-  - [ ] Add market conditions banner component
-  - [ ] Fetch and display current conditions
-  - [ ] Calculate and display next review time
-  - [ ] Add countdown timer
-  - [ ] Update every 30 seconds
-- [ ] Add CSS styling for volatility badges
-- [ ] Log market conditions on each review cycle
+- [x] Create `marketConditionsService.ts`:
+  - [x] `calculateMarketConditions()` function
+  - [x] `calculateReviewInterval()` function
+  - [x] `logMarketConditions()` to database
+  - [x] `getLatestMarketConditions()` for caching
+  - [x] `calculateVolatility()` from BTC price data
+- [x] Create API endpoint `GET /api/market/conditions`
+  - [x] 5-minute caching to reduce database load
+  - [x] Automatic logging to `market_conditions_log` table
+- [x] Update `recommendations.js`:
+  - [x] Add market conditions banner component
+  - [x] Fetch and display current conditions
+  - [x] Display market regime, volatility, risk sentiment, BTC dominance
+  - [x] Show recommended review interval with reasoning
+  - [x] Color-coded indicators for quick visual assessment
+- [x] Update `index.html` with market conditions banner
+- [x] Integrate into main.js initialization
+- [x] Log market conditions on each API call
 
 **Deliverables:**
 - Market conditions visible on dashboard
 - Next review time dynamically calculated
 - Foundation for dynamic intervals (not yet active)
+
+**Phase 2 Status:** ✅ **COMPLETE** (November 4, 2025)
+
+**Key Achievements:**
+1. ✅ Market conditions service with intelligent interval calculation
+2. ✅ Volatility calculation from 7-day BTC price data
+3. ✅ Dynamic review interval recommendations (6-24 hours based on conditions)
+4. ✅ API endpoint with 5-minute caching
+5. ✅ Beautiful UI dashboard with color-coded indicators
+6. ✅ Automatic logging to database for historical tracking
+7. ✅ Reasoning displayed to users for transparency
+
+**Implementation Notes:**
+- Interval logic: 1-4 hours (never 24h), baseline 2h
+- Bull+High Vol=1h, Bear+Medium Vol=2h, Sideways+Low Vol=4h
+- Risk-off sentiment extends intervals (more cautious, max 4h)
+- Risk-on sentiment in bull markets shortens intervals (more aggressive, min 1h)
+- **Smart Execution Implemented:** Cron runs every 2h but checks conditions and skips if not time yet
+- Job processor checks last run time vs recommended interval before executing
 
 ---
 

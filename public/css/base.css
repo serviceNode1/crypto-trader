@@ -86,6 +86,21 @@ code {
     margin-top: var(--spacing-sm);
 }
 
+.error {
+    background: var(--error-bg-light, #fee2e2);
+    border: 2px solid var(--negative, #ef4444);
+    color: var(--error-text, #991b1b);
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+    font-weight: 500;
+}
+
+[data-theme="dark"] .error {
+    background: var(--error-bg-dark, #7f1d1d);
+    color: var(--error-text-dark, #fecaca);
+}
+
 .warning {
     background: #fff3cd;
     border: 2px solid #ffc107;
@@ -94,6 +109,12 @@ code {
     border-radius: 8px;
     margin: 20px 0;
     font-weight: 500;
+}
+
+[data-theme="dark"] .warning {
+    background: #78350f;
+    border-color: #f59e0b;
+    color: #fde68a;
 }
 
 .success-box {
@@ -303,6 +324,7 @@ code {
     gap: var(--spacing-md);
     padding: var(--spacing-xl);
     justify-content: center;
+    color: var(--text-secondary);
 }
 
 /* Animations */

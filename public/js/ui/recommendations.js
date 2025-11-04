@@ -3,7 +3,7 @@
  * Handles displaying AI recommendations
  */
 
-/* global document, localStorage */
+/* global document, localStorage, fetch */
 /* eslint-disable no-console */
 import { fetchRecommendations } from '../api/analysis.js';
 import { timeAgo } from '../utils/time.js';
@@ -325,4 +325,101 @@ export function updateLastAnalysisTime(timestamp) {
 export function refreshAnalysisTimeDisplay() {
     // This is now handled by updateRecommendationsHeader
     // Keep for backward compatibility
+}
+
+/**
+ * Fetch and display market conditions
+ */
+export async function loadMarketConditions() {
+    try {
+        const response = await fetch('/api/market/conditions');
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API error:', response.status, errorText);
+            throw new Error(`API returned ${response.status}: ${errorText}`);
+        }
+        
+        const conditions = await response.json();
+        displayMarketConditions(conditions);
+    } catch (error) {
+        console.error('Error loading market conditions:', error);
+        const contentElTop = document.getElementById('market-conditions-content-top');
+        if (contentElTop) {
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            contentElTop.innerHTML = `<div class="error">Failed to load market conditions<br><small style="font-weight: normal; opacity: 0.8;">${errorMsg}</small></div>`;
+        }
+    }
+}
+
+/**
+ * Display market conditions in the UI
+ */
+function displayMarketConditions(conditions) {
+    // Update both locations: top banner and recommendations section
+    const timestampEl = document.getElementById('market-conditions-timestamp');
+    const contentElTop = document.getElementById('market-conditions-content-top');
+    const timestampElTop = document.getElementById('market-conditions-timestamp-top');
+    
+    if (!contentElTop) return;
+    
+    // Update timestamps
+    const timeAgoText = timeAgo(new Date(conditions.timestamp));
+    if (timestampEl) {
+        timestampEl.textContent = timeAgoText;
+    }
+    if (timestampElTop) {
+        timestampElTop.textContent = timeAgoText;
+    }
+    
+    // Map regime to emoji and color
+    const regimeMap = {
+        'bull': { emoji: '📈', label: 'Bull Market', color: '#10b981' },
+        'bear': { emoji: '📉', label: 'Bear Market', color: '#ef4444' },
+        'sideways': { emoji: '↔️', label: 'Sideways', color: '#6b7280' },
+        'high_volatility': { emoji: '⚡', label: 'High Volatility', color: '#f59e0b' }
+    };
+    
+    const volatilityMap = {
+        'low': { emoji: '🟢', label: 'Low', color: '#10b981' },
+        'medium': { emoji: '🟡', label: 'Medium', color: '#f59e0b' },
+        'high': { emoji: '🔴', label: 'High', color: '#ef4444' }
+    };
+    
+    const sentimentMap = {
+        'risk-on': { emoji: '🚀', label: 'Risk-On', color: '#10b981' },
+        'neutral': { emoji: '⚖️', label: 'Neutral', color: '#6b7280' },
+        'risk-off': { emoji: '🛡️', label: 'Risk-Off', color: '#ef4444' }
+    };
+    
+    const regime = regimeMap[conditions.marketRegime] || regimeMap['sideways'];
+    const volatility = volatilityMap[conditions.volatility] || volatilityMap['medium'];
+    const sentiment = sentimentMap[conditions.riskSentiment] || sentimentMap['neutral'];
+    
+    const htmlContent = `
+        <div>
+            <div style="color: var(--text-muted); font-size: 11px; margin-bottom: 4px;">Market Regime</div>
+            <div style="font-weight: 600; color: ${regime.color};">${regime.emoji} ${regime.label}</div>
+        </div>
+        <div>
+            <div style="color: var(--text-muted); font-size: 11px; margin-bottom: 4px;">Volatility</div>
+            <div style="font-weight: 600; color: ${volatility.color};">${volatility.emoji} ${volatility.label}</div>
+        </div>
+        <div>
+            <div style="color: var(--text-muted); font-size: 11px; margin-bottom: 4px;">Risk Sentiment</div>
+            <div style="font-weight: 600; color: ${sentiment.color};">${sentiment.emoji} ${sentiment.label}</div>
+        </div>
+        <div>
+            <div style="color: var(--text-muted); font-size: 11px; margin-bottom: 4px;">BTC Dominance</div>
+            <div style="font-weight: 600; color: var(--text-primary);">${conditions.btcDominance.toFixed(1)}%</div>
+        </div>
+        <div style="grid-column: 1 / -1; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+            <div style="color: var(--text-muted); font-size: 11px; margin-bottom: 4px;">Current Review Schedule</div>
+            <div style="font-weight: 600; color: var(--text-secondary);">⏱️ Every ${conditions.recommendedInterval} ${conditions.recommendedInterval === 1 ? 'hour' : 'hours'}</div>
+            <div style="color: var(--text-muted); font-size: 11px; margin-top: 4px; font-style: italic;">${conditions.reasoning}</div>
+        </div>
+    `;
+    
+    if (contentElTop) {
+        contentElTop.innerHTML = htmlContent;
+    }
 }
