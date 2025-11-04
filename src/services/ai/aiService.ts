@@ -74,7 +74,8 @@ export interface AnalysisInput {
  */
 async function getOpenAIRecommendation(
   input: AnalysisInput,
-  debugMode: boolean = false
+  debugMode: boolean = false,
+  strategy: 'conservative' | 'moderate' | 'aggressive' = 'moderate'
 ): Promise<TradeRecommendation> {
   if (!openai) {
     throw new Error('OpenAI client not initialized - check OPENAI_API_KEY');
@@ -84,7 +85,7 @@ async function getOpenAIRecommendation(
     rateLimiters.openai,
     async () => {
       return withRetryJitter(async () => {
-        const prompt = buildAnalysisPrompt(input, debugMode);
+        const prompt = buildAnalysisPrompt(input, debugMode, strategy);
 
         logger.debug('Requesting OpenAI analysis', { symbol: input.symbol });
         logger.debug('2B: Debug mode:',debugMode, ' Prompt:', prompt);
@@ -134,9 +135,10 @@ async function getOpenAIRecommendation(
 /**
  * Generate trade recommendation using Anthropic Claude
  */
-async function getClaudeRecommendation(
+async function getAnthropicRecommendation(
   input: AnalysisInput,
-  debugMode: boolean = false
+  debugMode: boolean = false,
+  strategy: 'conservative' | 'moderate' | 'aggressive' = 'moderate'
 ): Promise<TradeRecommendation> {
   if (!anthropic) {
     throw new Error('Anthropic client not initialized - check ANTHROPIC_API_KEY');
@@ -146,7 +148,7 @@ async function getClaudeRecommendation(
     rateLimiters.anthropic,
     async () => {
       return withRetryJitter(async () => {
-        const prompt = buildAnalysisPrompt(input, debugMode);
+        const prompt = buildAnalysisPrompt(input, debugMode, strategy);
 
         logger.info('Requesting Claude analysis', { symbol: input.symbol });
         logger.debug('1a: Debug mode:',debugMode, ' Prompt:', prompt);
@@ -201,7 +203,11 @@ async function getClaudeRecommendation(
 /**
  * Build analysis prompt for AI models
  */
-function buildAnalysisPrompt(input: AnalysisInput, debugMode: boolean = false): string {
+function buildAnalysisPrompt(
+  input: AnalysisInput, 
+  debugMode: boolean = false,
+  strategy: 'conservative' | 'moderate' | 'aggressive' = 'moderate'
+): string {
   const {
     symbol,
     currentPrice,
@@ -261,6 +267,42 @@ Provide a JSON response with the following structure:
   "timeframe": "short-term (1-3 days)" | "medium-term (1-2 weeks)" | "long-term (1+ months)"
 }
 
+**Trading Strategy**: ${strategy.toUpperCase()}
+${strategy === 'conservative' ? `
+**Conservative Strategy Guidelines**:
+- ONLY recommend BUY with VERY strong conviction (80%+ confidence)
+- Require multiple confirming signals across technical, sentiment, AND news
+- Prefer established coins with strong fundamentals
+- Position sizes should be smaller (1-2% max)
+- Stop losses must be tight (5-8% maximum)
+- Risk level should typically be LOW, rarely MEDIUM
+- Favor longer timeframes (medium to long-term holds)
+- Be extra cautious in bear markets or high volatility
+- Reject opportunities with ANY significant red flags
+` : strategy === 'aggressive' ? `
+**Aggressive Strategy Guidelines**:
+- More willing to recommend BUY with moderate conviction (65%+ confidence)
+- Can act on strong signals from 1-2 sources (don't need all to align)
+- Open to higher volatility and emerging opportunities
+- Position sizes can be larger (3-5% of portfolio)
+- Stop losses can be wider (10-15% to allow for volatility)
+- Risk level can be MEDIUM or HIGH
+- Favor shorter timeframes (short to medium-term trades)
+- Willing to take calculated risks in volatile markets
+- Look for asymmetric risk/reward opportunities
+` : `
+**Moderate Strategy Guidelines**:
+- Recommend BUY with solid conviction (70%+ confidence)
+- Prefer 2-3 confirming signals across different data sources
+- Balance between established and emerging opportunities
+- Position sizes should be moderate (2-3% of portfolio)
+- Stop losses should be reasonable (8-12%)
+- Risk level typically MEDIUM, can be LOW or HIGH with justification
+- Flexible timeframes based on opportunity
+- Consider market regime but don't be overly cautious
+- Balanced approach to risk/reward
+`}
+
 **Important Guidelines**:
 ${debugMode ? `
 ⚠️ **DEBUG/TESTING MODE - AGGRESSIVE ANALYSIS** ⚠️
@@ -275,13 +317,13 @@ ${debugMode ? `
 9. Use larger position sizes (4-5% is fine for testing)
 **Remember: This is for TESTING AUTO-TRADING LOGIC, not real investment decisions!**
 ` : `
-1. Be conservative - only recommend BUY/SELL with strong conviction
+1. Follow the ${strategy} strategy guidelines above
 2. Consider all data sources - technical, sentiment, news, and market context
 3. Account for current market regime and risk sentiment
 4. Stop loss is MANDATORY for any BUY recommendation
-5. Position size should reflect risk level (lower for higher risk)
+5. Position size should reflect risk level and strategy
 6. Be explicit about uncertainties and risks in reasoning
-7. Confidence should be realistic (rarely above 80)
+7. Confidence should be realistic based on strategy (conservative higher bar, aggressive lower bar)
 `}`;
 }
 
@@ -293,7 +335,8 @@ export type AIModel = 'local' | 'anthropic' | 'openai' | 'both';
 export async function getAIRecommendation(
   input: AnalysisInput,
   modelChoice: AIModel = 'anthropic',
-  debugMode: boolean = false
+  debugMode: boolean = false,
+  strategy: 'conservative' | 'moderate' | 'aggressive' = 'moderate'
 ): Promise<TradeRecommendation> {
   try {
     if (debugMode) {
@@ -310,8 +353,8 @@ export async function getAIRecommendation(
     if (modelChoice === 'both') {
       // Get recommendations from both models
       const [openaiRec, claudeRec] = await Promise.allSettled([
-        getOpenAIRecommendation(input, debugMode),
-        getClaudeRecommendation(input, debugMode),
+        getOpenAIRecommendation(input, debugMode, strategy),
+        getAnthropicRecommendation(input, debugMode, strategy),
       ]);
 
       // Return both recommendations if both succeeded
@@ -340,11 +383,11 @@ export async function getAIRecommendation(
 
     // Use specific model
     if (modelChoice === 'openai') {
-      return await getOpenAIRecommendation(input, debugMode);
+      return await getOpenAIRecommendation(input, debugMode, strategy);
     }
 
     // Default to Anthropic (faster and cheaper for structured outputs)
-    return await getClaudeRecommendation(input, debugMode);
+    return await getAnthropicRecommendation(input, debugMode, strategy);
     
   } catch (error) {
     logger.error('AI recommendation failed', { 

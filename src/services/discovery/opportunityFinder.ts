@@ -262,6 +262,12 @@ export async function generateActionableRecommendations(
       logger.warn('⚠️ DEBUG MODE - AI will use aggressive/risky prompts');
     }
     logger.info('🤖 Generating AI recommendations for top opportunities...');
+    
+    // Ensure strategy is one of the valid AI strategy types (filter out 'debug')
+    const aiStrategy: 'conservative' | 'moderate' | 'aggressive' = 
+      (strategy === 'conservative' || strategy === 'moderate' || strategy === 'aggressive') 
+        ? strategy 
+        : 'moderate';
 
     const opportunities = await findOpportunities(false, strategy, coinUniverse, skipPortfolioFilter);
 
@@ -310,7 +316,7 @@ export async function generateActionableRecommendations(
           sentiment,
           news,
           marketContext,
-        }, 'anthropic', debugMode);
+        }, 'anthropic', debugMode, aiStrategy);
         
         // Only store if AI agrees it's a BUY
         if (recommendation.action === 'BUY') {
@@ -365,7 +371,7 @@ export async function generateActionableRecommendations(
           sentiment,
           news,
           marketContext,
-        }, 'anthropic', debugMode);
+        }, 'anthropic', debugMode, aiStrategy);
         
         // Only store if AI agrees it's a SELL
         if (recommendation.action === 'SELL') {

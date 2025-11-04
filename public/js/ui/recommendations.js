@@ -172,9 +172,9 @@ export async function loadRecommendations() {
                         </div>
                         <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
                             <div><strong style="color: var(--text-color);">Confidence:</strong> ${rec.confidence}% | <strong style="color: var(--text-color);">Risk:</strong> ${rec.riskLevel || 'Medium'}</div>
-                            ${rec.reasoning ? `<div style="margin-top: 4px;"><strong style="color: var(--text-color);">Reasoning:</strong> ${rec.reasoning}</div>` : ''}
+                            ${rec.reasoning ? `<div style="margin-top: 4px;"><strong style="color: var(--text-color);">Reasoning:</strong> ${typeof rec.reasoning === 'object' ? (rec.reasoning.conclusion || rec.reasoning.bullCase || JSON.stringify(rec.reasoning)) : rec.reasoning}</div>` : ''}
                             ${rec.entryPrice ? `<div style="margin-top: 4px;"><strong style="color: var(--text-color);">Entry:</strong> $${rec.entryPrice.toFixed(2)}</div>` : ''}
-                            ${rec.stopLoss ? `<div style="margin-top: 4px;"><strong style="color: var(--text-color);">Stop Loss:</strong> $${rec.stopLoss.toFixed(2)}</div>` : ''}
+                            ${rec.stopLoss ? `<div style="margin-top: 4px;"><strong style="color: var(--text-color);">Stop Loss:</strong> $${rec.stopLoss.toFixed(2)} <span class="badge badge-${rec.action.toLowerCase()}" style="font-size: 11px; cursor: pointer; margin-left: 8px;" onclick="populateBuyForm('${rec.symbol}', ${rec.entryPrice || 0}, ${rec.stopLoss || 0})">📋 Quick Buy</span></div>` : ''}
                             <div style="font-size: 11px; margin-top: 5px; color: var(--text-muted);">
                                 ${timeAgo(rec.createdAt)}
                             </div>
@@ -423,3 +423,46 @@ function displayMarketConditions(conditions) {
         contentElTop.innerHTML = htmlContent;
     }
 }
+
+/**
+ * Populate buy form with recommendation data
+ * TODO: Make this a proper feature - currently just a quick helper
+ */
+window.populateBuyForm = function(symbol, entryPrice, stopLoss) {
+    // Scroll to the manual trading form
+    const manualTradingCard = document.querySelector('#manual-trading-content');
+    if (manualTradingCard) {
+        manualTradingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    // Populate the form fields
+    const symbolInput = document.getElementById('manualTradeSymbol');
+    const stopLossCheckbox = document.getElementById('addStopLoss');
+    const stopLossInput = document.getElementById('stopLossPrice');
+    
+    if (symbolInput) {
+        symbolInput.value = symbol;
+        console.log(`📋 Populated buy form: ${symbol} @ $${entryPrice} (Stop: $${stopLoss})`);
+    }
+    
+    // Enable stop loss checkbox if not already enabled
+    if (stopLossCheckbox && !stopLossCheckbox.checked) {
+        stopLossCheckbox.checked = true;
+        // Trigger the onchange event to show advanced options
+        if (typeof window.toggleAdvancedOptions === 'function') {
+            window.toggleAdvancedOptions();
+        }
+    }
+    
+    // Set stop loss price after a brief delay to ensure advanced options are visible
+    setTimeout(() => {
+        if (stopLossInput && stopLoss) {
+            stopLossInput.value = stopLoss.toFixed(2);
+        }
+    }, 100);
+    
+    // Show success message
+    if (typeof window.showSuccess === 'function') {
+        window.showSuccess('Quick Buy', `Populated buy form with ${symbol}. Entry: $${entryPrice.toFixed(2)}, Stop Loss: $${stopLoss.toFixed(2)}. Review and adjust before submitting.`);
+    }
+};

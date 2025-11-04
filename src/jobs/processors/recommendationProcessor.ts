@@ -41,7 +41,7 @@ async function storeDiscoveryRecommendation(
         recommendation.positionSize,
         recommendation.riskLevel,
         JSON.stringify(recommendation.reasoning || recommendation.keyFactors),
-        JSON.stringify(recommendation.sources || []),
+        recommendation.sources || [], // PostgreSQL array, not JSON string
         recommendation.discoveryScore || null,
       ]
     );

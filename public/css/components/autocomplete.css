@@ -163,7 +163,7 @@
 /* Fix for container overflow issues */
 .coin-autocomplete-wrapper {
     position: relative;
-    z-index: 100; /* Higher than cards but lower than modals */
+    z-index: 99; /* Higher than cards but lower than modals */
 }
 
 /* Ensure parent containers don't clip the dropdown */
@@ -187,7 +187,7 @@ div:has(.coin-autocomplete-wrapper) {
 /* Ensure cards with autocomplete have proper stacking context */
 .card:has(.coin-autocomplete-wrapper) {
     position: relative;
-    z-index: 100;
+    z-index: 99;
 }
 
 /* Ensure sibling cards don't overlap the dropdown */
@@ -198,7 +198,7 @@ div:has(.coin-autocomplete-wrapper) {
 
 /* But the card with autocomplete should be higher */
 .dashboard-grid > .card:has(.coin-autocomplete-wrapper) {
-    z-index: 100;
+    z-index: 99;
 }
 
 /* Scrollbar styling for dropdown */
