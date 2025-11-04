@@ -12,6 +12,7 @@ import { logger } from './utils/logger';
 import { initializeJobSystem } from './jobs/scheduler';
 import { closeQueues } from './jobs';
 import { initializeCoinList } from './services/dataCollection/coinListService';
+import { ensurePricesData } from './utils/startup';
 import {
   generalRateLimit,
   settingsRateLimit,
@@ -203,6 +204,11 @@ async function initializeApp(): Promise<void> {
     logger.info('Initializing coin list...');
     await initializeCoinList();
     logger.info('✓ Coin list initialized');
+
+    // Ensure prices table has historical data for market analysis
+    logger.info('Ensuring prices table has historical data...');
+    await ensurePricesData();
+    logger.info('✓ Prices data verified');
 
     // Initialize job system
     if (process.env.ENABLE_JOB_SCHEDULER !== 'false') {
