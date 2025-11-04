@@ -111,7 +111,7 @@
                     <label class="label">
                         🤖 AI Analysis Model:
                     </label>
-                    <select id="aiModelSelect" style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid var(--border-color); border-radius: 6px; cursor: pointer;">
+                    <select id="aiModelSelect" onchange="saveAIModelPreference(this.value)" style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid var(--border-color); border-radius: 6px; cursor: pointer;">
                         <option value="local">💻 Local Analysis (Free - No AI)</option>
                         <option value="openai">🤖 OpenAI GPT-4o-mini (Cheapest AI - $0.0007)</option>
                         <option value="anthropic" selected>🧠 Anthropic Claude Haiku (Fast - $0.0014)</option>

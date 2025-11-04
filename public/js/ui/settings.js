@@ -29,6 +29,7 @@ async function saveSettingsToBackend(settings) {
             discoveryStrategy: settings.discoveryStrategy,
             colorMode: settings.colorMode,
             visualStyle: settings.visualStyle,
+            aiModel: settings.aiModel,
             // Note: debugMode remains frontend-only
         };
         
@@ -278,6 +279,12 @@ export async function applySettings() {
     document.getElementById('colorModeSelect').value = settings.colorMode || 'auto';
     document.getElementById('visualStyleSelect').value = settings.visualStyle || 'default';
     
+    // AI Model preference
+    const aiModelSelect = document.getElementById('aiModelSelect');
+    if (aiModelSelect && settings.aiModel) {
+        aiModelSelect.value = settings.aiModel;
+    }
+    
     // Apply theme immediately
     if (settings.colorMode && settings.visualStyle) {
         applyTheme({ colorMode: settings.colorMode, visualStyle: settings.visualStyle });
@@ -296,6 +303,20 @@ export function updateConfidenceValue(value) {
  */
 export function updateMaxPositionValue(value) {
     document.getElementById('maxPositionValue').textContent = value;
+}
+
+/**
+ * Save AI model preference immediately when changed
+ */
+export async function saveAIModelPreference(aiModel) {
+    console.log('💾 Saving AI model preference:', aiModel);
+    
+    try {
+        await saveSettingsToBackend({ aiModel });
+        console.log('✅ AI model preference saved');
+    } catch (error) {
+        console.error('❌ Failed to save AI model preference:', error);
+    }
 }
 
 /**

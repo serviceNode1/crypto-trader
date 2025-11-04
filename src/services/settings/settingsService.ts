@@ -16,6 +16,7 @@ export interface UserSettings {
   discoveryStrategy: 'conservative' | 'moderate' | 'aggressive';
   colorMode: 'light' | 'dark' | 'auto';
   visualStyle: 'default' | 'glass';
+  aiModel: 'local' | 'openai' | 'anthropic' | 'both';
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -33,6 +34,7 @@ const DEFAULT_SETTINGS: Omit<UserSettings, 'id' | 'userId' | 'createdAt' | 'upda
   discoveryStrategy: 'moderate',
   colorMode: 'auto',
   visualStyle: 'default',
+  aiModel: 'anthropic',
 };
 
 /**
@@ -70,6 +72,7 @@ export async function getUserSettings(userId: number = 1): Promise<UserSettings>
       discoveryStrategy: row.discovery_strategy || 'moderate',
       colorMode: row.color_mode || 'auto',
       visualStyle: row.visual_style || 'default',
+      aiModel: row.ai_model || 'anthropic',
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
@@ -145,6 +148,10 @@ export async function updateUserSettings(
       updates.push(`visual_style = $${paramCount++}`);
       values.push(settings.visualStyle);
     }
+    if (settings.aiModel !== undefined) {
+      updates.push(`ai_model = $${paramCount++}`);
+      values.push(settings.aiModel);
+    }
 
     if (updates.length === 0) {
       throw new Error('No settings to update');
@@ -194,8 +201,9 @@ export async function resetUserSettings(userId: number = 1): Promise<UserSetting
            analysis_frequency = $9,
            discovery_strategy = $10,
            color_mode = $11,
-           visual_style = $12
-       WHERE user_id = $13
+           visual_style = $12,
+           ai_model = $13
+       WHERE user_id = $14
        RETURNING *`,
       [
         DEFAULT_SETTINGS.autoExecute,
@@ -210,6 +218,7 @@ export async function resetUserSettings(userId: number = 1): Promise<UserSetting
         DEFAULT_SETTINGS.discoveryStrategy,
         DEFAULT_SETTINGS.colorMode,
         DEFAULT_SETTINGS.visualStyle,
+        DEFAULT_SETTINGS.aiModel,
         userId,
       ]
     );

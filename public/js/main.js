@@ -23,7 +23,8 @@ import {
     changeColorMode,
     changeVisualStyle,
     toggleDebugMode,
-    handleTradingModeChange
+    handleTradingModeChange,
+    saveAIModelPreference
 } from './ui/settings.js';
 import { analyzeCrypto, selectCrypto, closeAnalysis, initializeAnalysisAutocomplete } from './ui/analysis.js';
 import { 
@@ -166,6 +167,7 @@ window.updateConfidenceValue = updateConfidenceValue;
 window.updateMaxPositionValue = updateMaxPositionValue;
 window.toggleDebugMode = toggleDebugMode;
 window.handleTradingModeChange = handleTradingModeChange;
+window.saveAIModelPreference = saveAIModelPreference;
 window.loadTrades = loadTrades;
 window.loadPortfolio = loadPortfolio;
 window.loadRecommendations = loadRecommendations;

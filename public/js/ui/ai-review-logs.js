@@ -57,18 +57,19 @@ export async function loadAIReviewLogs() {
  * Display AI review logs
  */
 function displayAIReviewLogs(logs, stats) {
-    const container = document.getElementById('ai-review-logs-content');
+    const contentEl = document.getElementById('ai-review-logs-content');
+    if (!contentEl) return;
     
     if (!logs || logs.length === 0) {
-        container.innerHTML = `
-            <div style="padding: 30px; text-align: center;">
-                <div style="font-size: 48px; margin-bottom: 15px;">📋</div>
-                <p style="color: var(--text-muted);">No AI review logs yet</p>
-                <p style="font-size: 13px; color: var(--text-muted); margin-top: 10px;">
-                    Logs will appear here after the first scheduled AI review runs
-                </p>
-            </div>
-        `;
+        contentEl.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--text-muted);">No review logs found</p>';
+        return;
+    }
+    
+    // Filter to only show completed or failed logs (not intermediate "started" states)
+    const finalLogs = logs.filter(log => log.status === 'completed' || log.status === 'failed');
+    
+    if (finalLogs.length === 0) {
+        contentEl.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--text-muted);">No completed reviews yet</p>';
         return;
     }
     
@@ -102,15 +103,22 @@ function displayAIReviewLogs(logs, stats) {
         </div>
     `;
     
-    // Logs timeline
-    const logsHTML = logs.map(log => {
-        const statusColor = log.status === 'completed' ? '#10b981' : 
+    // Logs timeline (only show final states)
+    const logsHTML = finalLogs.map(log => {
+        // Check if this was a skipped execution
+        const isSkipped = log.metadata && log.metadata.skipped;
+        
+        const statusColor = isSkipped ? '#6b7280' :
+                           log.status === 'completed' ? '#10b981' : 
                            log.status === 'failed' ? '#ef4444' : '#f59e0b';
-        const statusIcon = log.status === 'completed' ? '✅' : 
+        const statusIcon = isSkipped ? '⏭️' :
+                          log.status === 'completed' ? '✅' : 
                           log.status === 'failed' ? '❌' : '⏳';
         
         const typeIcon = log.reviewType === 'scheduled' ? '⏰' :
                         log.reviewType === 'manual' ? '👤' : '🔔';
+        
+        const statusText = isSkipped ? 'SKIPPED' : log.status.toUpperCase();
         
         return `
             <div style="border-left: 4px solid ${statusColor}; padding: 15px; margin-bottom: 15px; background: var(--card-bg-secondary); border-radius: 6px;">
@@ -120,7 +128,7 @@ function displayAIReviewLogs(logs, stats) {
                             ${typeIcon} ${log.reviewType.charAt(0).toUpperCase() + log.reviewType.slice(1)} Review
                         </span>
                         <span style="margin-left: 10px; font-size: 13px; padding: 3px 8px; background: ${statusColor}; color: white; border-radius: 4px; font-weight: 600;">
-                            ${statusIcon} ${log.status.toUpperCase()}
+                            ${statusIcon} ${statusText}
                         </span>
                     </div>
                     <div style="text-align: right; font-size: 12px; color: var(--text-muted);">
@@ -129,7 +137,12 @@ function displayAIReviewLogs(logs, stats) {
                     </div>
                 </div>
                 
-                ${log.status === 'completed' ? `
+                ${isSkipped ? `
+                    <div style="padding: 10px; background: var(--bg-secondary); border-radius: 4px; font-size: 13px; color: var(--text-muted);">
+                        <strong>Reason:</strong> ${log.metadata.reason}<br>
+                        <span style="font-size: 12px; font-style: italic;">Smart execution - waiting for ${log.metadata.recommendedInterval} interval</span>
+                    </div>
+                ` : log.status === 'completed' ? `
                     <div style="display: flex; gap: 20px; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">
                         <span>📊 ${log.coinsAnalyzed || 0} coins analyzed</span>
                         <span style="color: #10b981;">📈 ${log.buyRecommendations || 0} BUY</span>
@@ -147,7 +160,7 @@ function displayAIReviewLogs(logs, stats) {
         `;
     }).join('');
     
-    container.innerHTML = statsHTML + logsHTML;
+    contentEl.innerHTML = statsHTML + logsHTML;
 }
 
 /**

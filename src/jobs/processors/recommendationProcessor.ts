@@ -178,6 +178,26 @@ export async function processRecommendation(job: Job<RecommendationJobData>): Pr
   
   if (!shouldRun) {
     logger.info(`⏭️  Skipping recommendation job: ${reason}`);
+    
+    // Log the skip decision for transparency
+    await logAIReview({
+      reviewType: 'scheduled',
+      status: 'completed',
+      phase: 'completed',
+      coinsAnalyzed: 0,
+      buyRecommendations: 0,
+      sellRecommendations: 0,
+      skippedOpportunities: 0,
+      duration: Date.now() - startTime,
+      timestamp: new Date(),
+      metadata: {
+        skipped: true,
+        reason,
+        recommendedInterval: `${interval}h`,
+        decision: 'Smart execution - conditions not met'
+      }
+    });
+    
     return; // Exit early - don't run
   }
   
