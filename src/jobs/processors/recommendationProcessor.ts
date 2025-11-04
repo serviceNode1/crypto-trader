@@ -201,9 +201,10 @@ export async function processRecommendation(job: Job<RecommendationJobData>): Pr
     return; // Exit early - don't run
   }
   
-  // Define strategies to run
+  // Define strategies to run - run ALL strategies on top100
+  // Frontend will filter display based on user settings
   const strategies: DiscoveryStrategy[] = ['conservative', 'moderate', 'aggressive'];
-  const coinUniverses: CoinUniverse[] = ['top50']; // Can be expanded to ['top10', 'top50', 'top100']
+  const coinUniverses: CoinUniverse[] = ['top100']; // Run on top100, filter display by user settings
   
   logger.info(`🚀 Running recommendation job: ${reason}`);
   

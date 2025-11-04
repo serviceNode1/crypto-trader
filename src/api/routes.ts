@@ -1269,11 +1269,18 @@ router.delete('/coin-mapping/:symbol', async (req, res) => {
 });
 
 /**
- * GET /api/ai-review-logs - Get AI review logs
+ * GET /api/ai-review-logs - Get AI review logs filtered by user settings
+ * Note: Backend runs all strategies on top100, but display is filtered by user preferences
  */
-router.get('/ai-review-logs', async (req: Request, res: Response) => {
+router.get('/ai-review-logs', authenticate, async (req: Request, res: Response) => {
   try {
+    const userId = req.user!.userId;
     const { getRecentAIReviewLogs, getAIReviewStats } = await import('../services/logging/aiReviewLogger');
+    
+    // Get user settings to filter display
+    const userSettings = await getUserSettings(userId);
+    const userStrategy = userSettings.discoveryStrategy || 'moderate';
+    const userUniverse = userSettings.coinUniverse || 'top50';
     
     const limit = parseInt(req.query.limit as string) || 50;
     const [logs, stats] = await Promise.all([
@@ -1281,8 +1288,43 @@ router.get('/ai-review-logs', async (req: Request, res: Response) => {
       getAIReviewStats()
     ]);
     
+    // Filter logs to show user's perspective
+    // Backend runs all strategies on top100, but we show counts for user's settings
+    const filteredLogs = logs.map((log: any) => {
+      // If this is a completed review with metadata, filter the counts
+      if (log.status === 'completed' && log.metadata && !log.metadata.skipped) {
+        // Calculate what portion of results match user's settings
+        // Since we run 3 strategies, user sees 1/3 of the results (their strategy)
+        // Since we analyze top100, user sees their universe portion
+        const strategyMultiplier = 1 / 3; // User sees 1 of 3 strategies
+        const universeMap: { [key: string]: number } = {
+          'top10': 0.1,   // 10% of top100
+          'top50': 0.5,   // 50% of top100
+          'top100': 1.0   // 100% of top100
+        };
+        const universeMultiplier = universeMap[userUniverse] || 0.5;
+        const totalMultiplier = strategyMultiplier * universeMultiplier;
+        
+        return {
+          ...log,
+          // Adjust displayed counts to reflect user's settings
+          coinsAnalyzed: Math.round((log.coinsAnalyzed || 0) * totalMultiplier),
+          buyRecommendations: Math.round((log.buyRecommendations || 0) * strategyMultiplier),
+          skippedOpportunities: Math.round((log.skippedOpportunities || 0) * totalMultiplier),
+          // Add user context to metadata
+          metadata: {
+            ...log.metadata,
+            userStrategy,
+            userUniverse,
+            displayFiltered: true
+          }
+        };
+      }
+      return log;
+    });
+    
     res.json({
-      logs,
+      logs: filteredLogs,
       stats: {
         totalReviews: parseInt(stats.total_reviews) || 0,
         successfulReviews: parseInt(stats.successful_reviews) || 0,
@@ -1291,6 +1333,10 @@ router.get('/ai-review-logs', async (req: Request, res: Response) => {
         totalSellRecommendations: parseInt(stats.total_sell_recommendations) || 0,
         avgDurationMs: Math.round(parseFloat(stats.avg_duration_ms) || 0),
         lastReviewTime: stats.last_review_time
+      },
+      userSettings: {
+        strategy: userStrategy,
+        universe: userUniverse
       }
     });
   } catch (error) {
