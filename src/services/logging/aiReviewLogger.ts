@@ -159,6 +159,7 @@ export async function getRecentAIReviewLogs(limit: number = 50): Promise<AIRevie
         buy_recommendations, sell_recommendations, skipped_opportunities,
         error_message, metadata, duration, timestamp, created_at
       FROM ai_review_logs
+      WHERE timestamp >= NOW() - INTERVAL '3 days'
       ORDER BY timestamp DESC
       LIMIT $1`,
       [limit]
