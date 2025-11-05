@@ -332,7 +332,7 @@ function validateSettings(settings: Partial<UserSettings>): void {
 
   if (
     settings.visualStyle !== undefined &&
-    !['default', 'glass', 'compact', 'comfortable'].includes(settings.visualStyle)
+    !['default', 'glass'].includes(settings.visualStyle)
   ) {
     throw new Error('Invalid visual style');
   }

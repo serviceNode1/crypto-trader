@@ -21,8 +21,8 @@
 }
 
 .account-btn:hover {
-  border-color: var(--primary-color);
-  background: var(--primary-color);
+  border-color: var(--color-primary);
+  background: var(--color-primary);
   color: white;
 }
 

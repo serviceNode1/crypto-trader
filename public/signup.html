@@ -24,9 +24,11 @@
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 20px;
+      gap: 30px;
     }
 
     .signup-container {
@@ -240,6 +242,108 @@
 
     .password-toggle button:hover {
       color: #2d3748;
+    }
+
+    /* Signup page footer override */
+    .site-footer {
+      background: rgba(255, 255, 255, 0.95);
+      border-top: none;
+      padding: 20px;
+      margin-top: 0;
+      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .footer-content {
+      gap: 12px;
+      text-align: center;
+    }
+
+    .footer-links a {
+      color: #667eea;
+      font-size: 13px;
+    }
+
+    .footer-links a:hover {
+      color: #764ba2;
+    }
+
+    .footer-copyright {
+      color: #718096;
+      font-size: 11px;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 767px) {
+      body {
+        padding: 12px;
+        gap: 20px;
+      }
+
+      .signup-container {
+        padding: 32px 24px;
+        border-radius: 12px;
+      }
+
+      .logo h1 {
+        font-size: 24px;
+      }
+
+      .logo p {
+        font-size: 13px;
+      }
+
+      .form-group input {
+        padding: 10px 14px;
+        font-size: 16px; /* Prevents zoom on iOS */
+      }
+
+      .btn {
+        padding: 12px;
+        font-size: 16px; /* Prevents zoom on iOS */
+      }
+
+      .password-requirements {
+        font-size: 11px;
+      }
+
+      .site-footer {
+        padding: 16px;
+        border-radius: 8px;
+      }
+
+      .footer-links {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .footer-divider {
+        display: none;
+      }
+
+      .footer-links a {
+        font-size: 12px;
+      }
+
+      .footer-copyright {
+        font-size: 10px;
+      }
+    }
+
+    @media (max-width: 374px) {
+      body {
+        padding: 8px;
+      }
+
+      .signup-container {
+        padding: 24px 16px;
+      }
+
+      .logo h1 {
+        font-size: 22px;
+      }
     }
   </style>
 </head>
@@ -468,7 +572,7 @@
   </script>
 
   <!-- Footer -->
-  <footer class="site-footer" style="margin-top: 50px;">
+  <footer class="site-footer">
     <div class="footer-content">
       <div class="footer-links">
         <a href="/privacy">Privacy Policy</a>
