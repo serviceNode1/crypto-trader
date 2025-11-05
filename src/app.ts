@@ -30,6 +30,11 @@ const app: Express = express();
 const PORT = process.env.PORT || 3000;
 
 /**
+ * Trust proxy - Required for Cloudways/Apache reverse proxy
+ */
+app.set('trust proxy', true);
+
+/**
  * Middleware Configuration
  */
 
