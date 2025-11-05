@@ -126,10 +126,10 @@ app.get('/', (_req: Request, res: Response) => {
 });
 
 /**
- * Cloudways compatibility - redirect index.php to root
+ * Cloudways compatibility - serve index.html for index.php
  */
 app.get('/index.php', (_req: Request, res: Response) => {
-  res.redirect(301, '/');
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 /**
