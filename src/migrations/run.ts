@@ -42,8 +42,8 @@ async function runMigrations() {
       executedResult.rows.map((row) => row.filename)
     );
 
-    // Get migration files
-    const migrationsDir = __dirname;
+    // Get migration files - use src/migrations regardless of where this runs from
+    const migrationsDir = path.join(__dirname, '../../src/migrations');
     const files = fs
       .readdirSync(migrationsDir)
       .filter((file) => file.endsWith('.sql'))
