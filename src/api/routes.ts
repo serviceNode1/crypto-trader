@@ -1300,8 +1300,8 @@ router.get('/ai-review-logs', authenticate, async (req: Request, res: Response) 
              FROM discovery_recommendations 
              WHERE strategy = $1 
                AND coin_universe = $2
-               AND created_at >= $3 - INTERVAL '2 minutes'
-               AND created_at <= $3 + INTERVAL '2 minutes'`,
+               AND created_at >= $3::TIMESTAMP - INTERVAL '2 minutes'
+               AND created_at <= $3::TIMESTAMP + INTERVAL '2 minutes'`,
             [userStrategy, userUniverse, log.timestamp]
           );
           
