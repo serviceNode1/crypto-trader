@@ -1,7 +1,7 @@
 import { getCryptoNews } from '../dataCollection/cryptoPanicService';
+import { getTopCoinsByMarketCap } from '../dataCollection/coinGeckoService';
 import { query } from '../../config/database';
 import { logger } from '../../utils/logger';
-import axios from 'axios';
 
 export interface CoinCandidate {
   coinId: string;  // CoinGecko coin ID to prevent symbol collisions
@@ -350,33 +350,12 @@ export async function discoverCoins(
 }
 
 /**
- * Fetch coins by market cap from CoinGecko
+ * Fetch coins by market cap from CoinGecko (using cached service)
  */
 async function fetchCoinsByMarketCap(limit: number, forceRefresh: boolean = false): Promise<any[]> {
   try {
-    const url = `https://api.coingecko.com/api/v3/coins/markets`;
-    const params: any = {
-      vs_currency: 'usd',
-      order: 'market_cap_desc',
-      per_page: limit,
-      page: 1,
-      sparkline: true,  // Get 7-day price chart data
-      price_change_percentage: '24h,7d',
-    };
-    
-    // Add cache-busting parameter if force refresh
-    if (forceRefresh) {
-      params._t = Date.now();
-    }
-
-    const response = await axios.get(url, {
-      params,
-      headers: {
-        'x-cg-demo-api-key': process.env.COINGECKO_API_KEY || '',
-      },
-    });
-
-    return response.data;
+    // Use the cached service which includes rate limiting and retry logic
+    return await getTopCoinsByMarketCap(limit, forceRefresh);
   } catch (error) {
     logger.error('Failed to fetch coins from CoinGecko', { error });
     throw error;

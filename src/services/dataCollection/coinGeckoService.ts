@@ -466,6 +466,58 @@ export async function searchCoinsBySymbol(symbol: string): Promise<Array<{
   });
 }
 
+/**
+ * Get top coins by market cap with sparkline data for discovery
+ * Uses caching and rate limiting to avoid API rate limits
+ */
+export async function getTopCoinsByMarketCap(
+  limit: number = 100,
+  forceRefresh: boolean = false
+): Promise<any[]> {
+  const cacheKey = `top_coins:${limit}`;
+  const ttl = forceRefresh ? 0 : CACHE_TTL.DISCOVERY; // 2 hours cache for discovery
+
+  return cacheAside(cacheKey, ttl, async () => {
+    return withRateLimit(
+      rateLimiters.coinGecko,
+      async () => {
+        return withRetryJitter(
+          async () => {
+            const url = `${BASE_URL}/coins/markets`;
+
+            logger.debug('Fetching top coins by market cap from CoinGecko', {
+              limit,
+              forceRefresh,
+            });
+
+            const response = await axios.get(url, {
+              params: {
+                vs_currency: 'usd',
+                order: 'market_cap_desc',
+                per_page: limit,
+                page: 1,
+                sparkline: true, // Get 7-day price chart data
+                price_change_percentage: '24h,7d',
+              },
+              headers: {
+                'x-cg-demo-api-key': process.env.COINGECKO_API_KEY || '',
+              },
+            });
+
+            logger.info('Top coins by market cap fetched', { 
+              count: response.data.length,
+              cached: !forceRefresh 
+            });
+            return response.data;
+          },
+          { shouldRetry: isRetryableError }
+        );
+      },
+      'CoinGecko'
+    );
+  });
+}
+
 // Old hardcoded mapping functions removed - now using scalable coinListService
 // See src/services/dataCollection/coinListService.ts for the new implementation
 

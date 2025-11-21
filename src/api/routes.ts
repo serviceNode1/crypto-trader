@@ -1008,7 +1008,7 @@ router.post('/settings/reset', authenticate, async (req: Request, res: Response)
  * GET /api/discover - Discover trading opportunities
  * Query params: ?universe=top10|top25|top50|top100&strategy=conservative|moderate|aggressive&forceRefresh=true
  */
-router.get('/discover', async (req: Request, res: Response) => {
+router.get('/discover', async (req: Request, res: Response): Promise<void> => {
   try {
     const universe = (req.query.universe as 'top10' | 'top25' | 'top50' | 'top100') || 'top25';
     const strategy = (req.query.strategy as 'conservative' | 'moderate' | 'aggressive') || 'moderate';
@@ -1030,9 +1030,22 @@ router.get('/discover', async (req: Request, res: Response) => {
       executionTime, // How long it took in ms
       forceRefresh, // Whether cache was bypassed
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Failed to discover coins', { error });
-    res.status(500).json({ error: 'Failed to discover coins' });
+    
+    // Check if it's a rate limit error
+    if (error?.status === 429 || error?.code === 'ERR_BAD_REQUEST') {
+      res.status(429).json({ 
+        error: 'CoinGecko API rate limit exceeded',
+        message: 'Please wait a few minutes before trying again, or try without forceRefresh to use cached data.',
+        retryAfter: 60 // seconds
+      });
+    } else {
+      res.status(500).json({ 
+        error: 'Failed to discover coins',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   }
 });
 

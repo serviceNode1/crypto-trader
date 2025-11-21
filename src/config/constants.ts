@@ -24,6 +24,7 @@ export const CACHE_TTL = {
   NEWS: 1800, // 30 minutes
   TRADITIONAL_MARKETS: 3600, // 1 hour
   HISTORICAL: 86400, // 24 hours
+  DISCOVERY: 7200, // 2 hours - for coin discovery results
 } as const;
 
 // Timeframes for technical analysis
